@@ -15,6 +15,7 @@ import (
 	"github.com/uddeshya-world/verdict/internal/engine"
 	"github.com/uddeshya-world/verdict/internal/export/openvex"
 	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/policy"
 	"github.com/uddeshya-world/verdict/internal/rootpath"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
@@ -96,7 +97,8 @@ func TestReversedAssetsMatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a, err := engine.Evaluate(engine.Input{Pack: p, Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
+	pol := loadLabPolicy(t, root)
+	a, err := engine.Evaluate(engine.Input{Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +107,7 @@ func TestReversedAssetsMatch(t *testing.T) {
 	for i, j := 0, len(rev.Assets)-1; i < j; i, j = i+1, j-1 {
 		rev.Assets[i], rev.Assets[j] = rev.Assets[j], rev.Assets[i]
 	}
-	b, err := engine.Evaluate(engine.Input{Pack: p, Snapshot: &rev, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
+	b, err := engine.Evaluate(engine.Input{Pack: p, Policy: pol, Snapshot: &rev, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +127,7 @@ func TestSummaryAndValidateOutsideRepo(t *testing.T) {
 		"drill",
 		"--pack", filepath.Join(root, "packs/draft/ecp-cve-2024-6387-openssh.yaml"),
 		"--snapshot", filepath.Join(root, "examples/snapshots/regresshion-lab.json"),
+		"--policy", filepath.Join(root, "examples/policy/lab-zones.json"),
 		"--author", "Uddeshya Kumar",
 		"--openvex", vexPath,
 	}, &stdout, &stderr)
@@ -186,7 +189,7 @@ func drill(t *testing.T, root, packPath, snapPath string) (*engine.Report, *open
 	if err != nil {
 		t.Fatal(err)
 	}
-	rep, err := engine.Evaluate(engine.Input{Pack: p, Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
+	rep, err := engine.Evaluate(engine.Input{Pack: p, Policy: loadLabPolicy(t, root), Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,6 +198,15 @@ func drill(t *testing.T, root, packPath, snapPath string) (*engine.Report, *open
 		t.Fatal(err)
 	}
 	return rep, doc
+}
+
+func loadLabPolicy(t *testing.T, root string) *policy.Policy {
+	t.Helper()
+	p, err := policy.Load(mustRead(t, filepath.Join(root, "examples/policy/lab-zones.json")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
 }
 
 func loadPack(t *testing.T, path string) *pack.Pack {

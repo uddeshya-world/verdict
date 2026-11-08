@@ -5,6 +5,7 @@ package engine
 
 import (
 	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/uddeshya-world/verdict/internal/logic"
@@ -36,9 +37,9 @@ func freshInventory(pkgs ...snapshot.Package) snapshot.Asset {
 	}
 }
 
-func advisoryFact(value, basis, confidence, observedAt string) snapshot.Fact {
+func advisoryFact(value, basis, confidence, observedAt, packagePURL string) snapshot.Fact {
 	return snapshot.Fact{
-		Key: "advisory.cve_2024_6387.status", Value: value,
+		Key: "advisory.cve_2024_6387.status", PURL: packagePURL, Value: value,
 		Basis: basis, Confidence: confidence, ObservedAt: observedAt,
 		EvidenceID: "e-adv", Source: "caller",
 	}
@@ -52,7 +53,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 
 	t.Run("generic and deb", func(t *testing.T) {
 		a := freshInventory(generic, deb)
-		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", deb.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.True || !got.Leaf.Observed || got.Leaf.Confidence < logic.ConfHigh {
 			t.Fatalf("in-range generic must stay true: %+v", got)
@@ -60,7 +61,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 	})
 	t.Run("generic only", func(t *testing.T) {
 		a := freshInventory(generic)
-		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", generic.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.True {
 			t.Fatalf("stray fixed advisory cleared upstream: %+v", got)
@@ -71,7 +72,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 			snapshot.Package{PURL: "pkg:generic/openssh@9.8p1", Version: "9.8p1"},
 			deb,
 		)
-		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", deb.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.False || !got.Leaf.Observed {
 			t.Fatalf("patched upstream plus fixed distro should be false: %+v", got)
@@ -79,7 +80,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 	})
 	t.Run("deb only fixed", func(t *testing.T) {
 		a := freshInventory(deb)
-		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", deb.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.False || !got.Leaf.Observed || got.Leaf.Confidence < logic.ConfHigh {
 			t.Fatalf("distro advisory fixed: %+v", got)
@@ -93,7 +94,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 	})
 	t.Run("deb affected", func(t *testing.T) {
 		a := freshInventory(deb)
-		a.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z", deb.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.True {
 			t.Fatalf("%+v", got)
@@ -101,7 +102,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 	})
 	t.Run("out of range generic ignores affected advisory", func(t *testing.T) {
 		a := freshInventory(snapshot.Package{PURL: "pkg:generic/openssh@9.8p1", Version: "9.8p1"})
-		a.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z", "pkg:generic/openssh@9.8p1")}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.False {
 			t.Fatalf("advisory must not mark a non-distro package affected: %+v", got)
@@ -112,7 +113,7 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 			snapshot.Package{PURL: "pkg:generic/openssh@1:9.6p1-3ubuntu13.4", Version: "1:9.6p1-3ubuntu13.4"},
 			deb,
 		)
-		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", deb.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.Unknown || got.Reason != "unsupported_version" {
 			t.Fatalf("%+v", got)
@@ -120,10 +121,29 @@ func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 	})
 	t.Run("stale advisory does not fall through to sorting", func(t *testing.T) {
 		a := freshInventory(deb)
-		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-01T11:00:00Z")}
+		a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-01T11:00:00Z", deb.PURL)}
 		got := evalPackage("C1", ch, nil, a, eval, mustAge())
 		if got.Leaf.Value != logic.Unknown || got.Reason != "stale_evidence" {
 			t.Fatalf("%+v", got)
+		}
+	})
+	t.Run("not_affected is distinct from fixed and is scoped", func(t *testing.T) {
+		rhel := snapshot.Package{PURL: "pkg:rpm/redhat/openssh-server@8.0p1-10.el8", Version: "8.0p1-10.el8"}
+		a := freshInventory(rhel)
+		a.Facts = []snapshot.Fact{advisoryFact("not_affected", "observed", "high", "2026-11-08T11:00:00Z", rhel.PURL)}
+		got := evalPackage("C1", ch, nil, a, eval, mustAge())
+		if got.Leaf.Value != logic.False || !got.Leaf.Observed || got.Leaf.Confidence < logic.ConfHigh {
+			t.Fatalf("never-vulnerable advisory: %+v", got)
+		}
+		a.Facts[0].PURL = ""
+		got = evalPackage("C1", ch, nil, a, eval, mustAge())
+		if got.Leaf.Value != logic.Unknown || got.Reason != "advisory_purl_required" {
+			t.Fatalf("bare advisory: %+v", got)
+		}
+		a.Facts[0].PURL = "pkg:rpm/redhat/openssh-server@8.0p1-9.el8"
+		got = evalPackage("C1", ch, nil, a, eval, mustAge())
+		if got.Leaf.Value != logic.Unknown || got.Reason != "distro_advisory_required" {
+			t.Fatalf("other purl: %+v", got)
 		}
 	})
 }
@@ -155,7 +175,7 @@ func TestReviewedPackAdvisoryCannotClearInRangeGeneric(t *testing.T) {
 		{Key: "libc.family", Value: "glibc", Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-libc", Source: "caller"},
 		{Key: "process.listening.sshd", Value: "true", Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-sshd", Source: "caller"},
 		{Key: "config.sshd.LoginGraceTime", Value: "120", Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-lgt", Source: "caller"},
-		advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z"),
+		advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", "pkg:deb/ubuntu/openssh-server@1:9.6p1-3ubuntu13.4"),
 	}
 	exposure := []snapshot.Exposure{{
 		Port: 22, Proto: "tcp", ReachableFrom: []string{"internet"},
@@ -176,7 +196,7 @@ func TestReviewedPackAdvisoryCannotClearInRangeGeneric(t *testing.T) {
 		KBVersion: "demo-2026.11.08", EvaluationTime: "2026-11-08T12:00:00Z",
 		EvidenceTrust: "caller_asserted", Assets: []snapshot.Asset{mixed, debOnly},
 	}
-	rep, err := Evaluate(Input{Pack: p, Snapshot: snap, EvaluationTime: eval, KBVersion: snap.KBVersion})
+	rep, err := Evaluate(Input{Pack: p, Policy: labPol(t), Snapshot: snap, EvaluationTime: eval, KBVersion: snap.KBVersion})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +217,7 @@ func TestAdvisoryFactDoesNotClearUpstreamProperty(t *testing.T) {
 	eval := mustTime(t)
 	ch := opensshCheck()
 	versions := []string{"9.0p1", "8.5p1", "9.8p1", "4.0p1", "nope", "1:9.6p1-3ubuntu13.4"}
-	advisories := []string{"absent", "fixed", "affected", "stale-fixed", "attested-fixed", "low-fixed"}
+	advisories := []string{"absent", "fixed", "affected", "not-affected", "stale-fixed", "attested-fixed", "low-fixed"}
 	for i := 0; i < 400; i++ {
 		var pkgs []snapshot.Package
 		var inRange bool
@@ -218,18 +238,30 @@ func TestAdvisoryFactDoesNotClearUpstreamProperty(t *testing.T) {
 			pkgs = append(pkgs, snapshot.Package{PURL: "pkg:rpm/opensuse/openssh-server@9.6p1-1.1", Version: "9.6p1-1.1"})
 		}
 		asset := freshInventory(pkgs...)
+		target := ""
+		for _, pkg := range pkgs {
+			if strings.HasPrefix(pkg.PURL, "pkg:deb/") || strings.HasPrefix(pkg.PURL, "pkg:rpm/") {
+				target = pkg.PURL
+				break
+			}
+		}
+		if target == "" && len(pkgs) > 0 && rng.Intn(2) == 0 {
+			target = pkgs[0].PURL
+		}
 		kind := advisories[rng.Intn(len(advisories))]
 		switch kind {
 		case "fixed":
-			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z")}
+			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", target)}
 		case "affected":
-			asset.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z")}
+			asset.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z", target)}
 		case "stale-fixed":
-			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-01T11:00:00Z")}
+			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-01T11:00:00Z", target)}
 		case "attested-fixed":
-			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "attested", "high", "2026-11-08T11:00:00Z")}
+			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "attested", "high", "2026-11-08T11:00:00Z", target)}
 		case "low-fixed":
-			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "low", "2026-11-08T11:00:00Z")}
+			asset.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "low", "2026-11-08T11:00:00Z", target)}
+		case "not-affected":
+			asset.Facts = []snapshot.Fact{advisoryFact("not_affected", "observed", "high", "2026-11-08T11:00:00Z", target)}
 		}
 		got := evalPackage("C1", ch, nil, asset, eval, mustAge())
 		if inRange && got.Leaf.Value == logic.False {
@@ -276,7 +308,7 @@ func TestZoneCaseDoesNotDowngradeExploitable(t *testing.T) {
 		}},
 	}
 	rep, err := Evaluate(Input{
-		Pack: p,
+		Pack: p, Policy: labPol(t),
 		Snapshot: &snapshot.Snapshot{
 			KBVersion: "demo", EvaluationTime: "2026-11-08T12:00:00Z",
 			EvidenceTrust: "caller_asserted", Assets: []snapshot.Asset{asset},
@@ -291,9 +323,9 @@ func TestZoneCaseDoesNotDowngradeExploitable(t *testing.T) {
 	if got.State != stateExploitable || got.ExposureUncertainty {
 		t.Fatalf("Internet must match untrusted zone internet: %+v", got)
 	}
-	asset.Exposure[0].ReachableFrom = []string{"dmz"}
+	asset.Exposure[0].ReachableFrom = []string{"corp"}
 	rep, err = Evaluate(Input{
-		Pack: p,
+		Pack: p, Policy: labPol(t),
 		Snapshot: &snapshot.Snapshot{
 			KBVersion: "demo", EvaluationTime: "2026-11-08T12:00:00Z",
 			EvidenceTrust: "caller_asserted", Assets: []snapshot.Asset{asset},

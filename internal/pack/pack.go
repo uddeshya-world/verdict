@@ -94,14 +94,11 @@ type Condition struct {
 	AnyOf []Condition
 }
 
-// ExposureSpec classifies a true tree. It never selects not_affected.
-// A zone is trusted only when it is listed in TrustedZones. Comparison is
-// case-insensitive. Any other label is unknown exposure.
+// ExposureSpec names the port and protocol a true tree is about.
+// It never selects not_affected. Zone names live in the site policy.
 type ExposureSpec struct {
-	Port           int      `yaml:"port"`
-	Proto          string   `yaml:"proto"`
-	UntrustedZones []string `yaml:"untrusted_zones"`
-	TrustedZones   []string `yaml:"trusted_zones"`
+	Port  int    `yaml:"port"`
+	Proto string `yaml:"proto"`
 }
 
 // Remediation text is copied into OpenVEX action statements.
@@ -114,6 +111,7 @@ type Remediation struct {
 type DeclaredTest struct {
 	Name                      string `yaml:"name"`
 	Snapshot                  string `yaml:"snapshot"`
+	Policy                    string `yaml:"policy"`
 	Asset                     string `yaml:"asset"`
 	ExpectState               string `yaml:"expect_state"`
 	ExpectVEX                 string `yaml:"expect_vex"`

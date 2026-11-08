@@ -8,15 +8,21 @@ import (
 	"time"
 
 	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/policy"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
 func spec22() pack.ExposureSpec {
-	return pack.ExposureSpec{
-		Port: 22, Proto: "tcp",
-		UntrustedZones: []string{"internet", "partner", "user_lan"},
-		TrustedZones:   []string{"internal"},
+	return pack.ExposureSpec{Port: 22, Proto: "tcp"}
+}
+
+func labPol(t *testing.T) *policy.Policy {
+	t.Helper()
+	p, err := policy.Load([]byte(`{"untrusted_zones":["internet","partner","user_lan","dmz"],"trusted_zones":["internal","pci"]}`))
+	if err != nil {
+		t.Fatal(err)
 	}
+	return p
 }
 
 func mustTime(t *testing.T) time.Time {
@@ -45,7 +51,7 @@ func TestTrustedObservedIsNotExposedClass(t *testing.T) {
 		Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z",
 		EvidenceID: "e", Source: "t",
 	}}
-	got := classifyExposure(spec22(), a, mustTime(t), mustAge())
+	got := classifyExposure(labPol(t), spec22(), a, mustTime(t), mustAge())
 	if got.Kind != "trusted_only" || got.Uncertain {
 		t.Fatalf("%+v", got)
 	}
@@ -58,7 +64,7 @@ func TestInferredInternalIsUnknown(t *testing.T) {
 		Basis: "inferred", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z",
 		EvidenceID: "e", Source: "t",
 	}}
-	got := classifyExposure(spec22(), a, mustTime(t), mustAge())
+	got := classifyExposure(labPol(t), spec22(), a, mustTime(t), mustAge())
 	if got.Kind != "unknown" {
 		t.Fatalf("inferred internal must not clear exposure: %+v", got)
 	}
@@ -75,7 +81,7 @@ func TestUnlistedAndMismatchedZonesAreUnknown(t *testing.T) {
 		{"case variant of untrusted", "Internet", "untrusted"},
 		{"canonical trusted", "internal", "trusted_only"},
 		{"case variant of trusted", "Internal", "trusted_only"},
-		{"unlisted", "dmz", "unknown"},
+		{"unlisted", "corp", "unknown"},
 		{"typo", "internel", "unknown"},
 		{"wan", "wan", "unknown"},
 	}
@@ -87,7 +93,7 @@ func TestUnlistedAndMismatchedZonesAreUnknown(t *testing.T) {
 				Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z",
 				EvidenceID: "e", Source: "t",
 			}}
-			got := classifyExposure(spec22(), a, eval, mustAge())
+			got := classifyExposure(labPol(t), spec22(), a, eval, mustAge())
 			if got.Kind != tc.kind {
 				t.Fatalf("zone %q: got %+v want %s", tc.zone, got, tc.kind)
 			}
@@ -108,7 +114,7 @@ func TestMixedTrustedAndUnlistedIsUnknown(t *testing.T) {
 		Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z",
 		EvidenceID: "e", Source: "t",
 	}}
-	got := classifyExposure(spec22(), a, mustTime(t), mustAge())
+	got := classifyExposure(labPol(t), spec22(), a, mustTime(t), mustAge())
 	if got.Kind != "unknown" || !got.Uncertain {
 		t.Fatalf("%+v", got)
 	}
@@ -121,7 +127,7 @@ func TestStaleExposureIsUnknown(t *testing.T) {
 		Basis: "observed", Confidence: "high", ObservedAt: "2026-11-01T11:00:00Z",
 		EvidenceID: "e", Source: "t",
 	}}
-	got := classifyExposure(spec22(), a, mustTime(t), mustAge())
+	got := classifyExposure(labPol(t), spec22(), a, mustTime(t), mustAge())
 	if got.Kind != "unknown" {
 		t.Fatalf("stale exposure: %+v", got)
 	}

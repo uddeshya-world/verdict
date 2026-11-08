@@ -16,7 +16,7 @@ One static Go binary:
 2. Evaluate that pack against a local JSON snapshot of packages, facts, and exposure observations.
 3. Emit a canonical JSON report, a one-line funnel count, and an OpenVEX 0.2 document. `openvex validate` uses the upstream schema embedded in the binary, so it does not depend on the working directory.
 
-The engine is a pure function of the pack bytes, the snapshot, an explicit evaluation time, and a knowledge-bundle version. The same inputs produce byte-identical output. The process does not open sockets.
+The engine is a pure function of the pack bytes, the site zone policy, the snapshot, an explicit evaluation time, and a knowledge-bundle version. The same inputs produce byte-identical output. The process does not open sockets.
 
 ## What this is not
 
@@ -50,6 +50,7 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 ./verdict drill \
   --pack packs/draft/ecp-cve-2024-6387-openssh.yaml \
   --snapshot examples/snapshots/regresshion-lab.json \
+  --policy examples/policy/lab-zones.json \
   --author "Uddeshya Kumar" \
   --out /tmp/regresshion-report.json \
   --openvex /tmp/regresshion.openvex.json
@@ -59,6 +60,7 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 ./verdict drill \
   --pack packs/draft/ecp-cve-2021-44228-log4j.yaml \
   --snapshot examples/snapshots/log4shell-lab.json \
+  --policy examples/policy/lab-zones.json \
   --author "Uddeshya Kumar" \
   --out /tmp/log4shell-report.json \
   --openvex /tmp/log4shell.openvex.json
@@ -106,7 +108,7 @@ The condition tree uses Kleene three-valued logic:
 - Every leaf in that proof is `basis: observed` (not inferred or attested), confidence at least `high` after the ceiling, fresh at the evaluation time, and carries one shared OpenVEX justification. Mixed justifications do not get collapsed into a guessed label.
 - Unknowns, incomplete inventory, stale or expired evidence, unsupported ecosystems, and unsupported version strings never count as that proof.
 
-Exposure does not choose `affected` versus `not_affected`. If the tree is true, a zone listed in the pack's `untrusted_zones` is `exploitable`, a zone listed in `trusted_zones` is `vulnerable_not_exposed` (OpenVEX `affected`), and a missing, unusable, or unlisted zone is `exploitable` with explicit uncertainty. Matching ignores case. An advisory fact of `fixed` clears only distro packages; it does not clear a non-distro package that is still inside the affected range.
+Exposure does not choose `affected` versus `not_affected`. If the tree is true, a zone listed in the site policy's `untrusted_zones` is `exploitable`, a zone listed in `trusted_zones` is `vulnerable_not_exposed` (OpenVEX `affected`), and a missing policy, a missing observation, or an unlisted zone is `exploitable` with explicit uncertainty. Matching ignores case. Packs do not contain zone names. An advisory fact names one package URL. `fixed` means a vendor fix. `not_affected` means that package was never vulnerable. Neither value clears a different package, and neither clears a non-distro package that is still inside the affected range.
 
 Details and the alternatives that were rejected: [docs/adr/0002-not-affected-proof.md](docs/adr/0002-not-affected-proof.md).
 

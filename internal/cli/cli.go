@@ -19,6 +19,7 @@ import (
 	"github.com/uddeshya-world/verdict/internal/engine"
 	"github.com/uddeshya-world/verdict/internal/export/openvex"
 	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/policy"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
@@ -140,12 +141,16 @@ func testPack(path string, stdout io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("%s: %w", tc.Name, err)
 		}
+		pol, err := loadPolicy(path, tc.Policy)
+		if err != nil {
+			return fmt.Errorf("%s: %w", tc.Name, err)
+		}
 		evalAt, err := time.Parse(time.RFC3339, snap.EvaluationTime)
 		if err != nil {
 			return err
 		}
 		rep, err := engine.Evaluate(engine.Input{
-			Pack: p, Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion,
+			Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion,
 		})
 		if err != nil {
 			return fmt.Errorf("%s: %w", tc.Name, err)
@@ -180,8 +185,23 @@ func testPack(path string, stdout io.Writer) error {
 	return nil
 }
 
+func loadPolicy(packPath, rel string) (*policy.Policy, error) {
+	if rel == "" {
+		return nil, nil
+	}
+	path := rel
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(filepath.Dir(packPath), path)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return policy.Load(data)
+}
+
 func newDrill(stdout, stderr io.Writer) *cobra.Command {
-	var packPath, snapPath, outPath, vexPath, author, evalFlag, kbFlag, asset string
+	var packPath, snapPath, policyPath, outPath, vexPath, author, evalFlag, kbFlag, asset string
 	cmd := &cobra.Command{
 		Use:   "drill",
 		Short: "Evaluate one pack against a local snapshot",
@@ -204,6 +224,17 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 			snap, err := snapshot.Load(sdata)
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
+			}
+			var pol *policy.Policy
+			if policyPath != "" {
+				pdata, err := os.ReadFile(policyPath)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+				pol, err = policy.Load(pdata)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
 			}
 			if asset != "" {
 				var found []snapshot.Asset
@@ -232,7 +263,7 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 				kb = kbFlag
 			}
 			rep, err := engine.Evaluate(engine.Input{
-				Pack: p, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb,
+				Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb,
 			})
 			if err != nil {
 				return &ExitError{Code: 1, Err: err}
@@ -276,6 +307,7 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&packPath, "pack", "", "condition pack YAML")
 	cmd.Flags().StringVar(&snapPath, "snapshot", "", "local inventory snapshot JSON")
+	cmd.Flags().StringVar(&policyPath, "policy", "", "site zone policy JSON; without it exposure stays unknown")
 	cmd.Flags().StringVar(&outPath, "out", "", "write the JSON report here instead of stdout")
 	cmd.Flags().StringVar(&vexPath, "openvex", "", "write an OpenVEX 0.2 document")
 	cmd.Flags().StringVar(&author, "author", "", "operator-supplied OpenVEX author label; not authenticated")

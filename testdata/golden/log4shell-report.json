@@ -4,7 +4,8 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2021-44228-log4j",
-  "pack_sha256": "a5b0f7987d5570c11004f8c46012f19fe8c4c8c5498fae685472f0612ca20690",
+  "pack_sha256": "a20db93bc5846adf7399d49dea5b8747f32cd976666b73197007c3b41b2bbd16",
+  "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2021-44228",
   "evidence_trust": "caller_asserted_unverified",
@@ -459,17 +460,17 @@
         {
           "check_id": "C_version",
           "reason": "distro_advisory_required",
-          "hint": "Check C_version cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact (affected or fixed) or the result stays unknown. Pack hint: Provide the log4j-core package URL and, for distro builds, advisory.cve_2021_44228.status=affected or fixed."
+          "hint": "Check C_version cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: Provide the log4j-core package URL and, for distro builds, advisory.cve_2021_44228.status=affected or fixed."
         },
         {
           "check_id": "M_no_lookups_env",
           "reason": "distro_advisory_required",
-          "hint": "Check M_no_lookups_env cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact (affected or fixed) or the result stays unknown. Pack hint: Apache described LOG4J_FORMAT_MSG_NO_LOOKUPS=true for releases greater than 2.10. Record the effective value. Do not assume it."
+          "hint": "Check M_no_lookups_env cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: Apache described LOG4J_FORMAT_MSG_NO_LOOKUPS=true for releases greater than 2.10. Record the effective value. Do not assume it."
         },
         {
           "check_id": "M_no_lookups_prop",
           "reason": "distro_advisory_required",
-          "hint": "Check M_no_lookups_prop cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact (affected or fixed) or the result stays unknown. Pack hint: Apache described the system property log4j2.formatMsgNoLookups=true for releases greater than 2.10. Record the effective value."
+          "hint": "Check M_no_lookups_prop cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: Apache described the system property log4j2.formatMsgNoLookups=true for releases greater than 2.10. Record the effective value."
         }
       ],
       "leaves": [

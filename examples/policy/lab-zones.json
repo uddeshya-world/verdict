@@ -1,0 +1,4 @@
+{
+  "untrusted_zones": ["internet", "partner", "user_lan", "dmz"],
+  "trusted_zones": ["internal", "pci"]
+}

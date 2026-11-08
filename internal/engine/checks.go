@@ -67,7 +67,19 @@ func assess(o observation, eval time.Time, maxAge time.Duration) (usable, observ
 
 func findFact(asset snapshot.Asset, key string) *snapshot.Fact {
 	for i := range asset.Facts {
-		if asset.Facts[i].Key == key {
+		if asset.Facts[i].Key == key && asset.Facts[i].PURL == "" {
+			return &asset.Facts[i]
+		}
+	}
+	return nil
+}
+
+func findAdvisory(asset snapshot.Asset, key, packagePURL string) *snapshot.Fact {
+	if key == "" || packagePURL == "" {
+		return nil
+	}
+	for i := range asset.Facts {
+		if asset.Facts[i].Key == key && asset.Facts[i].PURL == packagePURL {
 			return &asset.Facts[i]
 		}
 	}
@@ -347,25 +359,7 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	}
 	needsAdvisory := len(distro) > 0 || len(extras) > 0
 	if needsAdvisory {
-		if fact != nil {
-			usableAdv, observedAdv, _, _ := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
-			if usableAdv && observedAdv && fact.Value == "affected" {
-				subjects := append(append([]snapshot.Package{}, distro...), extras...)
-				return applyAdvisory(id, ch, fact, subjects, usable, observed, conf, reason, asset, eval, maxAge)
-			}
-		}
-		if sawUnknown {
-			return unknownLeaf(id, "unsupported_version", "", ev)
-		}
-		if fact == nil {
-			detail := ch.AdvisoryFact
-			if len(extras) > 0 {
-				detail = extras[0].PURL
-			}
-			return unknownLeaf(id, "distro_advisory_required", detail, ev)
-		}
-		subjects := append(append([]snapshot.Package{}, distro...), extras...)
-		return applyAdvisory(id, ch, fact, subjects, usable, observed, conf, reason, asset, eval, maxAge)
+		return resolveDistroAdvisories(id, ch, distro, extras, sawUnknown, usable, observed, conf, reason, asset, eval, maxAge)
 	}
 	if sawUnknown {
 		return unknownLeaf(id, "unsupported_version", "", ev)
@@ -377,6 +371,81 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 		weak = "confidence_below_not_affected_bar"
 	}
 	return valueLeaf(id, logic.False, conf, observed, ch.NegationJustification, ev, weak, "")
+}
+
+func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot.Package, sawUnknown, invUsable, invObserved bool, invConf logic.Confidence, invReason string, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
+	subjects := append(append([]snapshot.Package{}, distro...), extras...)
+	ev := []string{asset.Inventory.EvidenceID}
+	if !invUsable {
+		return unknownLeaf(id, invReason, ch.AdvisoryFact, ev)
+	}
+	anyTrue := false
+	allFalse := true
+	useConf := invConf
+	allObserved := invObserved
+	unknownReason, unknownDetail := "", ""
+	note := func(reason, detail string) {
+		allFalse = false
+		if unknownReason == "" {
+			unknownReason = reason
+			unknownDetail = detail
+		}
+	}
+	for _, pkg := range subjects {
+		fact := findAdvisory(asset, ch.AdvisoryFact, pkg.PURL)
+		if fact == nil {
+			if bare := findFact(asset, ch.AdvisoryFact); bare != nil {
+				note("advisory_purl_required", ch.AdvisoryFact)
+			} else {
+				note("distro_advisory_required", pkg.PURL)
+			}
+			continue
+		}
+		ev = append(ev, fact.EvidenceID)
+		usable, observed, conf, reason := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
+		if !usable || !observed {
+			why := reason
+			if why == "" {
+				why = "advisory_not_observed"
+			}
+			note(why, pkg.PURL)
+			continue
+		}
+		if conf < useConf {
+			useConf = conf
+		}
+		if !observed {
+			allObserved = false
+		}
+		switch fact.Value {
+		case "affected":
+			anyTrue = true
+		case "fixed", "not_affected":
+		default:
+			note("unexpected_advisory_value", ch.AdvisoryFact)
+		}
+	}
+	ev = uniq(ev)
+	if anyTrue {
+		weak := ""
+		if !allObserved {
+			weak = "evidence_not_observed"
+		}
+		return valueLeaf(id, logic.True, useConf, allObserved, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
+	}
+	if sawUnknown {
+		return unknownLeaf(id, "unsupported_version", "", ev)
+	}
+	if !allFalse {
+		return unknownLeaf(id, unknownReason, unknownDetail, ev)
+	}
+	weak := ""
+	if !allObserved {
+		weak = "evidence_not_observed"
+	} else if useConf < logic.ConfHigh {
+		weak = "confidence_below_not_affected_bar"
+	}
+	return valueLeaf(id, logic.False, useConf, allObserved, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
 }
 
 func applyAdvisory(id string, ch pack.Check, fact *snapshot.Fact, matched []snapshot.Package, invUsable, invObserved bool, invConf logic.Confidence, invReason string, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
@@ -406,7 +475,7 @@ func applyAdvisory(id string, ch pack.Check, fact *snapshot.Fact, matched []snap
 			weak = "evidence_not_observed"
 		}
 		return valueLeaf(id, logic.True, useConf, invObserved && observed, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
-	case "fixed":
+	case "fixed", "not_affected":
 		weak := ""
 		if !invObserved {
 			weak = "evidence_not_observed"

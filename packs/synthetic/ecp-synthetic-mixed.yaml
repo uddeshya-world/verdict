@@ -48,20 +48,18 @@ conditions:
 exposure:
   port: 9
   proto: tcp
-  untrusted_zones:
-    - internet
-  trusted_zones:
-    - internal
 remediation:
   fix: "Synthetic fixture. There is nothing to patch."
 tests:
   - name: one-branch-true
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-mixed.json
     asset: syn-mixed-affected
     expect_state: exploitable
     expect_vex: affected
     expect_exposure_uncertainty: false
   - name: mixed-justification
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-mixed.json
     asset: syn-mixed-split
     expect_state: needs_review

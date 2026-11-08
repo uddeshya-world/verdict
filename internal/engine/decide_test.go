@@ -93,7 +93,7 @@ func TestDecideSafetyProperty(t *testing.T) {
 
 func TestExposureIgnoresAssetZones(t *testing.T) {
 	asset := assetWithZonesOnly()
-	got := classifyExposure(spec22(), asset, mustTime(t), mustAge())
+	got := classifyExposure(labPol(t), spec22(), asset, mustTime(t), mustAge())
 	if got.Kind != "unknown" || !got.Uncertain {
 		t.Fatalf("zones alone are not exposure: %+v", got)
 	}

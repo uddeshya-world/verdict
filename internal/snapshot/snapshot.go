@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"regexp"
 	"time"
+
+	"github.com/uddeshya-world/verdict/internal/purl"
 )
 
 // MaxBytes is the largest snapshot accepted.
@@ -54,8 +56,11 @@ type Package struct {
 }
 
 // Fact is one observed, attested, or inferred key.
+// PURL, when set, limits the fact to that inventory package. An advisory
+// fact without PURL does not apply to every package on the asset.
 type Fact struct {
 	Key        string `json:"key"`
+	PURL       string `json:"purl,omitempty"`
 	Value      string `json:"value"`
 	Basis      string `json:"basis"`
 	Confidence string `json:"confidence"`
@@ -147,12 +152,18 @@ func validate(s *Snapshot) error {
 		}
 		keys := map[string]struct{}{}
 		for _, f := range a.Facts {
-			if _, ok := keys[f.Key]; ok {
-				return fmt.Errorf("snapshot: asset %s duplicate fact %q", a.ID, f.Key)
+			id := f.Key + "\x00" + f.PURL
+			if _, ok := keys[id]; ok {
+				return fmt.Errorf("snapshot: asset %s duplicate fact %q for purl %q", a.ID, f.Key, f.PURL)
 			}
-			keys[f.Key] = struct{}{}
+			keys[id] = struct{}{}
 			if f.Key == "" || f.Source == "" {
 				return fmt.Errorf("snapshot: asset %s fact is missing key or source", a.ID)
+			}
+			if f.PURL != "" {
+				if _, err := purl.Parse(f.PURL); err != nil {
+					return fmt.Errorf("snapshot: asset %s fact %q: %w", a.ID, f.Key, err)
+				}
 			}
 			if err := validateQuality(a.ID+" fact "+f.Key, f.Basis, f.Confidence, f.ObservedAt, f.ExpiresAt, f.EvidenceID); err != nil {
 				return err

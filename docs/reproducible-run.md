@@ -8,6 +8,7 @@ go build -o verdict ./cmd/verdict
 ./verdict drill \
   --pack packs/draft/ecp-cve-2024-6387-openssh.yaml \
   --snapshot examples/snapshots/regresshion-lab.json \
+  --policy examples/policy/lab-zones.json \
   --author "Uddeshya Kumar" \
   --out /tmp/regresshion-report.json \
   --openvex /tmp/regresshion.openvex.json
@@ -44,6 +45,7 @@ Overriding time on purpose, to show the clock is an input:
 ./verdict drill \
   --pack packs/draft/ecp-cve-2024-6387-openssh.yaml \
   --snapshot examples/snapshots/regresshion-lab.json \
+  --policy examples/policy/lab-zones.json \
   --evaluation-time 2026-12-01T00:00:00Z \
   --author "Uddeshya Kumar" \
   --out /tmp/regresshion-later.json
