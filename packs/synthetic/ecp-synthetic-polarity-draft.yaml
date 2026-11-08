@@ -1,0 +1,76 @@
+apiVersion: verdict.dev/v1
+kind: ConditionPack
+metadata:
+  id: ECP-SYNTHETIC-POLARITY-DRAFT
+  cve:
+    - CVE-2099-0002
+  title: "Synthetic polarity fixture (draft)"
+  description: >
+    Same tree as ECP-SYNTHETIC-POLARITY with status draft and no reviewers.
+    A strictly false tree must stay needs_review. Fixture only.
+  status: draft
+  synthetic: true
+  confidence_ceiling: high
+  authors:
+    - name: Uddeshya Kumar
+      role: fixture-author
+  reviewers: []
+  sources:
+    - url: https://example.com/verdict-synthetic-polarity-draft
+      note: Reserved example URL. Not an advisory.
+  kb_min_version: demo-2026.11.08
+  evidence_max_age: 24h
+  limitations:
+    - "Synthetic draft. The strictly false fixture must not become not_affected."
+component:
+  purls:
+    - pkg:generic/synthetic-widget
+checks:
+  PRE_A:
+    type: host_fact
+    key: synth.pre_a
+    equals: "true"
+    negation_justification: vulnerable_code_not_present
+  PRE_B:
+    type: host_fact
+    key: synth.pre_b
+    equals: "true"
+    negation_justification: vulnerable_code_not_in_execute_path
+  PRE_C:
+    type: host_fact
+    key: synth.pre_c
+    equals: "true"
+    negation_justification: vulnerable_code_not_in_execute_path
+  MIT:
+    type: host_fact
+    key: synth.mitigation
+    equals: "true"
+    negation_justification: inline_mitigations_already_exist
+conditions:
+  all_of:
+    - ref: PRE_A
+    - any_of:
+        - ref: PRE_B
+        - ref: PRE_C
+    - not:
+        ref: MIT
+exposure:
+  port: 9
+  proto: tcp
+  untrusted_zones:
+    - internet
+  trusted_zones:
+    - internal
+remediation:
+  fix: "Synthetic fixture. There is nothing to patch."
+tests:
+  - name: draft-suppresses-not-affected
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-pre-a-false
+    expect_state: needs_review
+    expect_vex: under_investigation
+  - name: draft-still-affected
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-affected-internet
+    expect_state: exploitable
+    expect_vex: affected

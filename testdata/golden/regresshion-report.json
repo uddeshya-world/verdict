@@ -1,0 +1,981 @@
+{
+  "report_version": "0.1.0",
+  "tool": "github.com/uddeshya-world/verdict 0.1.0-foundation",
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00.000000000Z",
+  "pack_id": "ECP-CVE-2024-6387-openssh",
+  "pack_sha256": "57aaf227fa07685d6e2cf8b220bc67825dd677fa07669de09a18777979aace54",
+  "pack_status": "draft",
+  "cve": "CVE-2024-6387",
+  "evidence_trust": "caller_asserted_unverified",
+  "verdicts": [
+    {
+      "asset_id": "lab-deb-advisory-fixed",
+      "asset_name": "lab debian advisory",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-deb-adv"
+      ],
+      "tree_value": "false",
+      "reasons": [
+        "pack_not_reviewed"
+      ],
+      "hints": [
+        {
+          "reason": "pack_not_reviewed",
+          "hint": "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
+        }
+      ],
+      "proof": {
+        "sufficient": true,
+        "suppressed": true,
+        "suppress_reasons": [
+          "pack_not_reviewed"
+        ],
+        "confidence": "high",
+        "justification": "vulnerable_code_not_present",
+        "justifications": [
+          "vulnerable_code_not_present"
+        ],
+        "uniform_justification": true,
+        "check_ids": [
+          "C1_vulnerable_build"
+        ],
+        "evidence_ids": [
+          "e-adv",
+          "e-inventory-lab-deb-advisory-fixed"
+        ]
+      },
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-adv",
+            "e-inventory-lab-deb-advisory-fixed"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-deb-looks-fixed",
+      "asset_name": "lab debian package",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "none",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-deb"
+      ],
+      "tree_value": "unknown",
+      "reasons": [
+        "insufficient_proof",
+        "tree_unknown"
+      ],
+      "hints": [
+        {
+          "reason": "insufficient_proof",
+          "hint": "There is no sufficient observed high-confidence proof that a required precondition is false."
+        },
+        {
+          "reason": "tree_unknown",
+          "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
+        },
+        {
+          "check_id": "C1_vulnerable_build",
+          "reason": "distro_advisory_required",
+          "hint": "Check C1_vulnerable_build cannot treat advisory.cve_2024_6387.status as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact (affected or fixed) or the result stays unknown. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "distro_advisory_required",
+          "evidence_ids": [
+            "e-inventory-lab-deb-looks-fixed"
+          ]
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-edge-exploitable",
+      "asset_name": "lab edge ssh",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "exploitable",
+      "vex_status": "affected",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-edge"
+      ],
+      "tree_value": "true",
+      "reasons": [],
+      "hints": [],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-edge-exploitable"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ],
+      "action_statement": "Install the OpenSSH build your operating-system vendor says is fixed for CVE-2024-6387, or move an upstream build to 9.8p1 or later. A distro package can be fixed without its version string leaving the upstream range, and the reverse is also not evidence. Interim: The Qualys advisory says LoginGraceTime 0 avoids the grace-time race and exposes sshd to denial of service by exhausting connections. That tradeoff is not encoded as safety. Internal verdict state: exploitable. Generated by verdict from caller-asserted facts. This is not a human attestation and it is not a claim that the asset is safe."
+    },
+    {
+      "asset_id": "lab-incomplete-inventory",
+      "asset_name": "lab partial inventory",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "none",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-inc"
+      ],
+      "tree_value": "unknown",
+      "reasons": [
+        "insufficient_proof",
+        "tree_unknown"
+      ],
+      "hints": [
+        {
+          "reason": "insufficient_proof",
+          "hint": "There is no sufficient observed high-confidence proof that a required precondition is false."
+        },
+        {
+          "reason": "tree_unknown",
+          "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
+        },
+        {
+          "check_id": "C1_vulnerable_build",
+          "reason": "inventory_incomplete",
+          "hint": "Inventory for check C1_vulnerable_build is not marked complete, so a missing package is not component_not_present. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "inventory_incomplete",
+          "evidence_ids": [
+            "e-inventory-lab-incomplete-inventory"
+          ]
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-inferred-not-listening",
+      "asset_name": "lab inferred sshd",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "none",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-inf"
+      ],
+      "tree_value": "unknown",
+      "reasons": [
+        "insufficient_proof",
+        "tree_unknown"
+      ],
+      "hints": [
+        {
+          "reason": "insufficient_proof",
+          "hint": "There is no sufficient observed high-confidence proof that a required precondition is false."
+        },
+        {
+          "reason": "tree_unknown",
+          "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "reason": "inferred_evidence_discarded",
+          "hint": "Check C3_sshd_listening has basis inferred. Inferred values are discarded and cannot falsify a precondition. Pack hint: Fact key process.listening.sshd must be true or false from an observed socket table."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-inferred-not-listening"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "inferred_evidence_discarded",
+          "evidence_ids": [
+            "e-sshd"
+          ]
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-internal-only",
+      "asset_name": "lab internal ssh",
+      "asset_kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "vulnerable_not_exposed",
+      "vex_status": "affected",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-int"
+      ],
+      "tree_value": "true",
+      "reasons": [],
+      "hints": [],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-internal-only"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ],
+      "action_statement": "Install the OpenSSH build your operating-system vendor says is fixed for CVE-2024-6387, or move an upstream build to 9.8p1 or later. A distro package can be fixed without its version string leaving the upstream range, and the reverse is also not evidence. Interim: The Qualys advisory says LoginGraceTime 0 avoids the grace-time race and exposes sshd to denial of service by exhausting connections. That tradeoff is not encoded as safety. Internal verdict state: vulnerable_not_exposed. Generated by verdict from caller-asserted facts. This is not a human attestation and it is not a claim that the asset is safe."
+    },
+    {
+      "asset_id": "lab-low-confidence-musl",
+      "asset_name": "lab low confidence musl",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "none",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-musl"
+      ],
+      "tree_value": "false",
+      "reasons": [
+        "insufficient_proof",
+        "tree_false_without_sufficient_proof"
+      ],
+      "hints": [
+        {
+          "reason": "insufficient_proof",
+          "hint": "There is no sufficient observed high-confidence proof that a required precondition is false."
+        },
+        {
+          "reason": "tree_false_without_sufficient_proof",
+          "hint": "The condition tree is false, but the falsifying evidence is not a complete observed high-confidence proof."
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "reason": "confidence_below_not_affected_bar",
+          "hint": "Check C2_platform_glibc is below high confidence. Raising the number in JSON does not authenticate it, and a low value cannot support not_affected. Pack hint: Record the libc family that was actually observed. Do not assume glibc."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-low-confidence-musl"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "false",
+          "confidence": "low",
+          "observed": true,
+          "stale": false,
+          "reason": "confidence_below_not_affected_bar",
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-missing-config",
+      "asset_name": "lab missing sshd_config",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "none",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-miss"
+      ],
+      "tree_value": "unknown",
+      "reasons": [
+        "insufficient_proof",
+        "tree_unknown"
+      ],
+      "hints": [
+        {
+          "reason": "insufficient_proof",
+          "hint": "There is no sufficient observed high-confidence proof that a required precondition is false."
+        },
+        {
+          "reason": "tree_unknown",
+          "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "reason": "missing_fact",
+          "hint": "Check M1_logingracetime_zero needs fact \"config.sshd.LoginGraceTime\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: Record the effective LoginGraceTime. Qualys describes 0 as a workaround that also makes sshd easy to deny service via connection exhaustion. Absence is not 120 and is not 0."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-missing-config"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-mitigated-draft",
+      "asset_name": "lab login grace zero",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-mit"
+      ],
+      "tree_value": "false",
+      "reasons": [
+        "pack_not_reviewed"
+      ],
+      "hints": [
+        {
+          "reason": "pack_not_reviewed",
+          "hint": "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
+        }
+      ],
+      "proof": {
+        "sufficient": true,
+        "suppressed": true,
+        "suppress_reasons": [
+          "pack_not_reviewed"
+        ],
+        "confidence": "high",
+        "justification": "inline_mitigations_already_exist",
+        "justifications": [
+          "inline_mitigations_already_exist"
+        ],
+        "uniform_justification": true,
+        "check_ids": [
+          "M1_logingracetime_zero"
+        ],
+        "evidence_ids": [
+          "e-lgt"
+        ]
+      },
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-mitigated-draft"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-stale-version",
+      "asset_name": "lab stale inventory",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "none",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-stale"
+      ],
+      "tree_value": "unknown",
+      "reasons": [
+        "insufficient_proof",
+        "tree_unknown"
+      ],
+      "hints": [
+        {
+          "reason": "insufficient_proof",
+          "hint": "There is no sufficient observed high-confidence proof that a required precondition is false."
+        },
+        {
+          "reason": "tree_unknown",
+          "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
+        },
+        {
+          "check_id": "C1_vulnerable_build",
+          "reason": "stale_evidence",
+          "hint": "Evidence for check C1_vulnerable_build is older than evidence_max_age at the explicit evaluation time. Re-collect it. Stale evidence is unknown, not a proof of not_affected. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": true,
+          "reason": "stale_evidence",
+          "evidence_ids": [
+            "e-inventory-lab-stale-version"
+          ]
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    },
+    {
+      "asset_id": "lab-unknown-exposure",
+      "asset_name": "lab unlabeled ssh",
+      "asset_kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "exploitable",
+      "vex_status": "affected",
+      "confidence": "high",
+      "exposure_uncertainty": true,
+      "exposure_evidence_ids": [],
+      "tree_value": "true",
+      "reasons": [
+        "exposure_unknown_treated_as_exposed"
+      ],
+      "hints": [
+        {
+          "reason": "exposure_unknown_treated_as_exposed",
+          "hint": "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
+        }
+      ],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-unknown-exposure"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ],
+      "action_statement": "Install the OpenSSH build your operating-system vendor says is fixed for CVE-2024-6387, or move an upstream build to 9.8p1 or later. A distro package can be fixed without its version string leaving the upstream range, and the reverse is also not evidence. Interim: The Qualys advisory says LoginGraceTime 0 avoids the grace-time race and exposes sshd to denial of service by exhausting connections. That tradeoff is not encoded as safety. Internal verdict state: exploitable. Generated by verdict from caller-asserted facts. This is not a human attestation and it is not a claim that the asset is safe."
+    },
+    {
+      "asset_id": "lab-upstream-fixed-draft",
+      "asset_name": "lab upstream 9.8p1",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.8p1",
+      "state": "needs_review",
+      "vex_status": "under_investigation",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-fix"
+      ],
+      "tree_value": "false",
+      "reasons": [
+        "pack_not_reviewed"
+      ],
+      "hints": [
+        {
+          "reason": "pack_not_reviewed",
+          "hint": "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
+        }
+      ],
+      "proof": {
+        "sufficient": true,
+        "suppressed": true,
+        "suppress_reasons": [
+          "pack_not_reviewed"
+        ],
+        "confidence": "high",
+        "justification": "vulnerable_code_not_present",
+        "justifications": [
+          "vulnerable_code_not_present"
+        ],
+        "uniform_justification": true,
+        "check_ids": [
+          "C1_vulnerable_build"
+        ],
+        "evidence_ids": [
+          "e-inventory-lab-upstream-fixed-draft"
+        ]
+      },
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-upstream-fixed-draft"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ]
+    }
+  ]
+}

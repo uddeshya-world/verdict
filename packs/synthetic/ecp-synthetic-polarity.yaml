@@ -1,0 +1,136 @@
+apiVersion: verdict.dev/v1
+kind: ConditionPack
+metadata:
+  id: ECP-SYNTHETIC-POLARITY
+  cve:
+    - CVE-2099-0001
+  title: "Synthetic polarity fixture"
+  description: >
+    Synthetic reviewed pack used to test not_affected, negation, and
+    disjunction proofs. The reviewers are fixture labels, not people.
+    There is no real CVE-2099-0001.
+  status: reviewed
+  synthetic: true
+  confidence_ceiling: high
+  authors:
+    - name: Uddeshya Kumar
+      role: fixture-author
+  reviewers:
+    - name: synthetic-reviewer-alpha
+      role: synthetic-fixture-reviewer
+    - name: synthetic-reviewer-beta
+      role: synthetic-fixture-reviewer
+  sources:
+    - url: https://example.com/verdict-synthetic-polarity
+      note: Reserved example URL. This pack is not derived from an advisory.
+  kb_min_version: demo-2026.11.08
+  evidence_max_age: 24h
+  limitations:
+    - "Synthetic. Do not use this pack against a real CVE."
+    - "Reviewer names are fixtures so the engine's quorum check can be tested. They are not a review of any real vulnerability."
+    - "Facts are caller-asserted demo data."
+component:
+  purls:
+    - pkg:generic/synthetic-widget
+checks:
+  PRE_A:
+    type: host_fact
+    key: synth.pre_a
+    equals: "true"
+    negation_justification: vulnerable_code_not_present
+  PRE_B:
+    type: host_fact
+    key: synth.pre_b
+    equals: "true"
+    negation_justification: vulnerable_code_not_in_execute_path
+  PRE_C:
+    type: host_fact
+    key: synth.pre_c
+    equals: "true"
+    negation_justification: vulnerable_code_not_in_execute_path
+  MIT:
+    type: host_fact
+    key: synth.mitigation
+    equals: "true"
+    negation_justification: inline_mitigations_already_exist
+conditions:
+  all_of:
+    - ref: PRE_A
+    - any_of:
+        - ref: PRE_B
+        - ref: PRE_C
+    - not:
+        ref: MIT
+exposure:
+  port: 9
+  proto: tcp
+  untrusted_zones:
+    - internet
+  trusted_zones:
+    - internal
+remediation:
+  fix: "Synthetic fixture. There is nothing to patch."
+  interim: "Synthetic mitigation fact synth.mitigation=true."
+tests:
+  - name: exploitable
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-affected-internet
+    expect_state: exploitable
+    expect_vex: affected
+    expect_exposure_uncertainty: false
+  - name: internal
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-affected-internal
+    expect_state: vulnerable_not_exposed
+    expect_vex: affected
+    expect_exposure_uncertainty: false
+  - name: unknown-zone
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-unknown-zone
+    expect_state: exploitable
+    expect_vex: affected
+    expect_exposure_uncertainty: true
+  - name: zones-are-not-exposure
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-zones-only
+    expect_state: exploitable
+    expect_vex: affected
+    expect_exposure_uncertainty: true
+  - name: precondition-false
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-pre-a-false
+    expect_state: not_affected
+    expect_vex: not_affected
+    expect_justification: vulnerable_code_not_present
+  - name: both-disjuncts-false
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-disjunction-false
+    expect_state: not_affected
+    expect_vex: not_affected
+    expect_justification: vulnerable_code_not_in_execute_path
+  - name: one-disjunct-unknown
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-disjunction-unknown
+    expect_state: needs_review
+    expect_vex: under_investigation
+  - name: mitigation-present
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-mitigated
+    expect_state: not_affected
+    expect_vex: not_affected
+    expect_justification: inline_mitigations_already_exist
+  - name: mitigation-low-confidence
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-mitigated-low
+    expect_state: needs_review
+    expect_vex: under_investigation
+  - name: stale-false
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-stale-false
+    expect_state: needs_review
+    expect_vex: under_investigation
+  - name: attested-mitigation
+    snapshot: ../../examples/snapshots/synthetic-polarity.json
+    asset: syn-attested-mitigation
+    expect_state: needs_review
+    expect_vex: under_investigation

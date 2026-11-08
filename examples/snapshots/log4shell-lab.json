@@ -1,0 +1,397 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "lab-log4j-affected",
+      "name": "lab log4j 2.14.1",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-log4j-affected",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+            "version": "2.14.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "jar.class.org.apache.logging.log4j.core.lookup.JndiLookup",
+          "value": "present",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-class",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "LOG4J_FORMAT_MSG_NO_LOOKUPS",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-env",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "log4j2.formatMsgNoLookups",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-prop",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-lab-log4j-affected",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+    },
+    {
+      "id": "lab-log4j-property-set",
+      "name": "lab log4j flag",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-log4j-property-set",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+            "version": "2.14.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "jar.class.org.apache.logging.log4j.core.lookup.JndiLookup",
+          "value": "present",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-class",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "LOG4J_FORMAT_MSG_NO_LOOKUPS",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-env",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "log4j2.formatMsgNoLookups",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-prop",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-lab-log4j-property-set",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+    },
+    {
+      "id": "lab-log4j-class-absent",
+      "name": "lab class removed",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-log4j-class-absent",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+            "version": "2.14.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "jar.class.org.apache.logging.log4j.core.lookup.JndiLookup",
+          "value": "absent",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-class",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "LOG4J_FORMAT_MSG_NO_LOOKUPS",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-env",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "log4j2.formatMsgNoLookups",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-prop",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-lab-log4j-class-absent",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
+    },
+    {
+      "id": "lab-log4j-fixed-upstream",
+      "name": "lab 2.15.0",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-log4j-fixed-upstream",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.15.0",
+            "version": "2.15.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "jar.class.org.apache.logging.log4j.core.lookup.JndiLookup",
+          "value": "present",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-class",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "LOG4J_FORMAT_MSG_NO_LOOKUPS",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-env",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "log4j2.formatMsgNoLookups",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-prop",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-lab-log4j-fixed-upstream",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.15.0"
+    },
+    {
+      "id": "lab-log4j-old-property",
+      "name": "lab 2.9.1 flag",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-log4j-old-property",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.9.1",
+            "version": "2.9.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "jar.class.org.apache.logging.log4j.core.lookup.JndiLookup",
+          "value": "present",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-class",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "LOG4J_FORMAT_MSG_NO_LOOKUPS",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-env",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "log4j2.formatMsgNoLookups",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-prop",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-lab-log4j-old-property",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.9.1"
+    },
+    {
+      "id": "lab-log4j-rpm",
+      "name": "lab rpm log4j",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-log4j-rpm",
+        "packages": [
+          {
+            "purl": "pkg:rpm/opensuse/log4j-core@2.15.0",
+            "version": "2.15.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "jar.class.org.apache.logging.log4j.core.lookup.JndiLookup",
+          "value": "present",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-class",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "LOG4J_FORMAT_MSG_NO_LOOKUPS",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-env",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "log4j2.formatMsgNoLookups",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-prop",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-lab-log4j-rpm",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:rpm/opensuse/log4j-core@2.15.0"
+    }
+  ]
+}

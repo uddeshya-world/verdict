@@ -1,0 +1,12 @@
+Verdict
+Copyright 2026 Uddeshya Kumar
+
+This product includes a copy of the OpenVEX JSON Schema retrieved on
+2026-11-08 from the OpenVEX specification repository:
+
+  https://github.com/openvex/spec/blob/a68ccd19b15a9604d28ef66ebf33f27a772ba4ec/openvex_json_schema.json
+
+The OpenVEX specification is licensed under the Apache License, Version 2.0.
+The schema file in schemas/openvex.schema.json is used for offline validation
+of documents this tool exports. It is not a claim that OpenVEX has certified
+this project.

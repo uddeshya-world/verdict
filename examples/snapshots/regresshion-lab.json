@@ -1,0 +1,768 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "lab-edge-exploitable",
+      "name": "lab edge ssh",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-edge-exploitable",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-edge",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-internal-only",
+      "name": "lab internal ssh",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-internal-only",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-int",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-unknown-exposure",
+      "name": "lab unlabeled ssh",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-unknown-exposure",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-missing-config",
+      "name": "lab missing sshd_config",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-missing-config",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-miss",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-mitigated-draft",
+      "name": "lab login grace zero",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-mitigated-draft",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "0",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-mit",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-deb-looks-fixed",
+      "name": "lab debian package",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-deb-looks-fixed",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13",
+            "version": "1:9.8p1-3ubuntu13"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-deb",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13"
+    },
+    {
+      "id": "lab-deb-advisory-fixed",
+      "name": "lab debian advisory",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-deb-advisory-fixed",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10",
+            "version": "1:8.9p1-3ubuntu0.10"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "fixed",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-deb-adv",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10"
+    },
+    {
+      "id": "lab-stale-version",
+      "name": "lab stale inventory",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-01T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-stale-version",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-stale",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-incomplete-inventory",
+      "name": "lab partial inventory",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": false,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-incomplete-inventory",
+        "packages": []
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-inc",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-upstream-fixed-draft",
+      "name": "lab upstream 9.8p1",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-upstream-fixed-draft",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.8p1",
+            "version": "9.8p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-fix",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.8p1"
+    },
+    {
+      "id": "lab-low-confidence-musl",
+      "name": "lab low confidence musl",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-low-confidence-musl",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "musl",
+          "basis": "observed",
+          "confidence": "low",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-musl",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "lab-inferred-not-listening",
+      "name": "lab inferred sshd",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-inferred-not-listening",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "false",
+          "basis": "inferred",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-inf",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    }
+  ]
+}
