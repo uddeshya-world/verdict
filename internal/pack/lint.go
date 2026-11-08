@@ -389,7 +389,6 @@ func lintNegation(c Condition, neg int, checks map[string]Check) error {
 	return nil
 }
 
-// DistinctReviewers counts reviewer names case-insensitively.
 func lintZoneList(name string, zones []string, add func(string, ...any)) {
 	seen := map[string]struct{}{}
 	for _, z := range zones {
@@ -404,6 +403,7 @@ func lintZoneList(name string, zones []string, add func(string, ...any)) {
 	}
 }
 
+// DistinctReviewers counts reviewer names case-insensitively.
 func DistinctReviewers(p *Pack) int {
 	seen := map[string]struct{}{}
 	for _, r := range p.Metadata.Reviewers {

@@ -43,6 +43,6 @@ Banned in engine and logic code, and checked by test:
 2. For each asset, evaluate each check against facts. Stale, expired, future-dated, inferred, and unparsable observations become `unknown` leaves. They are not silent falses.
 3. Evaluate the condition tree.
 4. Derive the state. Exposure runs only when the tree is true.
-5. Sort assets, reasons, hints, and evidence ids. Marshal.
+5. Sort assets, reasons, hints, and evidence ids. Count the funnel. Marshal.
 
 The same pipeline is what `verdict pack test` uses for the `tests:` entries in a pack.

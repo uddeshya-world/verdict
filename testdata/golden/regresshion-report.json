@@ -977,5 +977,12 @@
         }
       ]
     }
-  ]
+  ],
+  "summary": {
+    "assets": 12,
+    "exploitable": 2,
+    "vulnerable_not_exposed": 1,
+    "not_affected": 0,
+    "needs_review": 9
+  }
 }

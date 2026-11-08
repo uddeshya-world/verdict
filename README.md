@@ -14,7 +14,7 @@ One static Go binary:
 
 1. Lint an Exploitability Condition Pack (typed checks only; unknown fields and check kinds are rejected).
 2. Evaluate that pack against a local JSON snapshot of packages, facts, and exposure observations.
-3. Emit a canonical JSON report and an OpenVEX 0.2 document that is validated against the upstream OpenVEX schema shipped in this repo.
+3. Emit a canonical JSON report, a one-line funnel count, and an OpenVEX 0.2 document. `openvex validate` uses the upstream schema embedded in the binary, so it does not depend on the working directory.
 
 The engine is a pure function of the pack bytes, the snapshot, an explicit evaluation time, and a knowledge-bundle version. The same inputs produce byte-identical output. The process does not open sockets.
 
@@ -158,7 +158,8 @@ Implemented in this foundation:
 - [x] Deterministic Kleene engine and strict `not_affected` proof
 - [x] Strict pack loader and linter
 - [x] Local snapshot input and offline demo
-- [x] OpenVEX export validated against the pinned upstream schema
+- [x] OpenVEX export validated against the schema embedded in the binary
+- [x] Funnel summary counts on stderr and in the JSON report
 - [x] Deny-by-default `netpolicy` package, with no runtime dial on the drill path
 - [x] Unit, property, golden, schema, and purity tests
 

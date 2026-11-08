@@ -6,7 +6,7 @@ Copy of the OpenVEX JSON Schema retrieved on 2026-11-08 from:
 
 https://github.com/openvex/spec/blob/a68ccd19b15a9604d28ef66ebf33f27a772ba4ec/openvex_json_schema.json
 
-Upstream commit `a68ccd19b15a9604d28ef66ebf33f27a772ba4ec` (2025-03-31). The OpenVEX specification is Apache-2.0. The file is stored in-tree so `verdict openvex validate` and the tests can run with no network.
+Upstream commit `a68ccd19b15a9604d28ef66ebf33f27a772ba4ec` (2025-03-31). The OpenVEX specification is Apache-2.0. The file is stored in-tree and embedded in the `verdict` binary (`schemas/embed.go`). `verdict openvex validate` uses those bytes unless `--schema` names another file. Validation does not use the network and does not require this directory to be the working directory.
 
 This is the schema for documents we export. It is not a schema for condition packs.
 
