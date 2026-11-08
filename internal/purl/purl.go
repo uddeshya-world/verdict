@@ -67,7 +67,8 @@ func Match(pattern string, p PURL) bool {
 	return pat.Namespace == p.Namespace
 }
 
-// Canonical decodes percent-escapes and sorts qualifiers.
+// Canonical decodes percent-escapes, re-encodes reserved characters, and sorts qualifiers.
+// Reserved characters are % @ ? # / & =. A colon in a version stays decoded so 1%3A8.9 and 1:8.9 match.
 // Qualifiers are kept. An advisory without them does not match a package URL that has them.
 // Epoch stays in the qualifier when that is where the source put it.
 func Canonical(raw string) (string, error) {
@@ -93,6 +94,7 @@ func Canonical(raw string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	typ = encode(typ)
 	version := ""
 	if i := strings.LastIndex(path, "@"); i >= 0 {
 		version = path[i+1:]
@@ -104,6 +106,7 @@ func Canonical(raw string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		version = encode(version)
 	}
 	parts := strings.Split(path, "/")
 	for i, part := range parts {
@@ -111,6 +114,7 @@ func Canonical(raw string) (string, error) {
 		if err != nil || parts[i] == "" {
 			return "", fmt.Errorf("purl: malformed %q", raw)
 		}
+		parts[i] = encode(parts[i])
 	}
 	q, err := canonicalQualifiers(qual)
 	if err != nil {
@@ -128,7 +132,7 @@ func Canonical(raw string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		out += "#" + decoded
+		out += "#" + encode(decoded)
 	}
 	return out, nil
 }
@@ -170,7 +174,7 @@ func canonicalQualifiers(raw string) (string, error) {
 			return "", fmt.Errorf("purl: duplicate qualifier %q", k)
 		}
 		seen[k] = struct{}{}
-		out = append(out, pair{k, v})
+		out = append(out, pair{encode(k), encode(v)})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].k < out[j].k })
 	parts := make([]string, len(out))
@@ -183,6 +187,19 @@ func canonicalQualifiers(raw string) (string, error) {
 // Decode percent-decodes a package-URL component. Plus signs are kept.
 func Decode(s string) (string, error) {
 	return unescape(s)
+}
+
+func encode(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c < 0x20 || c > 0x7e || c == '%' || c == '@' || c == '?' || c == '#' || c == '/' || c == '&' || c == '=' {
+			fmt.Fprintf(&b, "%%%02X", c)
+			continue
+		}
+		b.WriteByte(c)
+	}
+	return b.String()
 }
 
 func unescape(s string) (string, error) {
