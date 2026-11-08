@@ -77,6 +77,7 @@ func newPack(stdout, stderr io.Writer) *cobra.Command {
 		Use:   "pack",
 		Short: "Lint or test condition packs",
 	}
+	cmd.AddCommand(newPackReview(stdout, stderr))
 	cmd.AddCommand(&cobra.Command{
 		Use:   "lint FILE...",
 		Short: "Reject unknown fields, unknown check kinds, and malformed trees",

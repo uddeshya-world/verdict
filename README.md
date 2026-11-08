@@ -178,7 +178,8 @@ Not implemented (do not treat design-plan milestones as done):
 
 - [ ] Phase 0 interviews
 - [x] Draft seed packs for Spring4Shell, xz, and IngressNightmare, still unreviewed
-- [ ] Any real-world pack with two human reviewers, fixtures built from images, or a signed bundle
+- [ ] Any real-world pack with two human reviewers. `verdict pack review` checks a record against the pack bytes and does not edit the pack. regreSSHion stays draft
+- [ ] Fixtures built from images, or a signed bundle
 - [x] Offline CycloneDX and Trivy JSON import. Scanner vulnerability lists are ignored
 - [ ] Grype importer, SSH collector, Kubernetes collector
 - [ ] Distro advisory feeds (RHSA, USN, DSA, Alpine, SUSE) as downloaded data. A local advisory file is the only input today
