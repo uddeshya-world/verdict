@@ -26,3 +26,5 @@ jobs:
         run: |
           go build -o verdict ./cmd/verdict
           ./scripts/demo.sh
+      - name: verdict-bench false not_affected gate
+        run: ./verdict bench --corpus bench/corpus.json

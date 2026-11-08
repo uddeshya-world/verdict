@@ -1,0 +1,33 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "wrong-version",
+      "name": "advisory for a different build",
+      "kind": "host",
+      "zones": ["internet"],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv",
+        "packages": [
+          {"purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6", "version": "1:8.9p1-3ubuntu0.6"}
+        ]
+      },
+      "facts": [
+        {"key": "libc.family", "value": "glibc", "basis": "observed", "confidence": "high", "observed_at": "2026-11-08T11:00:00Z", "evidence_id": "e-libc", "source": "bench"},
+        {"key": "process.listening.sshd", "value": "true", "basis": "observed", "confidence": "high", "observed_at": "2026-11-08T11:00:00Z", "evidence_id": "e-sshd", "source": "bench"},
+        {"key": "service.socket_activation.sshd", "value": "false", "basis": "observed", "confidence": "high", "observed_at": "2026-11-08T11:00:00Z", "evidence_id": "e-sock", "source": "bench"},
+        {"key": "config.sshd.LoginGraceTime", "value": "120", "basis": "observed", "confidence": "high", "observed_at": "2026-11-08T11:00:00Z", "evidence_id": "e-lgt", "source": "bench"},
+        {"key": "advisory.cve_2024_6387.status", "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10", "value": "fixed", "basis": "observed", "confidence": "high", "observed_at": "2026-11-08T11:00:00Z", "evidence_id": "e-adv", "source": "bench"}
+      ],
+      "exposure": [
+        {"port": 22, "proto": "tcp", "reachable_from": ["internet"], "basis": "observed", "confidence": "high", "observed_at": "2026-11-08T11:00:00Z", "evidence_id": "e-exp", "source": "bench"}
+      ]
+    }
+  ]
+}
