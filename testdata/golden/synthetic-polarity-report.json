@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-SYNTHETIC-POLARITY",
-  "pack_sha256": "0ea7faff94a8e1a50c03c40f5bfc648dd71fb872ec9a6b92d48677f0de220042",
+  "pack_sha256": "6134e397216337c2a7b4372a23f8b4bb3687bf995f133c5d7d0f4a8d80a8d9f9",
   "pack_status": "reviewed",
   "cve": "CVE-2099-0001",
   "evidence_trust": "caller_asserted_unverified",
@@ -736,7 +736,7 @@
       "hints": [
         {
           "reason": "exposure_unknown_treated_as_exposed",
-          "hint": "No usable observed exposure matched the pack port and protocol. An affected asset with unknown exposure is reported exploitable with exposure_uncertainty. Asset zone labels are not exposure evidence. Internal-only reachability would still be affected."
+          "hint": "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
         }
       ],
       "leaves": [
@@ -807,7 +807,7 @@
       "hints": [
         {
           "reason": "exposure_unknown_treated_as_exposed",
-          "hint": "No usable observed exposure matched the pack port and protocol. An affected asset with unknown exposure is reported exploitable with exposure_uncertainty. Asset zone labels are not exposure evidence. Internal-only reachability would still be affected."
+          "hint": "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
         }
       ],
       "leaves": [

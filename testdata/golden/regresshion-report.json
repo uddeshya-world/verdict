@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-6387-openssh",
-  "pack_sha256": "8fcd0fc57e2ab96ed2ee5eac9106f81c8e4f3863d67882ba5c3751683c2e2c70",
+  "pack_sha256": "57aaf227fa07685d6e2cf8b220bc67825dd677fa07669de09a18777979aace54",
   "pack_status": "draft",
   "cve": "CVE-2024-6387",
   "evidence_trust": "caller_asserted_unverified",
@@ -835,7 +835,7 @@
       "hints": [
         {
           "reason": "exposure_unknown_treated_as_exposed",
-          "hint": "No usable observed exposure matched the pack port and protocol. An affected asset with unknown exposure is reported exploitable with exposure_uncertainty. Asset zone labels are not exposure evidence. Internal-only reachability would still be affected."
+          "hint": "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
         }
       ],
       "leaves": [

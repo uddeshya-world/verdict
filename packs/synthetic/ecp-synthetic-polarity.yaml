@@ -66,6 +66,8 @@ exposure:
   proto: tcp
   untrusted_zones:
     - internet
+  trusted_zones:
+    - internal
 remediation:
   fix: "Synthetic fixture. There is nothing to patch."
   interim: "Synthetic mitigation fact synth.mitigation=true."

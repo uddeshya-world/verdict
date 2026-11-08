@@ -12,7 +12,11 @@ import (
 )
 
 func spec22() pack.ExposureSpec {
-	return pack.ExposureSpec{Port: 22, Proto: "tcp", UntrustedZones: []string{"internet"}}
+	return pack.ExposureSpec{
+		Port: 22, Proto: "tcp",
+		UntrustedZones: []string{"internet", "partner", "user_lan"},
+		TrustedZones:   []string{"internal"},
+	}
 }
 
 func mustTime(t *testing.T) time.Time {
@@ -57,6 +61,56 @@ func TestInferredInternalIsUnknown(t *testing.T) {
 	got := classifyExposure(spec22(), a, mustTime(t), mustAge())
 	if got.Kind != "unknown" {
 		t.Fatalf("inferred internal must not clear exposure: %+v", got)
+	}
+}
+
+func TestUnlistedAndMismatchedZonesAreUnknown(t *testing.T) {
+	eval := mustTime(t)
+	cases := []struct {
+		name string
+		zone string
+		kind string
+	}{
+		{"canonical untrusted", "internet", "untrusted"},
+		{"case variant of untrusted", "Internet", "untrusted"},
+		{"canonical trusted", "internal", "trusted_only"},
+		{"case variant of trusted", "Internal", "trusted_only"},
+		{"unlisted", "dmz", "unknown"},
+		{"typo", "internel", "unknown"},
+		{"wan", "wan", "unknown"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a := assetWithZonesOnly()
+			a.Exposure = []snapshot.Exposure{{
+				Port: 22, Proto: "tcp", ReachableFrom: []string{tc.zone},
+				Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z",
+				EvidenceID: "e", Source: "t",
+			}}
+			got := classifyExposure(spec22(), a, eval, mustAge())
+			if got.Kind != tc.kind {
+				t.Fatalf("zone %q: got %+v want %s", tc.zone, got, tc.kind)
+			}
+			if tc.kind == "unknown" && !got.Uncertain {
+				t.Fatalf("zone %q must be uncertain: %+v", tc.zone, got)
+			}
+			if tc.kind != "unknown" && got.Uncertain {
+				t.Fatalf("zone %q must not be uncertain: %+v", tc.zone, got)
+			}
+		})
+	}
+}
+
+func TestMixedTrustedAndUnlistedIsUnknown(t *testing.T) {
+	a := assetWithZonesOnly()
+	a.Exposure = []snapshot.Exposure{{
+		Port: 22, Proto: "tcp", ReachableFrom: []string{"internal", "guest-wifi"},
+		Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z",
+		EvidenceID: "e", Source: "t",
+	}}
+	got := classifyExposure(spec22(), a, mustTime(t), mustAge())
+	if got.Kind != "unknown" || !got.Uncertain {
+		t.Fatalf("%+v", got)
 	}
 }
 

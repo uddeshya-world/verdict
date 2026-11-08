@@ -290,20 +290,15 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 			extras = append(extras, pkg)
 		}
 	}
-	subjects := matched
-	if len(subjects) == 0 {
-		subjects = extras
-	}
+	var fact *snapshot.Fact
 	if ch.AdvisoryFact != "" {
-		if fact := findFact(asset, ch.AdvisoryFact); fact != nil {
-			return applyAdvisory(id, ch, fact, subjects, usable, observed, conf, reason, asset, eval, maxAge)
-		}
+		fact = findFact(asset, ch.AdvisoryFact)
 	}
 	ev := []string{asset.Inventory.EvidenceID}
-	if len(matched) == 0 && len(extras) > 0 {
-		return unknownLeaf(id, "distro_advisory_required", extras[0].PURL, ev)
-	}
-	if len(matched) == 0 {
+	if len(matched) == 0 && len(extras) == 0 {
+		if fact != nil {
+			return applyAdvisory(id, ch, fact, nil, usable, observed, conf, reason, asset, eval, maxAge)
+		}
 		if !asset.Inventory.Complete {
 			return unknownLeaf(id, "inventory_incomplete", "", ev)
 		}
@@ -323,37 +318,54 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	if !usable {
 		return unknownLeaf(id, reason, "", ev)
 	}
-	sawDistro := false
-	sawUnknown := false
-	sawTrue := false
+	var upstream []snapshot.Package
+	var distro []snapshot.Package
 	for _, pkg := range matched {
 		parsed, _ := purl.Parse(pkg.PURL)
 		if purl.DistroType(parsed.Type) {
-			sawDistro = true
+			distro = append(distro, pkg)
 			continue
 		}
+		upstream = append(upstream, pkg)
+	}
+	sawUnknown := false
+	for _, pkg := range upstream {
 		in, unknown := versionInRanges(ch.VersionScheme, pkg.Version, ch.AffectedRanges)
 		if unknown {
 			sawUnknown = true
 			continue
 		}
 		if in {
-			sawTrue = true
+			// An in-range non-distro package is vulnerable on its own.
+			// A fixed advisory for a distro build on the same asset does not clear it.
+			weak := ""
+			if !observed {
+				weak = "evidence_not_observed"
+			}
+			return valueLeaf(id, logic.True, conf, observed, ch.NegationJustification, ev, weak, "")
 		}
 	}
-	if sawTrue {
-		weak := ""
-		if !observed {
-			weak = "evidence_not_observed"
+	needsAdvisory := len(distro) > 0 || len(extras) > 0
+	if needsAdvisory {
+		if fact != nil {
+			usableAdv, observedAdv, _, _ := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
+			if usableAdv && observedAdv && fact.Value == "affected" {
+				subjects := append(append([]snapshot.Package{}, distro...), extras...)
+				return applyAdvisory(id, ch, fact, subjects, usable, observed, conf, reason, asset, eval, maxAge)
+			}
 		}
-		return valueLeaf(id, logic.True, conf, observed, ch.NegationJustification, ev, weak, "")
-	}
-	if sawDistro || len(extras) > 0 {
-		detail := ch.AdvisoryFact
-		if len(extras) > 0 {
-			detail = extras[0].PURL
+		if sawUnknown {
+			return unknownLeaf(id, "unsupported_version", "", ev)
 		}
-		return unknownLeaf(id, "distro_advisory_required", detail, ev)
+		if fact == nil {
+			detail := ch.AdvisoryFact
+			if len(extras) > 0 {
+				detail = extras[0].PURL
+			}
+			return unknownLeaf(id, "distro_advisory_required", detail, ev)
+		}
+		subjects := append(append([]snapshot.Package{}, distro...), extras...)
+		return applyAdvisory(id, ch, fact, subjects, usable, observed, conf, reason, asset, eval, maxAge)
 	}
 	if sawUnknown {
 		return unknownLeaf(id, "unsupported_version", "", ev)

@@ -79,15 +79,20 @@ func Lint(p *Pack) error {
 	if len(p.Exposure.UntrustedZones) == 0 {
 		add("exposure.untrusted_zones must not be empty")
 	}
-	seenZ := map[string]struct{}{}
+	if len(p.Exposure.TrustedZones) == 0 {
+		add("exposure.trusted_zones must not be empty")
+	}
+	lintZoneList("untrusted_zones", p.Exposure.UntrustedZones, add)
+	lintZoneList("trusted_zones", p.Exposure.TrustedZones, add)
+	seenZone := map[string]string{}
 	for _, z := range p.Exposure.UntrustedZones {
-		if z == "" || strings.EqualFold(z, "unknown") {
-			add("exposure zone %q is not a concrete untrusted zone", z)
+		seenZone[strings.ToLower(z)] = "untrusted_zones"
+	}
+	for _, z := range p.Exposure.TrustedZones {
+		key := strings.ToLower(z)
+		if prev, ok := seenZone[key]; ok && prev != "trusted_zones" {
+			add("exposure zone %q is listed as both trusted and untrusted", z)
 		}
-		if _, ok := seenZ[z]; ok {
-			add("duplicate exposure zone %q", z)
-		}
-		seenZ[z] = struct{}{}
 	}
 	if strings.TrimSpace(p.Remediation.Fix) == "" {
 		add("remediation.fix must not be empty")
@@ -385,6 +390,20 @@ func lintNegation(c Condition, neg int, checks map[string]Check) error {
 }
 
 // DistinctReviewers counts reviewer names case-insensitively.
+func lintZoneList(name string, zones []string, add func(string, ...any)) {
+	seen := map[string]struct{}{}
+	for _, z := range zones {
+		key := strings.ToLower(z)
+		if z == "" || key == "unknown" || strings.TrimSpace(z) != z {
+			add("exposure.%s zone %q is not a concrete zone", name, z)
+		}
+		if _, ok := seen[key]; ok {
+			add("exposure.%s has duplicate zone %q", name, z)
+		}
+		seen[key] = struct{}{}
+	}
+}
+
 func DistinctReviewers(p *Pack) int {
 	seen := map[string]struct{}{}
 	for _, r := range p.Metadata.Reviewers {

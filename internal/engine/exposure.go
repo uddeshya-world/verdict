@@ -13,6 +13,8 @@ import (
 )
 
 func classifyExposure(spec pack.ExposureSpec, asset snapshot.Asset, eval time.Time, maxAge time.Duration) ExposureClass {
+	untrustedZones := zoneSet(spec.UntrustedZones)
+	trustedZones := zoneSet(spec.TrustedZones)
 	var evidence []string
 	sawUntrusted := false
 	sawUnknown := false
@@ -34,13 +36,17 @@ func classifyExposure(spec pack.ExposureSpec, asset snapshot.Asset, eval time.Ti
 			unknownZone = true
 		}
 		for _, z := range e.ReachableFrom {
-			if z == "" || strings.EqualFold(z, "unknown") {
+			key := strings.ToLower(z)
+			switch {
+			case z == "" || key == "unknown":
 				unknownZone = true
-			}
-			for _, u := range spec.UntrustedZones {
-				if z == u {
-					untrusted = true
-				}
+			case zoneListed(untrustedZones, key):
+				untrusted = true
+			case zoneListed(trustedZones, key):
+			default:
+				// A label in neither list is not trusted. Typos and
+				// unexpected case-sensitive leftovers fail closed.
+				unknownZone = true
 			}
 		}
 		if untrusted {
@@ -57,4 +63,17 @@ func classifyExposure(spec pack.ExposureSpec, asset snapshot.Asset, eval time.Ti
 		return ExposureClass{Kind: "untrusted", EvidenceIDs: uniq(evidence)}
 	}
 	return ExposureClass{Kind: "trusted_only", EvidenceIDs: uniq(evidence)}
+}
+
+func zoneSet(zones []string) map[string]struct{} {
+	out := make(map[string]struct{}, len(zones))
+	for _, z := range zones {
+		out[strings.ToLower(z)] = struct{}{}
+	}
+	return out
+}
+
+func zoneListed(set map[string]struct{}, key string) bool {
+	_, ok := set[key]
+	return ok
 }

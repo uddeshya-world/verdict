@@ -106,7 +106,7 @@ The condition tree uses Kleene three-valued logic:
 - Every leaf in that proof is `basis: observed` (not inferred or attested), confidence at least `high` after the ceiling, fresh at the evaluation time, and carries one shared OpenVEX justification. Mixed justifications do not get collapsed into a guessed label.
 - Unknowns, incomplete inventory, stale or expired evidence, unsupported ecosystems, and unsupported version strings never count as that proof.
 
-Exposure does not choose `affected` versus `not_affected`. If the tree is true, an observed untrusted path is `exploitable`, an observed trusted-only path is `vulnerable_not_exposed` (OpenVEX `affected`), and missing or unusable exposure is `exploitable` with explicit uncertainty.
+Exposure does not choose `affected` versus `not_affected`. If the tree is true, a zone listed in the pack's `untrusted_zones` is `exploitable`, a zone listed in `trusted_zones` is `vulnerable_not_exposed` (OpenVEX `affected`), and a missing, unusable, or unlisted zone is `exploitable` with explicit uncertainty. Matching ignores case. An advisory fact of `fixed` clears only distro packages; it does not clear a non-distro package that is still inside the affected range.
 
 Details and the alternatives that were rejected: [docs/adr/0002-not-affected-proof.md](docs/adr/0002-not-affected-proof.md).
 

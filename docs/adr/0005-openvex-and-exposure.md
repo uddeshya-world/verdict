@@ -23,9 +23,10 @@ Internal states:
 
 Exposure classification, only if the condition tree is true:
 
-- At least one fresh, high, observed record for the pack port and protocol, and every such record's zones are disjoint from `untrusted_zones` and do not contain `unknown`: `vulnerable_not_exposed`.
-- Any such record intersecting `untrusted_zones`: `exploitable`, uncertainty false.
-- No usable record, a low-confidence record, an inferred record, a stale record, or a zone of `unknown`: `exploitable` with `exposure_uncertainty: true` and reason `exposure_unknown_treated_as_exposed`.
+- Zone labels are compared case-insensitively. `trusted_zones` is an explicit list. A label in neither `trusted_zones` nor `untrusted_zones` is unknown. It is not treated as trusted.
+- At least one fresh, high, observed record for the pack port and protocol, and every such record's zones are listed in `trusted_zones`: `vulnerable_not_exposed`.
+- Any such record intersecting `untrusted_zones`: `exploitable`, uncertainty false. A known untrusted zone wins over an unknown zone on the same asset.
+- No usable record, a low-confidence record, an inferred record, a stale record, an empty zone list, the label `unknown`, or any zone in neither list: `exploitable` with `exposure_uncertainty: true` and reason `exposure_unknown_treated_as_exposed`.
 
 Asset-level `zones` are not records. An asset labeled internal with no exposure observation is uncertain, not "not exposed".
 

@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-SYNTHETIC-MIXED",
-  "pack_sha256": "bffd3aa10fe30e849a5489228d102cb34784d4197e61cff8ce1941dc056ab8fa",
+  "pack_sha256": "d797c26d7efb9b12d5af9080a99155d206b8dd19d10d2103d510f0b63a1cdb5f",
   "pack_status": "reviewed",
   "cve": "CVE-2099-0003",
   "evidence_trust": "caller_asserted_unverified",

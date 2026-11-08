@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2021-44228-log4j",
-  "pack_sha256": "7617a05f85c88c6600351214f76a2d61dcfdeeb5b02056617eca1429e98faa50",
+  "pack_sha256": "a5b0f7987d5570c11004f8c46012f19fe8c4c8c5498fae685472f0612ca20690",
   "pack_status": "draft",
   "cve": "CVE-2021-44228",
   "evidence_trust": "caller_asserted_unverified",

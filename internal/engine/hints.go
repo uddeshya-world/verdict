@@ -78,7 +78,7 @@ func decisionHint(reason string) string {
 	case "tree_false_without_sufficient_proof":
 		return "The condition tree is false, but the falsifying evidence is not a complete observed high-confidence proof."
 	case "exposure_unknown_treated_as_exposed":
-		return "No usable observed exposure matched the pack port and protocol. An affected asset with unknown exposure is reported exploitable with exposure_uncertainty. Asset zone labels are not exposure evidence. Internal-only reachability would still be affected."
+		return "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
 	default:
 		return reason
 	}

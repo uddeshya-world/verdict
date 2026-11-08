@@ -13,6 +13,7 @@ The design notes call distro advisory feeds the backlog item that fixes this. Th
 ## Decision
 
 - Package URL types `deb`, `rpm`, and `apk` never use `vercmp`. The leaf is unknown with reason `distro_advisory_required` unless the pack's `advisory_fact` is present and usable.
+- `advisory_fact` applies only to those distro-typed matches and to same-name packages the pattern did not cover. It does not apply to `pkg:generic`, `pkg:maven`, `pkg:golang`, or any other non-distro match. If any of those is inside an affected range, the leaf is true and a `fixed` advisory on the same asset is ignored. A `fixed` advisory can falsify the check only when every non-distro match is observed outside the range and every distro or extra package is covered by that fact. One asset-scoped fact covers every distro and extra package; it does not name a purl.
 - A package whose **name** matches a pattern but whose type or namespace does not (for example `pkg:rpm/.../log4j-core` against a `pkg:maven` pattern) is not `component_not_present`. The leaf is unknown until an advisory fact names that coordinate. Absence is only for a complete inventory that contains no package of those names.
 - Usable means the fact exists, is not stale, is not inferred, and its value is `affected` or `fixed`. A stale advisory does not fall through to version sorting.
 - `pkg:generic` with scheme `openssh_upstream` parses only `MAJOR.MINORpREVISION`. Any other string, including an Ubuntu revision glued onto a generic purl, is unknown.
@@ -22,7 +23,7 @@ The design notes call distro advisory feeds the backlog item that fixes this. Th
 
 ## Consequences
 
-The regreSSHion demo asset that carries a Debian purl stays `needs_review` even when the version text contains `9.8p1`. An asset with an explicit observed `advisory...=fixed` fact falsifies the version check, and the draft pack still withholds `not_affected`.
+The regreSSHion demo asset that carries a Debian purl stays `needs_review` even when the version text contains `9.8p1`. An asset with only distro packages and an explicit observed `advisory...=fixed` fact falsifies the version check, and the draft pack still withholds `not_affected`. The same fact does not falsify the check when a non-distro package on that asset is inside the upstream range.
 
 Callers can lie by labeling a distro build as `pkg:generic/openssh@9.8p1`. The engine trusts the purl type it is given. That limitation is part of the trust boundary, not something version sorting can repair.
 

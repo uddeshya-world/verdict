@@ -10,7 +10,7 @@ Allowed `type` values:
 
 | Type | Fact it reads | True when |
 | --- | --- | --- |
-| `package_version` | Inventory packages plus optional `advisory_fact` | A matching package is in an affected range, or the advisory fact is `affected` |
+| `package_version` | Inventory packages plus optional `advisory_fact` | A non-distro package is in an affected range, or a distro package's advisory fact is `affected` |
 | `host_fact` | `key` | The fact equals `equals` |
 | `config_value` | `key` | The fact equals `equals` |
 | `env_var` | `key` | The fact equals `equals` |
@@ -33,7 +33,7 @@ There is no `missing_means: true`. An absent fact is `unknown`. v0.1 will not in
 
 `semver` and `go` exist for generic upstream strings. `go` requires a leading `v`. Build metadata (`+...`) is rejected.
 
-`deb`, `rpm`, and `apk` package URLs never use those schemes. The check is `unknown` with reason `distro_advisory_required` unless `advisory_fact` is a fresh observed fact whose value is `affected` or `fixed`.
+`deb`, `rpm`, and `apk` package URLs never use those schemes. Those coordinates, and a same-name package the pattern did not match, stay `unknown` with reason `distro_advisory_required` unless `advisory_fact` is a fresh observed fact whose value is `affected` or `fixed`. That fact does not override a non-distro package. If any non-distro match is inside an affected range, the check is true even when the advisory says `fixed`. `fixed` falsifies the check only when every non-distro match is outside the range and every distro or unmatched same-name package is covered by the fact. The fact is asset-scoped. It does not name a package URL, so one `fixed` value covers every distro package on the asset.
 
 ## Conditions
 
@@ -41,7 +41,7 @@ A condition node is exactly one of `ref`, `not`, `all_of`, `any_of`. Maximum dep
 
 ## Exposure block
 
-`port`, `proto` (`tcp` or `udp`), and `untrusted_zones`. This block does not decide `not_affected`. It classifies a true tree. Zone labels on the asset are echoed and are not a substitute for an exposure observation.
+`port`, `proto` (`tcp` or `udp`), `untrusted_zones`, and `trusted_zones`. Both zone lists are required and non-empty. The same label cannot appear in both, comparison is case-insensitive, and `unknown` is not a concrete zone. This block does not decide `not_affected`. It classifies a true tree. A reachable zone is untrusted only when it matches `untrusted_zones`, and trusted only when it matches `trusted_zones`. Any other label is unknown exposure, which is exploitable with uncertainty. Zone labels on the asset are echoed and are not a substitute for an exposure observation.
 
 ## Tests
 
