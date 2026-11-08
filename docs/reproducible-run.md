@@ -38,6 +38,18 @@ Repeat with:
 
 `scripts/demo.sh` runs the same commands and `cmp`s the goldens.
 
+An import does not use the clock or the network. The evaluation time is the flag:
+
+```bash
+./verdict import cyclonedx \
+  --input examples/import/cyclonedx-openssh.json \
+  --out /tmp/imported-snapshot.json \
+  --asset-id bastion-01 \
+  --asset-name bastion \
+  --kb-version demo-2026.11.08 \
+  --evaluation-time 2026-11-08T12:00:00Z
+```
+
 What "reproducible" means here: same pack bytes, same snapshot bytes, same author string, same Go `encoding/json` rules. It does not mean a reproducible-build attestation. Builds are not signed and no SLSA provenance is generated.
 
 Changing `--author` changes the OpenVEX document and not the verdict states. `--author` is an operator-supplied label. The CLI does not authenticate it.

@@ -70,6 +70,8 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 
 The drill reads `evaluation_time` and `kb_version` from the snapshot. Pass `--evaluation-time` and `--kb-version` only to override those explicit inputs. The CLI does not substitute the current clock.
 
+`verdict import cyclonedx` and `verdict import trivy` read a JSON file you already have and write a snapshot. Packages without a package URL are skipped. A Trivy `Vulnerabilities` array is not copied, so a scanner's fixed/affected decision does not become an advisory fact. The inventory defaults to `attested` and `medium`. `verdict import advisories` merges a local file of `affected`, `fixed`, or `not_affected` rows. That path does not download a USN or RHSA feed.
+
 A human-readable line per asset is written to stderr. The JSON report is the canonical record.
 
 Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affected`):
@@ -159,7 +161,7 @@ Threat model (design, with implemented versus planned controls separated): [docs
 Implemented in this foundation:
 
 - [x] Public documentation, license, threat model, ADRs, contributor and reviewer policy
-- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill`, `openvex validate`
+- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill`, `openvex validate`, `import`
 - [x] Deterministic Kleene engine and strict `not_affected` proof
 - [x] Strict pack loader and linter
 - [x] Local snapshot input and offline demo
@@ -173,8 +175,9 @@ Not implemented (do not treat design-plan milestones as done):
 - [ ] Phase 0 interviews
 - [x] Draft seed packs for Spring4Shell, xz, and IngressNightmare, still unreviewed
 - [ ] Any real-world pack with two human reviewers, fixtures built from images, or a signed bundle
-- [ ] SBOM / Trivy / Grype importers, SSH collector, Kubernetes collector
-- [ ] Distro advisory feeds (RHSA, USN, DSA, Alpine, SUSE) as data rather than a single caller-supplied fact
+- [x] Offline CycloneDX and Trivy JSON import. Scanner vulnerability lists are ignored
+- [ ] Grype importer, SSH collector, Kubernetes collector
+- [ ] Distro advisory feeds (RHSA, USN, DSA, Alpine, SUSE) as downloaded data. A local advisory file is the only input today
 - [ ] Knowledge-bundle import, signature verification, customer trust roots
 - [ ] Web UI, API, authn, audit log, SQLite/Postgres, ticket export, PDF
 - [ ] CycloneDX VEX and CSAF VEX

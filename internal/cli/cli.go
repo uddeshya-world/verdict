@@ -56,6 +56,7 @@ bundle version are explicit inputs.`,
 	root.AddCommand(newPack(stdout, stderr))
 	root.AddCommand(newDrill(stdout, stderr))
 	root.AddCommand(newOpenVEX())
+	root.AddCommand(newImport(stdout, stderr))
 	return root
 }
 
