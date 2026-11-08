@@ -252,6 +252,9 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintf(stderr, "asset=%s state=%s vex=%s confidence=%s exposure_uncertainty=%t\n",
 					v.AssetID, v.State, v.VEXStatus, v.Confidence, v.ExposureUncertainty)
 			}
+			s := rep.Summary
+			fmt.Fprintf(stderr, "summary exploitable=%d vulnerable_not_exposed=%d not_affected=%d needs_review=%d assets=%d\n",
+				s.Exploitable, s.VulnerableNotExposed, s.NotAffected, s.NeedsReview, s.Assets)
 			if vexPath != "" {
 				if author == "" {
 					return &ExitError{Code: 2, Err: fmt.Errorf("--author is required with --openvex and is not authenticated")}
@@ -304,7 +307,7 @@ func newOpenVEX() *cobra.Command {
 			return nil
 		},
 	}
-	val.Flags().StringVar(&schema, "schema", "schemas/openvex.schema.json", "path to the OpenVEX JSON Schema")
+	val.Flags().StringVar(&schema, "schema", "", "OpenVEX JSON Schema path; empty uses the schema embedded in the binary")
 	cmd.AddCommand(val)
 	return cmd
 }

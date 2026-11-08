@@ -29,6 +29,16 @@ type Report struct {
 	CVE            string    `json:"cve"`
 	EvidenceTrust  string    `json:"evidence_trust"`
 	Verdicts       []Verdict `json:"verdicts"`
+	Summary        Summary   `json:"summary"`
+}
+
+// Summary is the funnel count for the report. It is derived from Verdicts.
+type Summary struct {
+	Assets               int `json:"assets"`
+	Exploitable          int `json:"exploitable"`
+	VulnerableNotExposed int `json:"vulnerable_not_exposed"`
+	NotAffected          int `json:"not_affected"`
+	NeedsReview          int `json:"needs_review"`
 }
 
 // Verdict is one asset.
@@ -134,7 +144,25 @@ func Evaluate(in Input) (*Report, error) {
 	sort.Slice(report.Verdicts, func(i, j int) bool {
 		return report.Verdicts[i].AssetID < report.Verdicts[j].AssetID
 	})
+	report.Summary = summarize(report.Verdicts)
 	return report, nil
+}
+
+func summarize(vs []Verdict) Summary {
+	s := Summary{Assets: len(vs)}
+	for _, v := range vs {
+		switch v.State {
+		case stateExploitable:
+			s.Exploitable++
+		case stateNotExposed:
+			s.VulnerableNotExposed++
+		case stateNotAffected:
+			s.NotAffected++
+		case stateNeedsReview:
+			s.NeedsReview++
+		}
+	}
+	return s
 }
 
 func evalAsset(p *pack.Pack, asset snapshot.Asset, node logic.Node, meta Meta, eval time.Time) Verdict {

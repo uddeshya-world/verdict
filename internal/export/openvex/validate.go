@@ -7,24 +7,33 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
+	"github.com/uddeshya-world/verdict/schemas"
 )
 
-// Validate checks doc against the OpenVEX JSON Schema at schemaPath.
+// Validate checks doc against the OpenVEX JSON Schema.
+// An empty schemaPath uses the schema embedded in the binary.
 // Format annotations are enforced when the library knows the format.
 func Validate(schemaPath string, doc []byte) error {
 	var raw any
 	if err := json.Unmarshal(doc, &raw); err != nil {
 		return fmt.Errorf("openvex: %w", err)
 	}
-	f, err := os.Open(schemaPath)
-	if err != nil {
-		return fmt.Errorf("openvex: schema: %w", err)
+	var src io.Reader
+	if schemaPath == "" {
+		src = bytes.NewReader(schemas.OpenVEX)
+	} else {
+		f, err := os.Open(schemaPath)
+		if err != nil {
+			return fmt.Errorf("openvex: schema: %w", err)
+		}
+		defer f.Close()
+		src = f
 	}
-	defer f.Close()
-	schDoc, err := jsonschema.UnmarshalJSON(f)
+	schDoc, err := jsonschema.UnmarshalJSON(src)
 	if err != nil {
 		return fmt.Errorf("openvex: schema: %w", err)
 	}

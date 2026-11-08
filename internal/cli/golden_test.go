@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,6 +70,14 @@ func TestGoldenDrills(t *testing.T) {
 			if err := openvex.Validate(schema, raw); err != nil {
 				t.Fatal(err)
 			}
+			if err := openvex.Validate("", raw); err != nil {
+				t.Fatal(err)
+			}
+			sum := rep.Summary
+			got := sum.Exploitable + sum.VulnerableNotExposed + sum.NotAffected + sum.NeedsReview
+			if sum.Assets != len(rep.Verdicts) || got != sum.Assets {
+				t.Fatalf("summary %+v does not cover %d verdicts", sum, len(rep.Verdicts))
+			}
 			compareGolden(t, filepath.Join(root, "testdata", "golden", tc.name+"-report.json"), body)
 			compareGolden(t, filepath.Join(root, "testdata", "golden", tc.name+".openvex.json"), raw)
 		})
@@ -104,6 +113,48 @@ func TestReversedAssetsMatch(t *testing.T) {
 	bb, _ := canonjson.Marshal(b)
 	if !bytes.Equal(ab, bb) {
 		t.Fatal("asset order changed the report")
+	}
+}
+
+func TestSummaryAndValidateOutsideRepo(t *testing.T) {
+	root := moduleRoot(t)
+	dir := t.TempDir()
+	vexPath := filepath.Join(dir, "out.openvex.json")
+	var stdout, stderr bytes.Buffer
+	err := Execute([]string{
+		"drill",
+		"--pack", filepath.Join(root, "packs/draft/ecp-cve-2024-6387-openssh.yaml"),
+		"--snapshot", filepath.Join(root, "examples/snapshots/regresshion-lab.json"),
+		"--author", "Uddeshya Kumar",
+		"--openvex", vexPath,
+	}, &stdout, &stderr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(stderr.String(), "summary exploitable=") || !strings.Contains(stderr.String(), "assets=") {
+		t.Fatalf("missing summary line:\n%s", stderr.String())
+	}
+	rep, err := DecodeReport(stdout.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Summary.Assets != len(rep.Verdicts) || rep.Summary.Assets == 0 {
+		t.Fatalf("%+v", rep.Summary)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	var out2, err2 bytes.Buffer
+	if err := Execute([]string{"openvex", "validate", vexPath}, &out2, &err2); err != nil {
+		t.Fatalf("embedded schema: %v %s", err, err2.String())
+	}
+	if !strings.Contains(out2.String(), "openvex: valid") {
+		t.Fatal(out2.String())
 	}
 }
 

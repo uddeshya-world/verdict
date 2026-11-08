@@ -15,6 +15,8 @@ go build -o verdict ./cmd/verdict
 ./verdict openvex validate /tmp/regresshion.openvex.json
 ```
 
+`openvex validate` does not look up `schemas/openvex.schema.json` relative to the current directory. The schema is embedded. `--schema` still accepts a path when you want to check a document against a different file.
+
 Byte comparison against the committed golden, after a build:
 
 ```bash
