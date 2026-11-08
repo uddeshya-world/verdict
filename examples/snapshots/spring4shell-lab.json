@@ -1,0 +1,200 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "lab-spring-war",
+      "name": "lab spring war",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-spring-war",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.springframework/spring-webmvc@5.3.17",
+            "version": "5.3.17"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "runtime.jdk9_or_newer",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-jdk",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-war",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-spring-boot-jar",
+      "name": "lab spring boot jar",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-spring-boot-jar",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.springframework/spring-webmvc@5.3.17",
+            "version": "5.3.17"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "runtime.jdk9_or_newer",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-jdk",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "spring.packaging",
+          "value": "boot-jar",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-pkg",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-boot",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-spring-fixed",
+      "name": "lab spring fixed",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-spring-fixed",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.springframework/spring-webmvc@5.3.18",
+            "version": "5.3.18"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "runtime.jdk9_or_newer",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-jdk",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-fix",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-spring-jdk8",
+      "name": "lab spring jdk8",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-spring-jdk8",
+        "packages": [
+          {
+            "purl": "pkg:maven/org.springframework/spring-webmvc@5.3.17",
+            "version": "5.3.17"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "runtime.jdk9_or_newer",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-jdk",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 8080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-jdk8",
+          "source": "demo-snapshot"
+        }
+      ]
+    }
+  ]
+}

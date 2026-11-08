@@ -1,0 +1,292 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "lab-xz-561",
+      "name": "lab xz 5.6.1",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-xz-561",
+        "packages": [
+          {
+            "purl": "pkg:generic/xz@5.6.1",
+            "version": "5.6.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.sshd.links_liblzma",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-link",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-561",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-xz-546",
+      "name": "lab xz 5.4.6",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-xz-546",
+        "packages": [
+          {
+            "purl": "pkg:generic/xz@5.4.6",
+            "version": "5.4.6"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.sshd.links_liblzma",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-link",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-546",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-xz-deb",
+      "name": "lab xz deb",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-xz-deb",
+        "packages": [
+          {
+            "purl": "pkg:deb/debian/xz-utils@5.6.1-1",
+            "version": "5.6.1-1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.sshd.links_liblzma",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-link",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-deb",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-xz-deb-never",
+      "name": "lab xz never backdoored",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-xz-deb-never",
+        "packages": [
+          {
+            "purl": "pkg:deb/debian/xz-utils@5.4.6-1",
+            "version": "5.4.6-1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.sshd.links_liblzma",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-link",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "advisory.cve_2024_3094.status",
+          "value": "not_affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv",
+          "source": "demo-snapshot",
+          "purl": "pkg:deb/debian/xz-utils@5.4.6-1"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-never",
+          "source": "demo-snapshot"
+        }
+      ]
+    },
+    {
+      "id": "lab-xz-sshd-down",
+      "name": "lab xz 5.6.1 sshd not running",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-xz-sshd-down",
+        "packages": [
+          {
+            "purl": "pkg:generic/xz@5.6.1",
+            "version": "5.6.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.sshd.links_liblzma",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-link-down",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-down",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-sshd-down",
+          "source": "demo-snapshot"
+        }
+      ]
+    }
+  ]
+}

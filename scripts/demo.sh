@@ -29,4 +29,7 @@ run regresshion packs/draft/ecp-cve-2024-6387-openssh.yaml examples/snapshots/re
 run log4shell packs/draft/ecp-cve-2021-44228-log4j.yaml examples/snapshots/log4shell-lab.json
 run synthetic-polarity packs/synthetic/ecp-synthetic-polarity.yaml examples/snapshots/synthetic-polarity.json
 run synthetic-mixed packs/synthetic/ecp-synthetic-mixed.yaml examples/snapshots/synthetic-mixed.json
+run spring4shell packs/draft/ecp-cve-2022-22965-spring.yaml examples/snapshots/spring4shell-lab.json
+run xz packs/draft/ecp-cve-2024-3094-xz.yaml examples/snapshots/xz-lab.json
+run ingress-nginx packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml examples/snapshots/ingress-nginx-lab.json
 echo "demo ok"

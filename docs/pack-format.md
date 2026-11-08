@@ -21,7 +21,11 @@ Allowed `type` values:
 
 Every check requires `negation_justification`, one of the five OpenVEX labels. `package_version` also requires `absence_justification` for the complete-inventory, package-missing case (usually `component_not_present`).
 
+`tradeoff` is optional text. When a sufficient false proof includes that check, the verdict sets `mitigation_dependent` and copies the text into `impact_statement`, including on the OpenVEX document. Nothing in v0.1 re-evaluates that mitigation later.
+
 There is no `missing_means: true`. An absent fact is `unknown`. v0.1 will not invent a vendor default. That includes LoginGraceTime and Log4j lookup settings: put the effective value in the snapshot or accept `needs_review`.
+
+`process.listening.sshd` is the process socket table. A false value means no sshd socket was observed. It does not mean a connection to tcp/22 cannot reach sshd. systemd socket activation (`ssh.socket` on Ubuntu 22.10 and later) and inetd hold the port in PID 1 and start sshd on the first connection. A snapshot that records only "sshd is not running" must not set `process.listening.sshd` to false and stop there. The regreSSHion pack also reads `service.socket_activation.sshd`. That fact is true when such a unit would spawn sshd. The reachability branch is false only when both facts are observed false. A missing socket-activation fact leaves the branch unknown, so it cannot support `not_affected`.
 
 `when_package` may further restrict a check (used for mitigations that the advisory says apply only inside a version range). If the matched package is outside that range, the check is false because the predicate does not hold, using the inventory observation. Lint requires a `when_package` check to sit under an odd number of `not` nodes, so "mitigation not applicable" cannot by itself be the proof of `not_affected`.
 

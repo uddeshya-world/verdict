@@ -46,6 +46,7 @@ checks:
     key: synth.mitigation
     equals: "true"
     negation_justification: inline_mitigations_already_exist
+    tradeoff: "Synthetic mitigation. A real mitigation would describe its cost here. Nothing re-checks this later; watch mode is not implemented."
 conditions:
   all_of:
     - ref: PRE_A

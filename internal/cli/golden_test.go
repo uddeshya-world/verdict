@@ -33,6 +33,9 @@ func TestGoldenDrills(t *testing.T) {
 		{"log4shell", "packs/draft/ecp-cve-2021-44228-log4j.yaml", "examples/snapshots/log4shell-lab.json", true},
 		{"synthetic-polarity", "packs/synthetic/ecp-synthetic-polarity.yaml", "examples/snapshots/synthetic-polarity.json", false},
 		{"synthetic-mixed", "packs/synthetic/ecp-synthetic-mixed.yaml", "examples/snapshots/synthetic-mixed.json", false},
+		{"spring4shell", "packs/draft/ecp-cve-2022-22965-spring.yaml", "examples/snapshots/spring4shell-lab.json", true},
+		{"xz", "packs/draft/ecp-cve-2024-3094-xz.yaml", "examples/snapshots/xz-lab.json", true},
+		{"ingress-nginx", "packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml", "examples/snapshots/ingress-nginx-lab.json", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -168,6 +171,9 @@ func TestPackTestCommand(t *testing.T) {
 		"pack", "test",
 		filepath.Join(root, "packs/draft/ecp-cve-2024-6387-openssh.yaml"),
 		filepath.Join(root, "packs/draft/ecp-cve-2021-44228-log4j.yaml"),
+		filepath.Join(root, "packs/draft/ecp-cve-2022-22965-spring.yaml"),
+		filepath.Join(root, "packs/draft/ecp-cve-2024-3094-xz.yaml"),
+		filepath.Join(root, "packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml"),
 		filepath.Join(root, "packs/synthetic/ecp-synthetic-polarity.yaml"),
 		filepath.Join(root, "packs/synthetic/ecp-synthetic-polarity-draft.yaml"),
 		filepath.Join(root, "packs/synthetic/ecp-synthetic-mixed.yaml"),

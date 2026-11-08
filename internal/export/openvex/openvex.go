@@ -35,6 +35,7 @@ type Statement struct {
 	Status                   string    `json:"status"`
 	StatusNotes              string    `json:"status_notes,omitempty"`
 	Justification            string    `json:"justification,omitempty"`
+	ImpactStatement          string    `json:"impact_statement,omitempty"`
 	ActionStatement          string    `json:"action_statement,omitempty"`
 	ActionStatementTimestamp string    `json:"action_statement_timestamp,omitempty"`
 }
@@ -102,10 +103,11 @@ func statement(rep *engine.Report, v engine.Verdict) (Statement, error) {
 			ID:   "urn:cve:" + rep.CVE,
 			Name: rep.CVE,
 		},
-		Timestamp:   rep.EvaluationTime,
-		Products:    []Product{prod},
-		Status:      v.VEXStatus,
-		StatusNotes: notes(rep, v),
+		Timestamp:       rep.EvaluationTime,
+		Products:        []Product{prod},
+		Status:          v.VEXStatus,
+		StatusNotes:     notes(rep, v),
+		ImpactStatement: v.ImpactStatement,
 	}
 	switch v.VEXStatus {
 	case "not_affected":
@@ -133,6 +135,9 @@ func notes(rep *engine.Report, v engine.Verdict) string {
 	)
 	if len(v.Reasons) > 0 {
 		b += "; reasons=" + strings.Join(v.Reasons, ",")
+	}
+	if v.MitigationDependent {
+		b += "; mitigation_dependent=true"
 	}
 	b += ". not_affected is withheld unless a reviewed pack has a sufficient observed proof. Unknown exposure on an affected asset is exploitable with uncertainty. This note is not a claim that the asset is safe."
 	return b

@@ -77,6 +77,7 @@ Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affecte
 | Asset | State | OpenVEX status | Why |
 | --- | --- | --- | --- |
 | `lab-edge-exploitable` | `exploitable` | `affected` | Upstream 9.6p1, glibc, sshd listening, LoginGraceTime not 0, observed path from `internet` |
+| `lab-socket-activated` | `exploitable` | `affected` | sshd is not in the process table, but `service.socket_activation.sshd` is true, so tcp/22 still reaches sshd |
 | `lab-internal-only` | `vulnerable_not_exposed` | `affected` | Same preconditions, observed path only from `internal`. Still affected |
 | `lab-unknown-exposure` | `exploitable` | `affected` | Asset zones say internal, but there is no exposure observation. Unknown exposure is reported as exploitable with `exposure_uncertainty: true` |
 | `lab-missing-config` | `needs_review` | `under_investigation` | LoginGraceTime was not observed. The absent key is not treated as the default |
@@ -87,7 +88,7 @@ Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affecte
 | `lab-incomplete-inventory` | `needs_review` | `under_investigation` | Inventory is not complete, so a missing package is not `component_not_present` |
 | `lab-upstream-fixed-draft` | `needs_review` | `under_investigation` | Upstream 9.8p1 is outside the Qualys range, and the pack is still draft |
 | `lab-low-confidence-musl` | `needs_review` | `under_investigation` | libc observation says not glibc at low confidence. Not sufficient for `not_affected` |
-| `lab-inferred-not-listening` | `needs_review` | `under_investigation` | "sshd not listening" is marked inferred, so it is discarded |
+| `lab-inferred-not-listening` | `needs_review` | `under_investigation` | "sshd not listening" is marked inferred, so it is discarded. A missing socket-activation fact would also leave reachability unknown |
 
 The synthetic reviewed pack is the one that is allowed to emit `not_affected`, and only in the fixture cases where the proof is sufficient. See [docs/reproducible-run.md](docs/reproducible-run.md).
 
@@ -135,6 +136,9 @@ See [docs/architecture.md](docs/architecture.md).
 | --- | --- | --- |
 | `packs/draft/ecp-cve-2024-6387-openssh.yaml` | draft | regreSSHion preconditions from the Qualys advisory. Not reviewed |
 | `packs/draft/ecp-cve-2021-44228-log4j.yaml` | draft | Log4Shell preconditions from Apache's advisory. Not reviewed. Does not cover CVE-2021-45046 |
+| `packs/draft/ecp-cve-2022-22965-spring.yaml` | draft | Spring4Shell preconditions from the Spring announcement. Not reviewed. A Boot jar is not encoded as safe |
+| `packs/draft/ecp-cve-2024-3094-xz.yaml` | draft | xz 5.6.0 and 5.6.1 sshd path from the oss-security report. Not reviewed |
+| `packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml` | draft | ingress-nginx admission path from the Kubernetes announcement. Not reviewed |
 | `packs/synthetic/ecp-synthetic-polarity.yaml` | reviewed, synthetic | Fixture for proof polarity, exposure, and `not_affected` |
 | `packs/synthetic/ecp-synthetic-polarity-draft.yaml` | draft, synthetic | Same tree as the reviewed fixture, to show draft suppression |
 | `packs/synthetic/ecp-synthetic-mixed.yaml` | reviewed, synthetic | Disjunction whose branches disagree on justification |
@@ -167,7 +171,8 @@ Implemented in this foundation:
 
 Not implemented (do not treat design-plan milestones as done):
 
-- [ ] Phase 0 interviews and the other three hand-written seed packs (Spring4Shell, xz, IngressNightmare)
+- [ ] Phase 0 interviews
+- [x] Draft seed packs for Spring4Shell, xz, and IngressNightmare, still unreviewed
 - [ ] Any real-world pack with two human reviewers, fixtures built from images, or a signed bundle
 - [ ] SBOM / Trivy / Grype importers, SSH collector, Kubernetes collector
 - [ ] Distro advisory feeds (RHSA, USN, DSA, Alpine, SUSE) as data rather than a single caller-supplied fact

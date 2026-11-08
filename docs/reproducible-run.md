@@ -32,6 +32,9 @@ Repeat with:
 | `packs/draft/ecp-cve-2021-44228-log4j.yaml` | `examples/snapshots/log4shell-lab.json` | `testdata/golden/log4shell` |
 | `packs/synthetic/ecp-synthetic-polarity.yaml` | `examples/snapshots/synthetic-polarity.json` | `testdata/golden/synthetic-polarity` |
 | `packs/synthetic/ecp-synthetic-mixed.yaml` | `examples/snapshots/synthetic-mixed.json` | `testdata/golden/synthetic-mixed` |
+| `packs/draft/ecp-cve-2022-22965-spring.yaml` | `examples/snapshots/spring4shell-lab.json` | `testdata/golden/spring4shell` |
+| `packs/draft/ecp-cve-2024-3094-xz.yaml` | `examples/snapshots/xz-lab.json` | `testdata/golden/xz` |
+| `packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml` | `examples/snapshots/ingress-nginx-lab.json` | `testdata/golden/ingress-nginx` |
 
 `scripts/demo.sh` runs the same commands and `cmp`s the goldens.
 
