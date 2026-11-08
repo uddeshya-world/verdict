@@ -70,6 +70,8 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 
 The drill reads `evaluation_time` and `kb_version` from the snapshot. Pass `--evaluation-time` and `--kb-version` only to override those explicit inputs. The CLI does not substitute the current clock.
 
+`verdict bench --corpus bench/corpus.json` scores every labeled fixture, including socket activation, a skipped CycloneDX component with `--complete`, an advisory for a different package URL, and the backdoored xz build with sshd down. It exits non-zero on a false `not_affected`. The reviewed bar is applied in memory. See [bench/README.md](bench/README.md).
+
 `verdict import cyclonedx` and `verdict import trivy` read a JSON file you already have and write a snapshot. Packages without a package URL are skipped. A Trivy `Vulnerabilities` array is not copied, so a scanner's fixed/affected decision does not become an advisory fact. The inventory defaults to `attested` and `medium`. `--complete` is refused when any component was skipped. `verdict import advisories` merges a local file of `affected`, `fixed`, or `not_affected` rows and warns when a row's package URL is not in that asset's inventory. That path does not download a USN or RHSA feed. Advisory matching is an exact string match on the package URL.
 
 A human-readable line per asset is written to stderr. The JSON report is the canonical record.
@@ -162,7 +164,7 @@ Threat model (design, with implemented versus planned controls separated): [docs
 Implemented in this foundation:
 
 - [x] Public documentation, license, threat model, ADRs, contributor and reviewer policy
-- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill`, `openvex validate`, `import`
+- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill`, `openvex validate`, `import`, `bench`
 - [x] Deterministic Kleene engine and strict `not_affected` proof
 - [x] Strict pack loader and linter
 - [x] Local snapshot input and offline demo
@@ -170,6 +172,7 @@ Implemented in this foundation:
 - [x] Funnel summary counts on stderr and in the JSON report
 - [x] Deny-by-default `netpolicy` package, with no runtime dial on the drill path
 - [x] Unit, property, golden, schema, and purity tests
+- [x] `verdict bench` ground-truth gate. A false `not_affected` fails CI. Draft packs are scored with an in-memory reviewed bar and are not promoted.
 
 Not implemented (do not treat design-plan milestones as done):
 

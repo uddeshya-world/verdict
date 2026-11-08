@@ -1,0 +1,497 @@
+[
+  {
+    "id": "regresshion/lab-edge-exploitable",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-edge-exploitable",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Upstream 9.6p1, glibc, sshd listening."
+  },
+  {
+    "id": "regresshion/lab-internal-only",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-internal-only",
+    "ground_truth": "affected",
+    "expect_state": "vulnerable_not_exposed",
+    "note": "Internal path is still affected."
+  },
+  {
+    "id": "regresshion/lab-unknown-exposure",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-unknown-exposure",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Unknown exposure fails closed."
+  },
+  {
+    "id": "regresshion/lab-missing-config",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-missing-config",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Absent LoginGraceTime is not the default."
+  },
+  {
+    "id": "regresshion/lab-mitigated-draft",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-mitigated-draft",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "LoginGraceTime 0 clears only with its tradeoff.",
+    "require_mitigation_dependent": true
+  },
+  {
+    "id": "regresshion/lab-deb-looks-fixed",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-deb-looks-fixed",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "A Debian version string is not a backport proof."
+  },
+  {
+    "id": "regresshion/lab-deb-advisory-fixed",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-deb-advisory-fixed",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "fixed advisory matches this package URL."
+  },
+  {
+    "id": "regresshion/lab-stale-version",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-stale-version",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Stale inventory cannot clear or confirm the version."
+  },
+  {
+    "id": "regresshion/lab-incomplete-inventory",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-incomplete-inventory",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Missing package on an incomplete inventory is unknown."
+  },
+  {
+    "id": "regresshion/lab-upstream-fixed-draft",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-upstream-fixed-draft",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "Upstream 9.8p1 is outside the affected range."
+  },
+  {
+    "id": "regresshion/lab-low-confidence-musl",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-low-confidence-musl",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Low-confidence musl cannot clear."
+  },
+  {
+    "id": "regresshion/lab-inferred-not-listening",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-inferred-not-listening",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Inferred not-listening is discarded."
+  },
+  {
+    "id": "regresshion/lab-socket-activated",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/regresshion-lab.json",
+    "asset": "lab-socket-activated",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "sshd is not running, but socket activation would start it."
+  },
+  {
+    "id": "regresshion/wrong-advisory-version",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/wrong-advisory-version.json",
+    "asset": "wrong-version",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "A fixed advisory for a different package URL does not cover this build."
+  },
+  {
+    "id": "regresshion/sshd-and-socket-both-false",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/sshd-unreachable.json",
+    "asset": "sshd-unreachable",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "Observed process table and socket activation are both false."
+  },
+  {
+    "id": "regresshion/import-complete-skips-openssh",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "cyclonedx",
+    "import_input": "bench/fixtures/openssh-no-purl.cdx.json",
+    "import_complete": true,
+    "ground_truth": "affected",
+    "expect_state": "import_rejected",
+    "note": "openssh-server is in the BOM without a package URL. --complete must not produce a snapshot that can become component_not_present."
+  },
+  {
+    "id": "xz/lab-xz-561",
+    "pack": "packs/draft/ecp-cve-2024-3094-xz.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/xz-lab.json",
+    "asset": "lab-xz-561",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Release tarball 5.6.1."
+  },
+  {
+    "id": "xz/lab-xz-546",
+    "pack": "packs/draft/ecp-cve-2024-3094-xz.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/xz-lab.json",
+    "asset": "lab-xz-546",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "Upstream 5.4.6 is not the backdoored tarball."
+  },
+  {
+    "id": "xz/lab-xz-deb",
+    "pack": "packs/draft/ecp-cve-2024-3094-xz.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/xz-lab.json",
+    "asset": "lab-xz-deb",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Debian package without an advisory for that URL."
+  },
+  {
+    "id": "xz/lab-xz-deb-never",
+    "pack": "packs/draft/ecp-cve-2024-3094-xz.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/xz-lab.json",
+    "asset": "lab-xz-deb-never",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "Advisory not_affected on this exact package URL."
+  },
+  {
+    "id": "xz/lab-xz-sshd-down",
+    "pack": "packs/draft/ecp-cve-2024-3094-xz.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/xz-lab.json",
+    "asset": "lab-xz-sshd-down",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Backdoored 5.6.1 stays affected when sshd is down and does not link liblzma."
+  },
+  {
+    "id": "spring4shell/lab-spring-war",
+    "pack": "packs/draft/ecp-cve-2022-22965-spring.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/spring4shell-lab.json",
+    "asset": "lab-spring-war",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "spring-webmvc 5.3.17 on JDK 9+."
+  },
+  {
+    "id": "spring4shell/lab-spring-boot-jar",
+    "pack": "packs/draft/ecp-cve-2022-22965-spring.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/spring4shell-lab.json",
+    "asset": "lab-spring-boot-jar",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Boot jar packaging is not proof of safety."
+  },
+  {
+    "id": "spring4shell/lab-spring-fixed",
+    "pack": "packs/draft/ecp-cve-2022-22965-spring.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/spring4shell-lab.json",
+    "asset": "lab-spring-fixed",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "5.3.18 is outside the affected Maven ranges."
+  },
+  {
+    "id": "spring4shell/lab-spring-jdk8",
+    "pack": "packs/draft/ecp-cve-2022-22965-spring.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/spring4shell-lab.json",
+    "asset": "lab-spring-jdk8",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "JDK 9+ is a required precondition and was observed false."
+  },
+  {
+    "id": "ingress/lab-ingress-vulnerable",
+    "pack": "packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/ingress-nginx-lab.json",
+    "asset": "lab-ingress-vulnerable",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "v1.11.4 with the admission webhook enabled."
+  },
+  {
+    "id": "ingress/lab-ingress-webhook-off",
+    "pack": "packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/ingress-nginx-lab.json",
+    "asset": "lab-ingress-webhook-off",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "Webhook disabled is a mitigation and must carry its tradeoff.",
+    "require_mitigation_dependent": true
+  },
+  {
+    "id": "ingress/lab-ingress-patched",
+    "pack": "packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/ingress-nginx-lab.json",
+    "asset": "lab-ingress-patched",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "v1.12.1 is outside the affected ranges."
+  },
+  {
+    "id": "log4shell/lab-log4j-affected",
+    "pack": "packs/draft/ecp-cve-2021-44228-log4j.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/log4shell-lab.json",
+    "asset": "lab-log4j-affected",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "log4j-core 2.14.1 with JndiLookup present and lookups enabled."
+  },
+  {
+    "id": "log4shell/lab-log4j-property-set",
+    "pack": "packs/draft/ecp-cve-2021-44228-log4j.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/log4shell-lab.json",
+    "asset": "lab-log4j-property-set",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "log4j-core 2.14.1 with JndiLookup present. formatMsgNoLookups=true does not clear CVE-2021-44228; Apache says flag-based mitigations are insufficient because lookups still occur, including through the Thread Context Map."
+  },
+  {
+    "id": "log4shell/lab-log4j-class-absent",
+    "pack": "packs/draft/ecp-cve-2021-44228-log4j.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/log4shell-lab.json",
+    "asset": "lab-log4j-class-absent",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "JndiLookup was observed absent."
+  },
+  {
+    "id": "log4shell/lab-log4j-fixed-upstream",
+    "pack": "packs/draft/ecp-cve-2021-44228-log4j.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/log4shell-lab.json",
+    "asset": "lab-log4j-fixed-upstream",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "2.15.0 is outside the CVE-2021-44228 ranges."
+  },
+  {
+    "id": "log4shell/lab-log4j-old-property",
+    "pack": "packs/draft/ecp-cve-2021-44228-log4j.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/log4shell-lab.json",
+    "asset": "lab-log4j-old-property",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "The no-lookups flag does not apply before 2.10."
+  },
+  {
+    "id": "log4shell/lab-log4j-rpm",
+    "pack": "packs/draft/ecp-cve-2021-44228-log4j.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/log4shell-lab.json",
+    "asset": "lab-log4j-rpm",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "An rpm coordinate is not sorted as a Maven version."
+  },
+  {
+    "id": "synthetic-polarity/syn-affected-internet",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-affected-internet",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "syn-affected-internet"
+  },
+  {
+    "id": "synthetic-polarity/syn-affected-internal",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-affected-internal",
+    "ground_truth": "affected",
+    "expect_state": "vulnerable_not_exposed",
+    "note": "syn-affected-internal"
+  },
+  {
+    "id": "synthetic-polarity/syn-unknown-zone",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-unknown-zone",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "syn-unknown-zone"
+  },
+  {
+    "id": "synthetic-polarity/syn-zones-only",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-zones-only",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "syn-zones-only"
+  },
+  {
+    "id": "synthetic-polarity/syn-pre-a-false",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-pre-a-false",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "syn-pre-a-false"
+  },
+  {
+    "id": "synthetic-polarity/syn-disjunction-false",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-disjunction-false",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "syn-disjunction-false"
+  },
+  {
+    "id": "synthetic-polarity/syn-disjunction-unknown",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-disjunction-unknown",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "syn-disjunction-unknown"
+  },
+  {
+    "id": "synthetic-polarity/syn-mitigated",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-mitigated",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "syn-mitigated",
+    "require_mitigation_dependent": true
+  },
+  {
+    "id": "synthetic-polarity/syn-mitigated-low",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-mitigated-low",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "syn-mitigated-low"
+  },
+  {
+    "id": "synthetic-polarity/syn-stale-false",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-stale-false",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "syn-stale-false"
+  },
+  {
+    "id": "synthetic-polarity/syn-attested-mitigation",
+    "pack": "packs/synthetic/ecp-synthetic-polarity.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-attested-mitigation",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "syn-attested-mitigation"
+  },
+  {
+    "id": "synthetic-polarity-draft/syn-pre-a-false",
+    "pack": "packs/synthetic/ecp-synthetic-polarity-draft.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-pre-a-false",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "Same tree as the reviewed fixture. The simulation is what lets not_affected appear; the pack file stays draft."
+  },
+  {
+    "id": "synthetic-polarity-draft/syn-affected-internet",
+    "pack": "packs/synthetic/ecp-synthetic-polarity-draft.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-polarity.json",
+    "asset": "syn-affected-internet",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "A true tree stays affected under the reviewed bar."
+  },
+  {
+    "id": "synthetic-mixed/syn-mixed-affected",
+    "pack": "packs/synthetic/ecp-synthetic-mixed.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-mixed.json",
+    "asset": "syn-mixed-affected",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "One disjunct is true."
+  },
+  {
+    "id": "synthetic-mixed/syn-mixed-split",
+    "pack": "packs/synthetic/ecp-synthetic-mixed.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/synthetic-mixed.json",
+    "asset": "syn-mixed-split",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Two different justifications cannot become not_affected."
+  }
+]
