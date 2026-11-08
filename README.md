@@ -70,7 +70,7 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 
 The drill reads `evaluation_time` and `kb_version` from the snapshot. Pass `--evaluation-time` and `--kb-version` only to override those explicit inputs. The CLI does not substitute the current clock.
 
-`verdict import cyclonedx` and `verdict import trivy` read a JSON file you already have and write a snapshot. Packages without a package URL are skipped. A Trivy `Vulnerabilities` array is not copied, so a scanner's fixed/affected decision does not become an advisory fact. The inventory defaults to `attested` and `medium`. `verdict import advisories` merges a local file of `affected`, `fixed`, or `not_affected` rows. That path does not download a USN or RHSA feed.
+`verdict import cyclonedx` and `verdict import trivy` read a JSON file you already have and write a snapshot. Packages without a package URL are skipped. A Trivy `Vulnerabilities` array is not copied, so a scanner's fixed/affected decision does not become an advisory fact. The inventory defaults to `attested` and `medium`. `--complete` is refused when any component was skipped. `verdict import advisories` merges a local file of `affected`, `fixed`, or `not_affected` rows and warns when a row's package URL is not in that asset's inventory. That path does not download a USN or RHSA feed. Advisory matching is an exact string match on the package URL.
 
 A human-readable line per asset is written to stderr. The JSON report is the canonical record.
 

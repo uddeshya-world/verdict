@@ -38,7 +38,9 @@ Repeat with:
 
 `scripts/demo.sh` runs the same commands and `cmp`s the goldens.
 
-An import does not use the clock or the network. The evaluation time is the flag:
+An import does not use the clock or the network. The evaluation time is the flag. `--complete` is rejected when any component is skipped, so a missing package URL cannot be reported later as `component_not_present`.
+
+Advisory rows match an inventory package URL as an exact string, version and qualifiers included. Import keeps the package URL bytes from the file. It does not sort qualifiers and it does not decode percent-encoding. A row that differs fails closed.
 
 ```bash
 ./verdict import cyclonedx \

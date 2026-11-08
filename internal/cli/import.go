@@ -123,9 +123,12 @@ The file is not downloaded. A row you do not write does not become a status.`,
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
-			next, err := importer.ApplyAdvisories(snap, doc)
+			next, warnings, err := importer.ApplyAdvisories(snap, doc)
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
+			}
+			for _, w := range warnings {
+				fmt.Fprintf(stderr, "warning: %s\n", w)
 			}
 			body, err := canonjson.Marshal(next)
 			if err != nil {

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/uddeshya-world/verdict/internal/purl"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
@@ -142,6 +143,9 @@ func finish(rows []row, skipped []string, opt InventoryOptions, kind string) (*R
 		pkgs = append(pkgs, pkg)
 	}
 	sort.Slice(pkgs, func(i, j int) bool { return pkgs[i].PURL < pkgs[j].PURL })
+	if opt.Complete && len(skipped) > 0 {
+		return nil, fmt.Errorf("import %s: inventory cannot be complete: %d components skipped (%s)", kind, len(skipped), strings.Join(skipped, "; "))
+	}
 	if len(pkgs) == 0 {
 		return nil, fmt.Errorf("import %s: no packages with a usable purl", kind)
 	}
@@ -265,9 +269,9 @@ func ParseAdvisories(data []byte) (*AdvisoryDocument, error) {
 
 // ApplyAdvisories adds advisory facts onto a snapshot.
 // It does not invent a status for a package that is not listed.
-func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Snapshot, error) {
+func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Snapshot, []string, error) {
 	if s == nil || doc == nil {
-		return nil, fmt.Errorf("import advisories: snapshot and document are required")
+		return nil, nil, fmt.Errorf("import advisories: snapshot and document are required")
 	}
 	next := *s
 	next.Assets = append([]snapshot.Asset{}, s.Assets...)
@@ -275,12 +279,16 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Sna
 	for i := range next.Assets {
 		index[next.Assets[i].ID] = i
 	}
+	var warnings []string
 	for _, f := range doc.Facts {
 		i, ok := index[f.AssetID]
 		if !ok {
-			return nil, fmt.Errorf("import advisories: asset %q is not in the snapshot", f.AssetID)
+			return nil, nil, fmt.Errorf("import advisories: asset %q is not in the snapshot", f.AssetID)
 		}
 		asset := next.Assets[i]
+		if !inventoryHasPURL(asset, f.PURL) {
+			warnings = append(warnings, fmt.Sprintf("advisory purl not in asset inventory: asset %s purl %s", f.AssetID, f.PURL))
+		}
 		asset.Facts = append(append([]snapshot.Fact{}, asset.Facts...), snapshot.Fact{
 			Key: f.Key, PURL: f.PURL, Value: f.Value, Basis: f.Basis, Confidence: f.Confidence,
 			ObservedAt: f.ObservedAt, ExpiresAt: f.ExpiresAt, EvidenceID: f.EvidenceID, Source: f.Source,
@@ -289,11 +297,20 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Sna
 	}
 	raw, err := json.Marshal(&next)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	checked, err := snapshot.Load(raw)
 	if err != nil {
-		return nil, fmt.Errorf("import advisories: %w", err)
+		return nil, nil, fmt.Errorf("import advisories: %w", err)
 	}
-	return checked, nil
+	return checked, warnings, nil
+}
+
+func inventoryHasPURL(asset snapshot.Asset, raw string) bool {
+	for _, pkg := range asset.Inventory.Packages {
+		if pkg.PURL == raw {
+			return true
+		}
+	}
+	return false
 }

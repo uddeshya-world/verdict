@@ -88,7 +88,7 @@ func TestAdvisoryOverlayIsExplicit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, err := ApplyAdvisories(sbom.Snapshot, doc)
+	out, warnings, err := ApplyAdvisories(sbom.Snapshot, doc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,36 @@ func TestAdvisoryOverlayIsExplicit(t *testing.T) {
 	if len(f) != 1 || f[0].Value != "not_affected" || f[0].PURL == "" {
 		t.Fatalf("%+v", f)
 	}
+	if len(warnings) != 0 {
+		t.Fatalf("matching purl should not warn: %v", warnings)
+	}
+	doc.Facts[0].PURL = "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6"
+	if _, warnings, err = ApplyAdvisories(sbom.Snapshot, doc); err != nil || len(warnings) != 1 {
+		t.Fatalf("unmatched purl warning: %v %v", warnings, err)
+	}
 	if _, err := ParseAdvisories([]byte(`{"facts":[{"asset_id":"a","key":"k","purl":"pkg:deb/ubuntu/openssh-server@1","value":"patched","basis":"observed","confidence":"high","observed_at":"2026-11-08T11:00:00Z","evidence_id":"e","source":"s"}]}`)); err == nil {
 		t.Fatal("patched is not an advisory value")
+	}
+}
+
+func TestCompleteRejectsSkippedComponents(t *testing.T) {
+	good := `{"name":"bash","version":"5.1-6ubuntu1","purl":"pkg:deb/ubuntu/bash@5.1-6ubuntu1"}`
+	cases := []string{
+		`{"bomFormat":"CycloneDX","components":[{"name":"openssh-server","version":"1:8.9p1-3ubuntu0.6"},` + good + `]}`,
+		`{"bomFormat":"CycloneDX","components":[{"name":"openssh-server","version":"1","purl":"not a purl"},` + good + `]}`,
+		`{"bomFormat":"CycloneDX","components":[{"name":"openssh-server","version":"1:8.9p1-3ubuntu0.6","purl":"pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10"},` + good + `]}`,
+		`{"bomFormat":"CycloneDX","components":[` + good + `,` + good + `]}`,
+	}
+	o := opt()
+	o.Complete = true
+	for _, raw := range cases {
+		got, err := CycloneDX([]byte(raw), o)
+		if err == nil || got != nil || !strings.Contains(err.Error(), "inventory cannot be complete") {
+			t.Fatalf("complete import with a skip must fail closed: %v %+v", err, got)
+		}
+	}
+	got, err := CycloneDX([]byte(`{"bomFormat":"CycloneDX","components":[`+good+`]}`), o)
+	if err != nil || !got.Snapshot.Assets[0].Inventory.Complete || len(got.Skipped) != 0 {
+		t.Fatalf("complete import of a fully identified BOM: %v %+v", err, got)
 	}
 }
