@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-3094-xz",
-  "pack_sha256": "2a5f9db78f08d7974c56a2aa964c66a2feaa1a7d607c727ecf0c5d5a43812255",
+  "pack_sha256": "087c1f0b423a2addc8923872a645e23a392e223ec6b5b255e130f375efa9e53e",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-3094",
@@ -56,28 +56,6 @@
       },
       "leaves": [
         {
-          "check_id": "C_sshd_links",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-link"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
-        {
-          "check_id": "C_sshd_listening",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-sshd"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
-        {
           "check_id": "C_version",
           "value": "false",
           "confidence": "high",
@@ -109,28 +87,6 @@
       "reasons": [],
       "hints": [],
       "leaves": [
-        {
-          "check_id": "C_sshd_links",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-link"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
-        {
-          "check_id": "C_sshd_listening",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-sshd"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
         {
           "check_id": "C_version",
           "value": "true",
@@ -177,32 +133,10 @@
         {
           "check_id": "C_version",
           "reason": "distro_advisory_required",
-          "hint": "Check C_version cannot treat pkg:deb/debian/xz-utils@5.6.1-1 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_3094.status to affected, fixed, or not_affected on that package URL. Do not sort a distro revision into 5.6.0."
+          "hint": "Check C_version cannot treat pkg:deb/debian/xz-utils@5.6.1-1 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_3094.status to affected, fixed, or not_affected on that package URL. Do not sort a distro revision into 5.6.0. sshd reachability does not replace this fact."
         }
       ],
       "leaves": [
-        {
-          "check_id": "C_sshd_links",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-link"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
-        {
-          "check_id": "C_sshd_listening",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-sshd"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
         {
           "check_id": "C_version",
           "value": "unknown",
@@ -263,28 +197,6 @@
       },
       "leaves": [
         {
-          "check_id": "C_sshd_links",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-link"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
-        {
-          "check_id": "C_sshd_listening",
-          "value": "true",
-          "confidence": "high",
-          "observed": true,
-          "stale": false,
-          "evidence_ids": [
-            "e-sshd"
-          ],
-          "justification": "vulnerable_code_not_in_execute_path"
-        },
-        {
           "check_id": "C_version",
           "value": "false",
           "confidence": "high",
@@ -297,11 +209,44 @@
           "justification": "vulnerable_code_not_present"
         }
       ]
+    },
+    {
+      "asset_id": "lab-xz-sshd-down",
+      "asset_name": "lab xz 5.6.1 sshd not running",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/xz@5.6.1",
+      "state": "exploitable",
+      "vex_status": "affected",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-sshd-down"
+      ],
+      "tree_value": "true",
+      "reasons": [],
+      "hints": [],
+      "leaves": [
+        {
+          "check_id": "C_version",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inv-lab-xz-sshd-down"
+          ],
+          "justification": "vulnerable_code_not_present"
+        }
+      ],
+      "action_statement": "Install a liblzma build your operating-system vendor says is not the backdoored 5.6.0 or 5.6.1 release tarball. CISA's alert names 5.4.6 as one uncompromised upstream version. A distro package at 5.4.6 is not_affected only when that vendor's advisory says so. Interim: There is no configuration workaround in the oss-security report. Do not treat an sshd setting as a fix for the backdoor. Internal verdict state: exploitable. Generated by verdict from caller-asserted facts. This is not a human attestation and it is not a claim that the asset is safe."
     }
   ],
   "summary": {
-    "assets": 4,
-    "exploitable": 1,
+    "assets": 5,
+    "exploitable": 2,
     "vulnerable_not_exposed": 0,
     "not_affected": 0,
     "needs_review": 3

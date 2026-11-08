@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-6387-openssh",
-  "pack_sha256": "b517758fba0d52501eb2265c7919a8641f0e7027554257289644ec7f5cb2853b",
+  "pack_sha256": "cd759362acbe3cfe1309d10a0aaa571312cbec1486183912ff52ef7fb18a053e",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-6387",
@@ -33,6 +33,11 @@
         {
           "reason": "pack_not_reviewed",
           "hint": "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "proof": {
@@ -78,6 +83,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -136,6 +150,11 @@
           "check_id": "C1_vulnerable_build",
           "reason": "distro_advisory_required",
           "hint": "Check C1_vulnerable_build cannot treat pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "leaves": [
@@ -160,6 +179,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -202,7 +230,13 @@
       ],
       "tree_value": "true",
       "reasons": [],
-      "hints": [],
+      "hints": [
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
+        }
+      ],
       "leaves": [
         {
           "check_id": "C1_vulnerable_build",
@@ -225,6 +259,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -283,6 +326,11 @@
           "check_id": "C1_vulnerable_build",
           "reason": "inventory_incomplete",
           "hint": "Inventory for check C1_vulnerable_build is not marked complete, so a missing package is not component_not_present. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "leaves": [
@@ -307,6 +355,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -362,9 +419,14 @@
           "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
         },
         {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
+        },
+        {
           "check_id": "C3_sshd_listening",
           "reason": "inferred_evidence_discarded",
-          "hint": "Check C3_sshd_listening has basis inferred. Inferred values are discarded and cannot falsify a precondition. Pack hint: Fact key process.listening.sshd must be true or false from an observed socket table."
+          "hint": "Check C3_sshd_listening has basis inferred. Inferred values are discarded and cannot falsify a precondition. Pack hint: process.listening.sshd records the process socket table. False does not mean tcp/22 cannot reach sshd. systemd ssh.socket and inetd hold the port and start sshd on the first connection. That case is service.socket_activation.sshd. Both facts must be observed false before this branch is false."
         }
       ],
       "leaves": [
@@ -389,6 +451,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -431,7 +502,13 @@
       ],
       "tree_value": "true",
       "reasons": [],
-      "hints": [],
+      "hints": [
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
+        }
+      ],
       "leaves": [
         {
           "check_id": "C1_vulnerable_build",
@@ -454,6 +531,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -513,6 +599,11 @@
           "check_id": "C2_platform_glibc",
           "reason": "confidence_below_not_affected_bar",
           "hint": "Check C2_platform_glibc is below high confidence. Raising the number in JSON does not authenticate it, and a low value cannot support not_affected. Pack hint: Record the libc family that was actually observed. Do not assume glibc."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "leaves": [
@@ -538,6 +629,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -593,6 +693,11 @@
           "hint": "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
         },
         {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
+        },
+        {
           "check_id": "M1_logingracetime_zero",
           "reason": "missing_fact",
           "hint": "Check M1_logingracetime_zero needs fact \"config.sshd.LoginGraceTime\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: Record the effective LoginGraceTime. Qualys describes 0 as a workaround that also makes sshd easy to deny service via connection exhaustion. Absence is not 120 and is not 0."
@@ -620,6 +725,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -666,6 +780,11 @@
         {
           "reason": "pack_not_reviewed",
           "hint": "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "proof": {
@@ -711,6 +830,15 @@
           "justification": "vulnerable_code_not_present"
         },
         {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
+        },
+        {
           "check_id": "C3_sshd_listening",
           "value": "true",
           "confidence": "high",
@@ -735,6 +863,83 @@
       ],
       "mitigation_dependent": true,
       "impact_statement": "M1_logingracetime_zero: Qualys says LoginGraceTime 0 avoids the signal-handler race and makes sshd easy to deny service by exhausting connections. It is an interim workaround, not a vendor fix. This draft does not emit not_affected for it."
+    },
+    {
+      "asset_id": "lab-socket-activated",
+      "asset_name": "lab socket-activated ssh",
+      "asset_kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "state": "exploitable",
+      "vex_status": "affected",
+      "confidence": "high",
+      "exposure_uncertainty": false,
+      "exposure_evidence_ids": [
+        "e-exp-socket"
+      ],
+      "tree_value": "true",
+      "reasons": [],
+      "hints": [],
+      "leaves": [
+        {
+          "check_id": "C1_vulnerable_build",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-inventory-lab-socket-activated"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C2_platform_glibc",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-libc"
+          ],
+          "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "true",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-ssh-socket"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "C3_sshd_listening",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-sshd-not-running"
+          ],
+          "justification": "vulnerable_code_not_in_execute_path"
+        },
+        {
+          "check_id": "M1_logingracetime_zero",
+          "value": "false",
+          "confidence": "high",
+          "observed": true,
+          "stale": false,
+          "evidence_ids": [
+            "e-lgt"
+          ],
+          "justification": "inline_mitigations_already_exist"
+        }
+      ],
+      "action_statement": "Install the OpenSSH build your operating-system vendor says is fixed for CVE-2024-6387, or move an upstream build to 9.8p1 or later. A distro package can be fixed without its version string leaving the upstream range, and the reverse is also not evidence. Interim: The Qualys advisory says LoginGraceTime 0 avoids the grace-time race and exposes sshd to denial of service by exhausting connections. That tradeoff is not encoded as safety. Internal verdict state: exploitable. Generated by verdict from caller-asserted facts. This is not a human attestation and it is not a claim that the asset is safe."
     },
     {
       "asset_id": "lab-stale-version",
@@ -769,6 +974,11 @@
           "check_id": "C1_vulnerable_build",
           "reason": "stale_evidence",
           "hint": "Evidence for check C1_vulnerable_build is older than evidence_max_age at the explicit evaluation time. Re-collect it. Stale evidence is unknown, not a proof of not_affected. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "leaves": [
@@ -793,6 +1003,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -839,6 +1058,11 @@
         {
           "reason": "exposure_unknown_treated_as_exposed",
           "hint": "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "leaves": [
@@ -863,6 +1087,15 @@
             "e-libc"
           ],
           "justification": "vulnerable_code_not_present"
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
         },
         {
           "check_id": "C3_sshd_listening",
@@ -912,6 +1145,11 @@
         {
           "reason": "pack_not_reviewed",
           "hint": "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
+        },
+        {
+          "check_id": "C3_socket_activation",
+          "reason": "missing_fact",
+          "hint": "Check C3_socket_activation needs fact \"service.socket_activation.sshd\" in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent. Pack hint: True when a systemd socket unit, inetd, or the same pattern accepts the ssh port and would start sshd, even if no sshd process is running. False only after that mechanism was observed absent. Do not infer false from an empty process table."
         }
       ],
       "proof": {
@@ -957,6 +1195,15 @@
           "justification": "vulnerable_code_not_present"
         },
         {
+          "check_id": "C3_socket_activation",
+          "value": "unknown",
+          "confidence": "none",
+          "observed": false,
+          "stale": false,
+          "reason": "missing_fact",
+          "evidence_ids": []
+        },
+        {
           "check_id": "C3_sshd_listening",
           "value": "true",
           "confidence": "high",
@@ -982,8 +1229,8 @@
     }
   ],
   "summary": {
-    "assets": 12,
-    "exploitable": 2,
+    "assets": 13,
+    "exploitable": 3,
     "vulnerable_not_exposed": 1,
     "not_affected": 0,
     "needs_review": 9
