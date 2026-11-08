@@ -45,6 +45,23 @@ func TestCycloneDXSkipsUnpurlAndIgnoresExtraFields(t *testing.T) {
 	}
 }
 
+func TestCycloneDXCanonicalizesPURL(t *testing.T) {
+	raw := []byte(`{"bomFormat":"CycloneDX","components":[{
+	  "name":"openssh-server",
+	  "version":"1%3A8.9p1-3ubuntu0.10",
+	  "purl":"pkg:deb/ubuntu/openssh-server@1%3A8.9p1-3ubuntu0.10?distro=ubuntu-22.04&arch=amd64"
+	}]}`)
+	got, err := CycloneDX(raw, opt())
+	if err != nil {
+		t.Fatal(err)
+	}
+	pkg := got.Snapshot.Assets[0].Inventory.Packages[0]
+	want := "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10?arch=amd64&distro=ubuntu-22.04"
+	if pkg.PURL != want || pkg.Version != "1:8.9p1-3ubuntu0.10" {
+		t.Fatalf("%+v", pkg)
+	}
+}
+
 func TestTrivyIgnoresVulnerabilityDecisions(t *testing.T) {
 	raw := []byte(`{
 	  "SchemaVersion": 2,

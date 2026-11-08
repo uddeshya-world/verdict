@@ -186,20 +186,32 @@ func finish(rows []row, skipped []string, opt InventoryOptions, kind string) (*R
 }
 
 func packageFromPURL(raw, versionField string) (snapshot.Package, error) {
-	parsed, err := purl.Parse(raw)
+	canon, err := purl.Canonical(raw)
+	if err != nil {
+		return snapshot.Package{}, err
+	}
+	parsed, err := purl.Parse(canon)
 	if err != nil {
 		return snapshot.Package{}, err
 	}
 	ver := parsed.Version
+	field := versionField
+	if versionField != "" {
+		decoded, decErr := purl.Decode(versionField)
+		if decErr != nil {
+			return snapshot.Package{}, decErr
+		}
+		field = decoded
+	}
 	if ver == "" {
-		ver = versionField
-	} else if versionField != "" && versionField != ver {
+		ver = field
+	} else if field != "" && field != ver {
 		return snapshot.Package{}, fmt.Errorf("purl version %q disagrees with version %q", ver, versionField)
 	}
 	if ver == "" {
 		return snapshot.Package{}, fmt.Errorf("purl %q has no version", raw)
 	}
-	return snapshot.Package{PURL: raw, Version: ver}, nil
+	return snapshot.Package{PURL: canon, Version: ver}, nil
 }
 
 func normalize(opt *InventoryOptions) error {
@@ -263,6 +275,9 @@ func ParseAdvisories(data []byte) (*AdvisoryDocument, error) {
 		if f.AssetID == "" || f.Key == "" || f.PURL == "" || f.Source == "" || f.EvidenceID == "" {
 			return nil, fmt.Errorf("import advisories: each fact needs asset_id, key, purl, source, and evidence_id")
 		}
+		if _, err := purl.Canonical(f.PURL); err != nil {
+			return nil, fmt.Errorf("import advisories: %s: %w", f.Key, err)
+		}
 	}
 	return &doc, nil
 }
@@ -286,11 +301,15 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Sna
 			return nil, nil, fmt.Errorf("import advisories: asset %q is not in the snapshot", f.AssetID)
 		}
 		asset := next.Assets[i]
-		if !inventoryHasPURL(asset, f.PURL) {
-			warnings = append(warnings, fmt.Sprintf("advisory purl not in asset inventory: asset %s purl %s", f.AssetID, f.PURL))
+		canon, err := purl.Canonical(f.PURL)
+		if err != nil {
+			return nil, nil, fmt.Errorf("import advisories: %s: %w", f.Key, err)
+		}
+		if !inventoryHasPURL(asset, canon) {
+			warnings = append(warnings, fmt.Sprintf("advisory purl not in asset inventory: asset %s purl %s", f.AssetID, canon))
 		}
 		asset.Facts = append(append([]snapshot.Fact{}, asset.Facts...), snapshot.Fact{
-			Key: f.Key, PURL: f.PURL, Value: f.Value, Basis: f.Basis, Confidence: f.Confidence,
+			Key: f.Key, PURL: canon, Value: f.Value, Basis: f.Basis, Confidence: f.Confidence,
 			ObservedAt: f.ObservedAt, ExpiresAt: f.ExpiresAt, EvidenceID: f.EvidenceID, Source: f.Source,
 		})
 		next.Assets[i] = asset
@@ -308,7 +327,7 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Sna
 
 func inventoryHasPURL(asset snapshot.Asset, raw string) bool {
 	for _, pkg := range asset.Inventory.Packages {
-		if pkg.PURL == raw {
+		if purl.Same(pkg.PURL, raw) {
 			return true
 		}
 	}

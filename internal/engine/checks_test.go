@@ -45,6 +45,25 @@ func advisoryFact(value, basis, confidence, observedAt, packagePURL string) snap
 	}
 }
 
+func TestCanonicalPURLAdvisoryMatches(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	a := freshInventory(snapshot.Package{
+		PURL:    "pkg:deb/ubuntu/openssh-server@1%3A8.9p1-3ubuntu0.10?distro=ubuntu-22.04&arch=amd64",
+		Version: "1:8.9p1-3ubuntu0.10",
+	})
+	a.Facts = []snapshot.Fact{advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10?arch=amd64&distro=ubuntu-22.04")}
+	got := evalPackage("C1", ch, nil, a, eval, mustAge())
+	if got.Leaf.Value != logic.False || got.Leaf.Justification != "vulnerable_code_not_present" {
+		t.Fatalf("canonical advisory should cover the encoded package URL: %+v", got)
+	}
+	a.Facts[0].PURL = "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.10"
+	got = evalPackage("C1", ch, nil, a, eval, mustAge())
+	if got.Leaf.Value == logic.False {
+		t.Fatalf("an advisory without the qualifiers must not clear the package: %+v", got)
+	}
+}
+
 func TestFixedAdvisoryDoesNotClearInRangeUpstream(t *testing.T) {
 	eval := mustTime(t)
 	ch := opensshCheck()
