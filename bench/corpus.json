@@ -299,9 +299,9 @@
     "policy": "examples/policy/lab-zones.json",
     "snapshot": "examples/snapshots/log4shell-lab.json",
     "asset": "lab-log4j-property-set",
-    "ground_truth": "not_affected",
-    "expect_state": "not_affected",
-    "note": "formatMsgNoLookups is observed true on a 2.10+ build. This pack covers CVE-2021-44228 only."
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "log4j-core 2.14.1 with JndiLookup present. formatMsgNoLookups=true does not clear CVE-2021-44228; Apache says flag-based mitigations are insufficient because lookups still occur, including through the Thread Context Map."
   },
   {
     "id": "log4shell/lab-log4j-class-absent",

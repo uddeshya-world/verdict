@@ -17,9 +17,10 @@ func newPackReview(stdout, stderr interface{ Write([]byte) (int, error) }) *cobr
 	cmd := &cobra.Command{
 		Use:   "review",
 		Short: "Check a review record against a pack file",
-		Long: `review checks that a record names two reviewers and the exact pack bytes.
+		Long: `review checks that a record names two reviewers and the pack content.
+The hash ignores metadata.status and metadata.reviewers, so setting
+status to reviewed does not invalidate a record made against the draft.
 It does not edit the pack and it does not decide that a name belongs to a real person.
-A real CVE stays draft until a human sets status to reviewed using names this command accepted.
 synthetic-reviewer-* names cannot sign a real CVE.`,
 		RunE: func(*cobra.Command, []string) error {
 			if packPath == "" || recordPath == "" {

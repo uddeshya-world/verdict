@@ -5,6 +5,8 @@ package pack
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -21,11 +23,33 @@ type ReviewAttestation struct {
 	Statement  string `json:"statement"`
 }
 
-// ReviewRecord binds reviewer statements to the exact pack bytes.
+// ReviewRecord binds reviewer statements to the pack content.
+// PackSHA256 is ContentSHA256, which ignores metadata.status and
+// metadata.reviewers. Promoting a pack does not invalidate the record.
 type ReviewRecord struct {
 	PackID     string              `json:"pack_id"`
 	PackSHA256 string              `json:"pack_sha256"`
 	Reviewers  []ReviewAttestation `json:"reviewers"`
+}
+
+// ContentSHA256 hashes the decoded pack with status and reviewers cleared.
+// Two files that differ only by promotion metadata have the same hash.
+func ContentSHA256(p *Pack) (string, error) {
+	if p == nil {
+		return "", fmt.Errorf("pack review: pack is nil")
+	}
+	clone := *p
+	clone.Metadata.Status = ""
+	clone.Metadata.Reviewers = nil
+	clone.FilePath = ""
+	clone.SHA256 = ""
+	clone.MaxAge = 0
+	raw, err := json.Marshal(&clone)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:]), nil
 }
 
 // ParseReviewRecord decodes a review file. Unknown fields are rejected.
@@ -51,8 +75,12 @@ func CheckReview(p *Pack, rec *ReviewRecord) error {
 	if rec.PackID != p.Metadata.ID {
 		return fmt.Errorf("pack review: record pack_id %q does not match %q", rec.PackID, p.Metadata.ID)
 	}
-	if rec.PackSHA256 == "" || rec.PackSHA256 != p.SHA256 {
-		return fmt.Errorf("pack review: record pack_sha256 does not match these pack bytes")
+	sum, err := ContentSHA256(p)
+	if err != nil {
+		return err
+	}
+	if rec.PackSHA256 == "" || rec.PackSHA256 != sum {
+		return fmt.Errorf("pack review: record pack_sha256 does not match the pack content (status and reviewers are not part of the hash)")
 	}
 	if len(rec.Reviewers) < 2 {
 		return fmt.Errorf("pack review: two distinct reviewers are required")

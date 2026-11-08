@@ -24,8 +24,12 @@ func TestPackReviewAcceptsSyntheticRecordOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sum, err := pack.ContentSHA256(p)
+	if err != nil {
+		t.Fatal(err)
+	}
 	rec := pack.ReviewRecord{
-		PackID: p.Metadata.ID, PackSHA256: p.SHA256,
+		PackID: p.Metadata.ID, PackSHA256: sum,
 		Reviewers: []pack.ReviewAttestation{
 			{Name: "synthetic-reviewer-alpha", ReviewedAt: "2026-11-08T12:00:00Z", Statement: "Fixture."},
 			{Name: "synthetic-reviewer-beta", ReviewedAt: "2026-11-08T12:00:00Z", Statement: "Fixture."},

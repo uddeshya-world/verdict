@@ -24,8 +24,19 @@ func TestReviewRecordRequiresTwoHumansAndMatchingBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sum, err := ContentSHA256(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	promoted := *p
+	promoted.Metadata.Status = "draft"
+	promoted.Metadata.Reviewers = nil
+	again, err := ContentSHA256(&promoted)
+	if err != nil || again != sum {
+		t.Fatalf("status and reviewers changed the content hash: %s %s %v", sum, again, err)
+	}
 	rec := &ReviewRecord{
-		PackID: p.Metadata.ID, PackSHA256: p.SHA256,
+		PackID: p.Metadata.ID, PackSHA256: sum,
 		Reviewers: []ReviewAttestation{
 			{Name: "synthetic-reviewer-alpha", ReviewedAt: "2026-11-08T12:00:00Z", Statement: "Fixture review of these bytes."},
 			{Name: "synthetic-reviewer-beta", ReviewedAt: "2026-11-08T12:00:00Z", Statement: "Fixture review of these bytes."},
@@ -41,7 +52,7 @@ func TestReviewRecordRequiresTwoHumansAndMatchingBytes(t *testing.T) {
 	if err := CheckReview(p, rec); err == nil {
 		t.Fatal("sha mismatch must fail")
 	}
-	rec.PackSHA256 = p.SHA256
+	rec.PackSHA256 = sum
 	rec.Reviewers = rec.Reviewers[:1]
 	if err := CheckReview(p, rec); err == nil {
 		t.Fatal("one reviewer must fail")
@@ -64,8 +75,12 @@ func TestRealCVEPackRejectsFixtureReviewers(t *testing.T) {
 	if p.Metadata.Status != "draft" || len(p.Metadata.Reviewers) != 0 {
 		t.Fatalf("regreSSHion must stay draft, got %s reviewers=%d", p.Metadata.Status, len(p.Metadata.Reviewers))
 	}
+	sum, err := ContentSHA256(p)
+	if err != nil {
+		t.Fatal(err)
+	}
 	rec := &ReviewRecord{
-		PackID: p.Metadata.ID, PackSHA256: p.SHA256,
+		PackID: p.Metadata.ID, PackSHA256: sum,
 		Reviewers: []ReviewAttestation{
 			{Name: "synthetic-reviewer-alpha", ReviewedAt: "2026-11-08T12:00:00Z", Statement: "not a person"},
 			{Name: "synthetic-reviewer-beta", ReviewedAt: "2026-11-08T12:00:00Z", Statement: "not a person"},
