@@ -27,11 +27,15 @@ func leafHint(reason, checkID, detail, packHint string) string {
 	case "inventory_not_observed":
 		base = fmt.Sprintf("Inventory for check %s is not a fresh observed list, so package absence or version order cannot be used.", checkID)
 	case "distro_advisory_required":
-		base = fmt.Sprintf("Check %s cannot treat %s as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact (affected or fixed) or the result stays unknown.", checkID, detail)
+		base = fmt.Sprintf("Check %s cannot treat %s as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package.", checkID, detail)
+	case "advisory_purl_required":
+		base = fmt.Sprintf("Advisory fact %q has no purl, so it was not applied. Set purl to the inventory package URL the advisory covers. One fact does not clear every package on the asset.", detail)
 	case "unsupported_version":
 		base = fmt.Sprintf("Check %s could not parse a version with the pack scheme. Unparsed versions are unknown, not outside the vulnerable range.", checkID)
 	case "unexpected_advisory_value":
-		base = fmt.Sprintf("Advisory fact %q must be exactly affected or fixed.", detail)
+		base = fmt.Sprintf("Advisory fact %q must be exactly affected, fixed, or not_affected. not_affected means never vulnerable, which is not the same claim as fixed.", detail)
+	case "zone_policy_missing":
+		base = "No site zone policy was supplied. Packs do not name trusted or untrusted zones. Without a policy, exposure is unknown and an affected asset is exploitable with exposure_uncertainty. Pass the site policy file that lists your zone names."
 	case "advisory_without_package":
 		base = fmt.Sprintf("Advisory fact %q is present but no matching package is in the inventory, so the advisory was not applied.", detail)
 	case "advisory_not_observed":

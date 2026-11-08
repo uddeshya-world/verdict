@@ -16,6 +16,7 @@ run() {
   ./verdict drill \
     --pack "$pack" \
     --snapshot "$snap" \
+    --policy examples/policy/lab-zones.json \
     --author "Uddeshya Kumar" \
     --out "/tmp/${name}-report.json" \
     --openvex "/tmp/${name}.openvex.json"

@@ -9,12 +9,16 @@ import (
 
 	"github.com/uddeshya-world/verdict/internal/logic"
 	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/policy"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
-func classifyExposure(spec pack.ExposureSpec, asset snapshot.Asset, eval time.Time, maxAge time.Duration) ExposureClass {
-	untrustedZones := zoneSet(spec.UntrustedZones)
-	trustedZones := zoneSet(spec.TrustedZones)
+func classifyExposure(pol *policy.Policy, spec pack.ExposureSpec, asset snapshot.Asset, eval time.Time, maxAge time.Duration) ExposureClass {
+	if pol == nil {
+		return ExposureClass{Kind: "unknown", Uncertain: true, Reason: "zone_policy_missing"}
+	}
+	untrustedZones := zoneSet(pol.UntrustedZones)
+	trustedZones := zoneSet(pol.TrustedZones)
 	var evidence []string
 	sawUntrusted := false
 	sawUnknown := false

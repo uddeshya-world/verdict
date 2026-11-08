@@ -33,7 +33,7 @@ There is no `missing_means: true`. An absent fact is `unknown`. v0.1 will not in
 
 `semver` and `go` exist for generic upstream strings. `go` requires a leading `v`. Build metadata (`+...`) is rejected.
 
-`deb`, `rpm`, and `apk` package URLs never use those schemes. Those coordinates, and a same-name package the pattern did not match, stay `unknown` with reason `distro_advisory_required` unless `advisory_fact` is a fresh observed fact whose value is `affected` or `fixed`. That fact does not override a non-distro package. If any non-distro match is inside an affected range, the check is true even when the advisory says `fixed`. `fixed` falsifies the check only when every non-distro match is outside the range and every distro or unmatched same-name package is covered by the fact. The fact is asset-scoped. It does not name a package URL, so one `fixed` value covers every distro package on the asset.
+`deb`, `rpm`, and `apk` package URLs never use those schemes. Those coordinates, and a same-name package the pattern did not match, stay `unknown` with reason `distro_advisory_required` unless `advisory_fact` is a fresh observed fact whose `purl` equals that inventory package URL. The value is `affected`, `fixed`, or `not_affected`. `fixed` means a vendor fix was applied. `not_affected` means the package was never vulnerable. Those are different claims. A fact with no `purl` does not cover any package. One fact covers one package. The fact does not override a non-distro package. If any non-distro match is inside an affected range, the check is true even when a distro fact says `fixed` or `not_affected`. A falsifying advisory result requires every non-distro match to be outside the range and every distro or unmatched same-name package to have its own `fixed` or `not_affected` fact.
 
 ## Conditions
 
@@ -41,7 +41,7 @@ A condition node is exactly one of `ref`, `not`, `all_of`, `any_of`. Maximum dep
 
 ## Exposure block
 
-`port`, `proto` (`tcp` or `udp`), `untrusted_zones`, and `trusted_zones`. Both zone lists are required and non-empty. The same label cannot appear in both, comparison is case-insensitive, and `unknown` is not a concrete zone. This block does not decide `not_affected`. It classifies a true tree. A reachable zone is untrusted only when it matches `untrusted_zones`, and trusted only when it matches `trusted_zones`. Any other label is unknown exposure, which is exploitable with uncertainty. Zone labels on the asset are echoed and are not a substitute for an exposure observation.
+`port` and `proto` (`tcp` or `udp`). This block does not decide `not_affected` and does not name zones. Zone vocabulary is a site policy file passed to `verdict drill --policy`. The policy has `untrusted_zones` and `trusted_zones`. Comparison is case-insensitive. `unknown` is not a concrete zone. A reachable zone is untrusted only when it matches the policy's untrusted list, and trusted only when it matches the trusted list. Any other label, and a missing policy, is unknown exposure, which is exploitable with uncertainty. Zone labels on the asset are echoed and are not a substitute for an exposure observation. `examples/policy/lab-zones.json` is the policy the fixtures use. It is not your organization's list.
 
 ## Tests
 

@@ -140,7 +140,11 @@ func notes(rep *engine.Report, v engine.Verdict) string {
 
 func documentID(rep *engine.Report) string {
 	ts := strings.NewReplacer("-", "", ":", "", ".", "").Replace(rep.EvaluationTime)
-	return "urn:verdict:openvex:" + sanitize(rep.PackSHA256) + ":" + sanitize(rep.KBVersion) + ":" + sanitize(ts)
+	pol := rep.PolicySHA256
+	if pol == "" {
+		pol = "none"
+	}
+	return "urn:verdict:openvex:" + sanitize(rep.PackSHA256) + ":" + sanitize(rep.KBVersion) + ":" + sanitize(ts) + ":" + sanitize(pol)
 }
 
 func sanitize(s string) string {

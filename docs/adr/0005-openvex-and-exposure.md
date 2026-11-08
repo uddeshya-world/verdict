@@ -23,10 +23,10 @@ Internal states:
 
 Exposure classification, only if the condition tree is true:
 
-- Zone labels are compared case-insensitively. `trusted_zones` is an explicit list. A label in neither `trusted_zones` nor `untrusted_zones` is unknown. It is not treated as trusted.
-- At least one fresh, high, observed record for the pack port and protocol, and every such record's zones are listed in `trusted_zones`: `vulnerable_not_exposed`.
+- Zone labels are compared case-insensitively against a site policy, not against the pack. The policy lists `trusted_zones` and `untrusted_zones` in the organization's vocabulary. A label in neither list is unknown. It is not treated as trusted. A missing policy is unknown.
+- At least one fresh, high, observed record for the pack port and protocol, and every such record's zones are listed in the policy's `trusted_zones`: `vulnerable_not_exposed`.
 - Any such record intersecting `untrusted_zones`: `exploitable`, uncertainty false. A known untrusted zone wins over an unknown zone on the same asset.
-- No usable record, a low-confidence record, an inferred record, a stale record, an empty zone list, the label `unknown`, or any zone in neither list: `exploitable` with `exposure_uncertainty: true` and reason `exposure_unknown_treated_as_exposed`.
+- No usable record, a low-confidence record, an inferred record, a stale record, an empty zone list, the label `unknown`, any zone in neither list, or no policy file: `exploitable` with `exposure_uncertainty: true` and reason `exposure_unknown_treated_as_exposed`. A missing policy also records `zone_policy_missing`.
 
 Asset-level `zones` are not records. An asset labeled internal with no exposure observation is uncertain, not "not exposed".
 

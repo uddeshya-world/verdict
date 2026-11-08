@@ -57,19 +57,17 @@ conditions:
 exposure:
   port: 9
   proto: tcp
-  untrusted_zones:
-    - internet
-  trusted_zones:
-    - internal
 remediation:
   fix: "Synthetic fixture. There is nothing to patch."
 tests:
   - name: draft-suppresses-not-affected
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-pre-a-false
     expect_state: needs_review
     expect_vex: under_investigation
   - name: draft-still-affected
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-affected-internet
     expect_state: exploitable

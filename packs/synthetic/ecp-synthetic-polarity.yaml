@@ -64,72 +64,79 @@ conditions:
 exposure:
   port: 9
   proto: tcp
-  untrusted_zones:
-    - internet
-  trusted_zones:
-    - internal
 remediation:
   fix: "Synthetic fixture. There is nothing to patch."
   interim: "Synthetic mitigation fact synth.mitigation=true."
 tests:
   - name: exploitable
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-affected-internet
     expect_state: exploitable
     expect_vex: affected
     expect_exposure_uncertainty: false
   - name: internal
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-affected-internal
     expect_state: vulnerable_not_exposed
     expect_vex: affected
     expect_exposure_uncertainty: false
   - name: unknown-zone
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-unknown-zone
     expect_state: exploitable
     expect_vex: affected
     expect_exposure_uncertainty: true
   - name: zones-are-not-exposure
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-zones-only
     expect_state: exploitable
     expect_vex: affected
     expect_exposure_uncertainty: true
   - name: precondition-false
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-pre-a-false
     expect_state: not_affected
     expect_vex: not_affected
     expect_justification: vulnerable_code_not_present
   - name: both-disjuncts-false
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-disjunction-false
     expect_state: not_affected
     expect_vex: not_affected
     expect_justification: vulnerable_code_not_in_execute_path
   - name: one-disjunct-unknown
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-disjunction-unknown
     expect_state: needs_review
     expect_vex: under_investigation
   - name: mitigation-present
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-mitigated
     expect_state: not_affected
     expect_vex: not_affected
     expect_justification: inline_mitigations_already_exist
   - name: mitigation-low-confidence
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-mitigated-low
     expect_state: needs_review
     expect_vex: under_investigation
   - name: stale-false
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-stale-false
     expect_state: needs_review
     expect_vex: under_investigation
   - name: attested-mitigation
+    policy: ../../examples/policy/lab-zones.json
     snapshot: ../../examples/snapshots/synthetic-polarity.json
     asset: syn-attested-mitigation
     expect_state: needs_review

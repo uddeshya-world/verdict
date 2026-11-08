@@ -14,6 +14,7 @@ import (
 	"github.com/uddeshya-world/verdict/internal/buildinfo"
 	"github.com/uddeshya-world/verdict/internal/logic"
 	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/policy"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
@@ -25,6 +26,7 @@ type Report struct {
 	EvaluationTime string    `json:"evaluation_time"`
 	PackID         string    `json:"pack_id"`
 	PackSHA256     string    `json:"pack_sha256"`
+	PolicySHA256   string    `json:"policy_sha256"`
 	PackStatus     string    `json:"pack_status"`
 	CVE            string    `json:"cve"`
 	EvidenceTrust  string    `json:"evidence_trust"`
@@ -98,6 +100,7 @@ type LeafView struct {
 // Input is the entire explicit evaluation request.
 type Input struct {
 	Pack           *pack.Pack
+	Policy         *policy.Policy
 	Snapshot       *snapshot.Snapshot
 	EvaluationTime time.Time
 	KBVersion      string
@@ -132,6 +135,7 @@ func Evaluate(in Input) (*Report, error) {
 		EvaluationTime: in.EvaluationTime.UTC().Format("2006-01-02T15:04:05.000000000Z"),
 		PackID:         in.Pack.Metadata.ID,
 		PackSHA256:     in.Pack.SHA256,
+		PolicySHA256:   policyHash(in.Policy),
 		PackStatus:     in.Pack.Metadata.Status,
 		CVE:            in.Pack.Metadata.CVE[0],
 		EvidenceTrust:  "caller_asserted_unverified",
@@ -139,7 +143,7 @@ func Evaluate(in Input) (*Report, error) {
 	}
 	node := toNode(in.Pack.Conditions)
 	for _, asset := range in.Snapshot.Assets {
-		report.Verdicts = append(report.Verdicts, evalAsset(in.Pack, asset, node, meta, in.EvaluationTime))
+		report.Verdicts = append(report.Verdicts, evalAsset(in.Pack, in.Policy, asset, node, meta, in.EvaluationTime))
 	}
 	sort.Slice(report.Verdicts, func(i, j int) bool {
 		return report.Verdicts[i].AssetID < report.Verdicts[j].AssetID
@@ -165,7 +169,14 @@ func summarize(vs []Verdict) Summary {
 	return s
 }
 
-func evalAsset(p *pack.Pack, asset snapshot.Asset, node logic.Node, meta Meta, eval time.Time) Verdict {
+func policyHash(p *policy.Policy) string {
+	if p == nil {
+		return ""
+	}
+	return p.SHA256
+}
+
+func evalAsset(p *pack.Pack, pol *policy.Policy, asset snapshot.Asset, node logic.Node, meta Meta, eval time.Time) Verdict {
 	leaves := evalChecks(p, asset, eval)
 	leafMap := map[string]logic.Leaf{}
 	for _, l := range leaves {
@@ -175,7 +186,7 @@ func evalAsset(p *pack.Pack, asset snapshot.Asset, node logic.Node, meta Meta, e
 	if err != nil {
 		return errorVerdict(asset, err)
 	}
-	exp := classifyExposure(p.Exposure, asset, eval, p.MaxAge)
+	exp := classifyExposure(pol, p.Exposure, asset, eval, p.MaxAge)
 	d := Decide(res, meta, exp)
 	v := Verdict{
 		AssetID:             asset.ID,

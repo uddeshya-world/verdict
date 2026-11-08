@@ -32,6 +32,7 @@ type Meta struct {
 type ExposureClass struct {
 	Kind        string
 	Uncertain   bool
+	Reason      string
 	EvidenceIDs []string
 }
 
@@ -96,6 +97,10 @@ func Decide(res logic.Result, meta Meta, exp ExposureClass) Decision {
 			d.VEX = vexAffected
 			d.Uncertainty = true
 			d.Reasons = append(d.Reasons, "exposure_unknown_treated_as_exposed")
+			if exp.Reason != "" {
+				d.Reasons = append(d.Reasons, exp.Reason)
+			}
+			sort.Strings(d.Reasons)
 		}
 		return d
 	}

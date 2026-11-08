@@ -4,7 +4,8 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-6387-openssh",
-  "pack_sha256": "57aaf227fa07685d6e2cf8b220bc67825dd677fa07669de09a18777979aace54",
+  "pack_sha256": "17c71c014dd7a44ccabfa84360a9a3067fda03bb6f7dcec17fb3b45702b49a3e",
+  "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-6387",
   "evidence_trust": "caller_asserted_unverified",
@@ -134,7 +135,7 @@
         {
           "check_id": "C1_vulnerable_build",
           "reason": "distro_advisory_required",
-          "hint": "Check C1_vulnerable_build cannot treat advisory.cve_2024_6387.status as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact (affected or fixed) or the result stays unknown. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+          "hint": "Check C1_vulnerable_build cannot treat pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
         }
       ],
       "leaves": [
