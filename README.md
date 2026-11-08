@@ -77,6 +77,7 @@ Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affecte
 | Asset | State | OpenVEX status | Why |
 | --- | --- | --- | --- |
 | `lab-edge-exploitable` | `exploitable` | `affected` | Upstream 9.6p1, glibc, sshd listening, LoginGraceTime not 0, observed path from `internet` |
+| `lab-socket-activated` | `exploitable` | `affected` | sshd is not in the process table, but `service.socket_activation.sshd` is true, so tcp/22 still reaches sshd |
 | `lab-internal-only` | `vulnerable_not_exposed` | `affected` | Same preconditions, observed path only from `internal`. Still affected |
 | `lab-unknown-exposure` | `exploitable` | `affected` | Asset zones say internal, but there is no exposure observation. Unknown exposure is reported as exploitable with `exposure_uncertainty: true` |
 | `lab-missing-config` | `needs_review` | `under_investigation` | LoginGraceTime was not observed. The absent key is not treated as the default |
@@ -87,7 +88,7 @@ Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affecte
 | `lab-incomplete-inventory` | `needs_review` | `under_investigation` | Inventory is not complete, so a missing package is not `component_not_present` |
 | `lab-upstream-fixed-draft` | `needs_review` | `under_investigation` | Upstream 9.8p1 is outside the Qualys range, and the pack is still draft |
 | `lab-low-confidence-musl` | `needs_review` | `under_investigation` | libc observation says not glibc at low confidence. Not sufficient for `not_affected` |
-| `lab-inferred-not-listening` | `needs_review` | `under_investigation` | "sshd not listening" is marked inferred, so it is discarded |
+| `lab-inferred-not-listening` | `needs_review` | `under_investigation` | "sshd not listening" is marked inferred, so it is discarded. A missing socket-activation fact would also leave reachability unknown |
 
 The synthetic reviewed pack is the one that is allowed to emit `not_affected`, and only in the fixture cases where the proof is sufficient. See [docs/reproducible-run.md](docs/reproducible-run.md).
 

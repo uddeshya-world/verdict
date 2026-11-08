@@ -232,6 +232,61 @@
           "source": "demo-snapshot"
         }
       ]
+    },
+    {
+      "id": "lab-xz-sshd-down",
+      "name": "lab xz 5.6.1 sshd not running",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-xz-sshd-down",
+        "packages": [
+          {
+            "purl": "pkg:generic/xz@5.6.1",
+            "version": "5.6.1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.sshd.links_liblzma",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-link-down",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-down",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-sshd-down",
+          "source": "demo-snapshot"
+        }
+      ]
     }
   ]
 }
