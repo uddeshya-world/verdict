@@ -68,6 +68,7 @@ type Check struct {
 	NegationJustification string       `yaml:"negation_justification"`
 	AbsenceJustification  string       `yaml:"absence_justification"`
 	ResolutionHint        string       `yaml:"resolution_hint"`
+	Tradeoff              string       `yaml:"tradeoff"`
 	VersionScheme         string       `yaml:"version_scheme"`
 	AffectedRanges        []string     `yaml:"affected_ranges"`
 	AdvisoryFact          string       `yaml:"advisory_fact"`

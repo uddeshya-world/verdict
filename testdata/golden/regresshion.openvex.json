@@ -1,6 +1,6 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "urn:verdict:openvex:17c71c014dd7a44ccabfa84360a9a3067fda03bb6f7dcec17fb3b45702b49a3e:demo-2026.11.08:20261108T120000000000000Z:8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
+  "@id": "urn:verdict:openvex:b517758fba0d52501eb2265c7919a8641f0e7027554257289644ec7f5cb2853b:demo-2026.11.08:20261108T120000000000000Z:8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "author": "Uddeshya Kumar",
   "role": "tool-assisted document creator; evidence was not authenticated",
   "timestamp": "2026-11-08T12:00:00.000000000Z",
@@ -168,7 +168,8 @@
         }
       ],
       "status": "under_investigation",
-      "status_notes": "verdict_state=needs_review; confidence=high; evidence_trust=caller_asserted_unverified; tree=false; exposure_uncertainty=false; pack=ECP-CVE-2024-6387-openssh; pack_status=draft; kb_version=demo-2026.11.08; reasons=pack_not_reviewed. not_affected is withheld unless a reviewed pack has a sufficient observed proof. Unknown exposure on an affected asset is exploitable with uncertainty. This note is not a claim that the asset is safe."
+      "status_notes": "verdict_state=needs_review; confidence=high; evidence_trust=caller_asserted_unverified; tree=false; exposure_uncertainty=false; pack=ECP-CVE-2024-6387-openssh; pack_status=draft; kb_version=demo-2026.11.08; reasons=pack_not_reviewed; mitigation_dependent=true. not_affected is withheld unless a reviewed pack has a sufficient observed proof. Unknown exposure on an affected asset is exploitable with uncertainty. This note is not a claim that the asset is safe.",
+      "impact_statement": "M1_logingracetime_zero: Qualys says LoginGraceTime 0 avoids the signal-handler race and makes sshd easy to deny service by exhausting connections. It is an interim workaround, not a vendor fix. This draft does not emit not_affected for it."
     },
     {
       "@id": "urn:verdict:statement:lab-stale-version:CVE-2024-6387",

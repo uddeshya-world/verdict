@@ -62,6 +62,8 @@ type Verdict struct {
 	Proof               *ProofView `json:"proof,omitempty"`
 	Leaves              []LeafView `json:"leaves"`
 	ActionStatement     string     `json:"action_statement,omitempty"`
+	MitigationDependent bool       `json:"mitigation_dependent,omitempty"`
+	ImpactStatement     string     `json:"impact_statement,omitempty"`
 }
 
 // Hint tells an operator what is missing.
@@ -210,6 +212,22 @@ func evalAsset(p *pack.Pack, pol *policy.Policy, asset snapshot.Asset, node logi
 	}
 	if v.Reasons == nil {
 		v.Reasons = []string{}
+	}
+	if res.Value == logic.False && res.StrictFalse != nil {
+		ids := append([]string{}, res.StrictFalse.CheckIDs...)
+		sort.Strings(ids)
+		var parts []string
+		for _, id := range ids {
+			text := strings.TrimSpace(p.Checks[id].Tradeoff)
+			if text == "" {
+				continue
+			}
+			parts = append(parts, id+": "+text)
+		}
+		if len(parts) > 0 {
+			v.MitigationDependent = true
+			v.ImpactStatement = strings.Join(parts, " ")
+		}
 	}
 	for _, l := range leaves {
 		view := LeafView{

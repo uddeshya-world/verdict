@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-SYNTHETIC-POLARITY",
-  "pack_sha256": "59a18906b116bd74f06618a0523180c9d3ae0145db818fc674ed5491955c99e7",
+  "pack_sha256": "2f45cd2f5c568bd30667d504014f7e2c98f7f4c9473b22b13e395e5e3ac3901e",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "reviewed",
   "cve": "CVE-2099-0001",
@@ -471,7 +471,9 @@
           ],
           "justification": "vulnerable_code_not_in_execute_path"
         }
-      ]
+      ],
+      "mitigation_dependent": true,
+      "impact_statement": "MIT: Synthetic mitigation. A real mitigation would describe its cost here. Nothing re-checks this later; watch mode is not implemented."
     },
     {
       "asset_id": "syn-mitigated-low",

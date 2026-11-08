@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-6387-openssh",
-  "pack_sha256": "17c71c014dd7a44ccabfa84360a9a3067fda03bb6f7dcec17fb3b45702b49a3e",
+  "pack_sha256": "b517758fba0d52501eb2265c7919a8641f0e7027554257289644ec7f5cb2853b",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-6387",
@@ -732,7 +732,9 @@
           ],
           "justification": "inline_mitigations_already_exist"
         }
-      ]
+      ],
+      "mitigation_dependent": true,
+      "impact_statement": "M1_logingracetime_zero: Qualys says LoginGraceTime 0 avoids the signal-handler race and makes sshd easy to deny service by exhausting connections. It is an interim workaround, not a vendor fix. This draft does not emit not_affected for it."
     },
     {
       "asset_id": "lab-stale-version",

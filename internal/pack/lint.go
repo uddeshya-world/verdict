@@ -200,6 +200,9 @@ func lintCheck(id string, c Check, component []string) error {
 	if len(c.ResolutionHint) > 500 {
 		add("check %s: resolution_hint is too long", id)
 	}
+	if len(c.Tradeoff) > 500 {
+		add("check %s: tradeoff is too long", id)
+	}
 	switch c.Type {
 	case "package_version":
 		if !vercmp.Known(c.VersionScheme) {

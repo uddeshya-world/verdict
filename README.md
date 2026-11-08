@@ -135,6 +135,9 @@ See [docs/architecture.md](docs/architecture.md).
 | --- | --- | --- |
 | `packs/draft/ecp-cve-2024-6387-openssh.yaml` | draft | regreSSHion preconditions from the Qualys advisory. Not reviewed |
 | `packs/draft/ecp-cve-2021-44228-log4j.yaml` | draft | Log4Shell preconditions from Apache's advisory. Not reviewed. Does not cover CVE-2021-45046 |
+| `packs/draft/ecp-cve-2022-22965-spring.yaml` | draft | Spring4Shell preconditions from the Spring announcement. Not reviewed. A Boot jar is not encoded as safe |
+| `packs/draft/ecp-cve-2024-3094-xz.yaml` | draft | xz 5.6.0 and 5.6.1 sshd path from the oss-security report. Not reviewed |
+| `packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml` | draft | ingress-nginx admission path from the Kubernetes announcement. Not reviewed |
 | `packs/synthetic/ecp-synthetic-polarity.yaml` | reviewed, synthetic | Fixture for proof polarity, exposure, and `not_affected` |
 | `packs/synthetic/ecp-synthetic-polarity-draft.yaml` | draft, synthetic | Same tree as the reviewed fixture, to show draft suppression |
 | `packs/synthetic/ecp-synthetic-mixed.yaml` | reviewed, synthetic | Disjunction whose branches disagree on justification |
@@ -167,7 +170,8 @@ Implemented in this foundation:
 
 Not implemented (do not treat design-plan milestones as done):
 
-- [ ] Phase 0 interviews and the other three hand-written seed packs (Spring4Shell, xz, IngressNightmare)
+- [ ] Phase 0 interviews
+- [x] Draft seed packs for Spring4Shell, xz, and IngressNightmare, still unreviewed
 - [ ] Any real-world pack with two human reviewers, fixtures built from images, or a signed bundle
 - [ ] SBOM / Trivy / Grype importers, SSH collector, Kubernetes collector
 - [ ] Distro advisory feeds (RHSA, USN, DSA, Alpine, SUSE) as data rather than a single caller-supplied fact
