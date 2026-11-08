@@ -1,0 +1,800 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "syn-affected-internet",
+      "name": "internet",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-affected-internet",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-inet",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-affected-internal",
+      "name": "internal",
+      "kind": "app",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-affected-internal",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-int",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-unknown-zone",
+      "name": "unknown zone",
+      "kind": "app",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-unknown-zone",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "unknown"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-unk",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-zones-only",
+      "name": "zones only",
+      "kind": "app",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-zones-only",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-pre-a-false",
+      "name": "pre a false",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-pre-a-false",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-a",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-disjunction-false",
+      "name": "both branches false",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-disjunction-false",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-d",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-disjunction-unknown",
+      "name": "one branch missing",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-disjunction-unknown",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-du",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-mitigated",
+      "name": "mitigation",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-mitigated",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-mitigated-low",
+      "name": "low mitigation",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-mitigated-low",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "low",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-ml",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-stale-false",
+      "name": "stale pre a",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-stale-false",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-01T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-st",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-attested-mitigation",
+      "name": "attested mitigation",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-syn-attested-mitigation",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.pre_a",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_b",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.pre_c",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-c",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.mitigation",
+          "value": "true",
+          "basis": "attested",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-m",
+          "source": "demo-snapshot",
+          "expires_at": "2026-12-08T12:00:00Z"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-at",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    }
+  ]
+}

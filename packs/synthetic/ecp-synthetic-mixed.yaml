@@ -1,0 +1,66 @@
+apiVersion: verdict.dev/v1
+kind: ConditionPack
+metadata:
+  id: ECP-SYNTHETIC-MIXED
+  cve:
+    - CVE-2099-0003
+  title: "Synthetic mixed-justification fixture"
+  description: >
+    Reviewed synthetic pack whose disjunction is false for two different
+    OpenVEX justifications. The engine must not pick one and call the asset
+    not_affected. Reviewer names are fixtures.
+  status: reviewed
+  synthetic: true
+  confidence_ceiling: high
+  authors:
+    - name: Uddeshya Kumar
+      role: fixture-author
+  reviewers:
+    - name: synthetic-reviewer-alpha
+      role: synthetic-fixture-reviewer
+    - name: synthetic-reviewer-beta
+      role: synthetic-fixture-reviewer
+  sources:
+    - url: https://example.com/verdict-synthetic-mixed
+      note: Reserved example URL. Not an advisory.
+  kb_min_version: demo-2026.11.08
+  evidence_max_age: 24h
+  limitations:
+    - "Synthetic. Mixed justifications stay needs_review."
+component:
+  purls:
+    - pkg:generic/synthetic-widget
+checks:
+  J1:
+    type: host_fact
+    key: synth.j1
+    equals: "true"
+    negation_justification: component_not_present
+  J2:
+    type: host_fact
+    key: synth.j2
+    equals: "true"
+    negation_justification: vulnerable_code_not_present
+conditions:
+  any_of:
+    - ref: J1
+    - ref: J2
+exposure:
+  port: 9
+  proto: tcp
+  untrusted_zones:
+    - internet
+remediation:
+  fix: "Synthetic fixture. There is nothing to patch."
+tests:
+  - name: one-branch-true
+    snapshot: ../../examples/snapshots/synthetic-mixed.json
+    asset: syn-mixed-affected
+    expect_state: exploitable
+    expect_vex: affected
+    expect_exposure_uncertainty: false
+  - name: mixed-justification
+    snapshot: ../../examples/snapshots/synthetic-mixed.json
+    asset: syn-mixed-split
+    expect_state: needs_review
+    expect_vex: under_investigation

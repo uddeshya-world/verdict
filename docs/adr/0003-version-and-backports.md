@@ -13,6 +13,7 @@ The design notes call distro advisory feeds the backlog item that fixes this. Th
 ## Decision
 
 - Package URL types `deb`, `rpm`, and `apk` never use `vercmp`. The leaf is unknown with reason `distro_advisory_required` unless the pack's `advisory_fact` is present and usable.
+- A package whose **name** matches a pattern but whose type or namespace does not (for example `pkg:rpm/.../log4j-core` against a `pkg:maven` pattern) is not `component_not_present`. The leaf is unknown until an advisory fact names that coordinate. Absence is only for a complete inventory that contains no package of those names.
 - Usable means the fact exists, is not stale, is not inferred, and its value is `affected` or `fixed`. A stale advisory does not fall through to version sorting.
 - `pkg:generic` with scheme `openssh_upstream` parses only `MAJOR.MINORpREVISION`. Any other string, including an Ubuntu revision glued onto a generic purl, is unknown.
 - `maven` parses a documented subset. Qualifiers outside that subset are unknown, so a rebuild suffix is not ordered as if it were upstream.

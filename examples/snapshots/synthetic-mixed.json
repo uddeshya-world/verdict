@@ -1,0 +1,119 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "syn-mixed-affected",
+      "name": "one branch true",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-aff",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.j1",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-j1",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.j2",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-j2",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-aff",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    },
+    {
+      "id": "syn-mixed-split",
+      "name": "two justifications",
+      "kind": "app",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-split",
+        "packages": [
+          {
+            "purl": "pkg:generic/synthetic-widget@1",
+            "version": "1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "synth.j1",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-j1",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "synth.j2",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-j2",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 9,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-split",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/synthetic-widget@1"
+    }
+  ]
+}
