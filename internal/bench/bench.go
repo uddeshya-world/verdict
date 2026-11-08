@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/uddeshya-world/verdict/internal/engine"
@@ -113,6 +114,9 @@ func LoadCorpus(data []byte) ([]Case, error) {
 			if c.ImportInput == "" || (c.ImportFormat != "cyclonedx" && c.ImportFormat != "trivy") {
 				return nil, fmt.Errorf("bench: %s needs import_input and import_format cyclonedx or trivy", c.ID)
 			}
+			if c.ExpectState == "" {
+				return nil, fmt.Errorf("bench: %s is an import case and needs expect_state", c.ID)
+			}
 		default:
 			return nil, fmt.Errorf("bench: %s kind %q", c.ID, c.Kind)
 		}
@@ -121,7 +125,40 @@ func LoadCorpus(data []byte) ([]Case, error) {
 }
 
 // Run scores every case. root is the module root.
+// UncoveredPacks lists repository packs that have no corpus case.
+func UncoveredPacks(root string, cases []Case) ([]string, error) {
+	covered := map[string]struct{}{}
+	for _, c := range cases {
+		covered[filepath.ToSlash(c.Pack)] = struct{}{}
+	}
+	var missing []string
+	for _, dir := range []string{"packs/draft", "packs/synthetic"} {
+		ents, err := os.ReadDir(filepath.Join(root, dir))
+		if err != nil {
+			return nil, err
+		}
+		for _, ent := range ents {
+			if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".yaml") {
+				continue
+			}
+			rel := dir + "/" + ent.Name()
+			if _, ok := covered[rel]; !ok {
+				missing = append(missing, rel)
+			}
+		}
+	}
+	sort.Strings(missing)
+	return missing, nil
+}
+
 func Run(root string, cases []Case) (*Report, error) {
+	missing, err := UncoveredPacks(root, cases)
+	if err != nil {
+		return nil, err
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("bench: packs with no corpus case: %s", strings.Join(missing, ", "))
+	}
 	rep := &Report{
 		ReviewedSimulation: true,
 		ReviewerNote:       "Draft packs are scored with two synthetic-reviewer-* names in memory. Those names are not a review of a real CVE and are not written back to the pack.",

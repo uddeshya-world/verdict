@@ -20,6 +20,9 @@ Adversarial fixtures from review:
 - `regresshion/import-complete-skips-openssh` — CycloneDX names openssh-server without a package URL. `--complete` must reject the file.
 - `regresshion/wrong-advisory-version` — `fixed` on a different package URL does not clear the installed build.
 - `xz/lab-xz-sshd-down` — xz 5.6.1 stays exploitable when sshd is down.
+- `log4shell/lab-log4j-property-set` — log4j-core 2.14.1 with JndiLookup present stays exploitable when `formatMsgNoLookups` is true. Removing the class is still a valid mitigation.
+
+Every pack file under `packs/draft` and `packs/synthetic` must appear in the corpus. An import case must set `expect_state`.
 
 Run from the module root:
 
