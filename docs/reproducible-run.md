@@ -40,7 +40,7 @@ Repeat with:
 
 An import does not use the clock or the network. The evaluation time is the flag. `--complete` is rejected when any component is skipped, so a missing package URL cannot be reported later as `component_not_present`.
 
-Advisory rows match an inventory package URL as an exact string, version and qualifiers included. Import keeps the package URL bytes from the file. It does not sort qualifiers and it does not decode percent-encoding. A row that differs fails closed.
+Import stores a canonical package URL: percent-escapes are decoded, reserved characters (`% @ ? # / & =`) are encoded again, and qualifiers are sorted. A colon in a version stays decoded. Qualifiers are kept, including `arch` and `epoch`, so an advisory that omits them does not match. `verdict snapshot merge` concatenates snapshot files that share `kb_version` and `evaluation_time`. Duplicate asset ids are rejected.
 
 ```bash
 ./verdict import cyclonedx \

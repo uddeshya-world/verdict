@@ -79,7 +79,7 @@ func findAdvisory(asset snapshot.Asset, key, packagePURL string) *snapshot.Fact 
 		return nil
 	}
 	for i := range asset.Facts {
-		if asset.Facts[i].Key == key && asset.Facts[i].PURL == packagePURL {
+		if asset.Facts[i].Key == key && purl.Same(asset.Facts[i].PURL, packagePURL) {
 			return &asset.Facts[i]
 		}
 	}
@@ -222,7 +222,11 @@ func evalWhen(w pack.WhenPackage, asset snapshot.Asset, eval time.Time, maxAge t
 	var matched []snapshot.Package
 	var extras []snapshot.Package
 	for _, pkg := range asset.Inventory.Packages {
-		parsed, err := purl.Parse(pkg.PURL)
+		canon, err := purl.Canonical(pkg.PURL)
+		if err != nil {
+			return whenResult{}, unknownLeaf("", "malformed_purl", pkg.PURL, nil)
+		}
+		parsed, err := purl.Parse(canon)
 		if err != nil {
 			return whenResult{}, unknownLeaf("", "malformed_purl", pkg.PURL, nil)
 		}
@@ -281,7 +285,11 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	var matched []snapshot.Package
 	var extras []snapshot.Package
 	for _, pkg := range asset.Inventory.Packages {
-		parsed, err := purl.Parse(pkg.PURL)
+		canon, err := purl.Canonical(pkg.PURL)
+		if err != nil {
+			return unknownLeaf(id, "malformed_purl", pkg.PURL, []string{asset.Inventory.EvidenceID})
+		}
+		parsed, err := purl.Parse(canon)
 		if err != nil {
 			return unknownLeaf(id, "malformed_purl", pkg.PURL, []string{asset.Inventory.EvidenceID})
 		}
