@@ -45,6 +45,15 @@ func TestCorpusHasNoFalseNotAffected(t *testing.T) {
 	if have["regresshion/lab-socket-activated"].ExpectState != "exploitable" {
 		t.Fatal("socket activation must stay exploitable")
 	}
+	flag := have["log4shell/lab-log4j-property-set"]
+	if flag.GroundTruth != "affected" || flag.ExpectState != "exploitable" {
+		t.Fatal("formatMsgNoLookups must not be labeled not_affected")
+	}
+	if _, err := UncoveredPacks(root, nil); err != nil {
+		t.Fatal(err)
+	} else if missing, _ := UncoveredPacks(root, nil); len(missing) == 0 {
+		t.Fatal("a corpus with no cases must report every pack")
+	}
 	rep, err := Run(root, cases)
 	if err != nil {
 		t.Fatal(err)
