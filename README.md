@@ -70,6 +70,8 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 
 The drill reads `evaluation_time` and `kb_version` from the snapshot. Pass `--evaluation-time` and `--kb-version` only to override those explicit inputs. The CLI does not substitute the current clock.
 
+**Offline knowledge bundles.** On the connected machine: `verdict bundle keygen`, then `verdict bundle build --dir <packs and OSV records> --kb-version 2026.11.09 --created-at <RFC3339> --key priv.pem --out kb.tar`. Carry `kb.tar` and `pub.pem` across. On the air-gapped side: `verdict bundle install --bundle kb.tar --pubkey pub.pem --dir kb/`, then `verdict drill --kb kb/2026.11.09 --pubkey pub.pem --cve CVE-... --snapshot ... --policy ...`. The drill re-verifies the stored bundle, uses the pack for that CVE, and falls back to the bundle's OSV records when there is none. Installed versions are immutable. Signing proves where the knowledge came from, not that a pack is correct.
+
 **No pack for this CVE yet?** `verdict drill --osv <record.json> --snapshot ... --policy ...` builds a version-only fallback in memory from local OSV records (download them on a connected machine, e.g. from osv.dev, and carry them in). It is always a draft with a low confidence ceiling. An in-range package is `affected`; an absent or out-of-range one is `needs_review`, never `not_affected`. Maven, npm, Go and crates.io ranges are compared. Distro ecosystems (Debian, Ubuntu, Alpine, Red Hat) are skipped and listed on stderr, because distro builds need an advisory fact. `--port`/`--proto` set the service to check exposure for; without them exposure is unknown and fails closed.
 
 `verdict bench --corpus bench/corpus.json` scores every labeled fixture, including socket activation, a skipped CycloneDX component with `--complete`, an advisory for a different package URL, and the backdoored xz build with sshd down. It exits non-zero on a false `not_affected`. The reviewed bar is applied in memory. See [bench/README.md](bench/README.md).
@@ -166,7 +168,7 @@ Threat model (design, with implemented versus planned controls separated): [docs
 Implemented in this foundation:
 
 - [x] Public documentation, license, threat model, ADRs, contributor and reviewer policy
-- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill` (pack or OSV fallback), `openvex validate`, `import`, `bench`
+- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill` (pack, OSV fallback, or installed bundle), `openvex validate`, `import`, `bench`, `bundle keygen/build/verify/install`
 - [x] Deterministic Kleene engine and strict `not_affected` proof
 - [x] Strict pack loader and linter
 - [x] Local snapshot input and offline demo
