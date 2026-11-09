@@ -232,6 +232,11 @@ func resolveFromKB(kbDir, pubPath, cve string, port int, proto string) (*kbResol
 	if err != nil {
 		return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
 	}
+	if base := filepath.Base(filepath.Clean(kbDir)); base != v.Manifest.KBVersion {
+		// install writes kb/<kb_version>/. A different signed bundle copied
+		// into that directory (for example an older one) is a rollback.
+		return nil, fmt.Errorf("--kb %s holds a bundle signed as kb_version %s; refusing a mismatched or rolled-back install", kbDir, v.Manifest.KBVersion)
+	}
 	res := &kbResolution{KBVersion: v.Manifest.KBVersion}
 	var matches []*pack.Pack
 	for _, p := range v.PackPaths() {

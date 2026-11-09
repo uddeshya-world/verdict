@@ -66,6 +66,19 @@ func TestBundleBuildInstallDrill(t *testing.T) {
 		"--snapshot", filepath.Join(root, "examples/snapshots/log4shell-lab.json"), "--out", filepath.Join(dir, "r3.json")); err == nil {
 		t.Fatal("unknown CVE accepted")
 	}
+	// A validly signed bundle for another version copied into this install is a rollback.
+	older := filepath.Join(dir, "older.tar")
+	if out, err := run("bundle", "build", "--dir", src, "--kb-version", "t0", "--created-at", "2026-11-01T06:00:00Z", "--key", priv, "--out", older); err != nil {
+		t.Fatalf("%v %s", err, out)
+	}
+	good, _ := os.ReadFile(filepath.Join(installed, "bundle.tar"))
+	oldRaw, _ := os.ReadFile(older)
+	os.WriteFile(filepath.Join(installed, "bundle.tar"), oldRaw, 0o644)
+	if out, err := run("drill", "--kb", installed, "--pubkey", pub, "--cve", "CVE-2024-6387",
+		"--snapshot", filepath.Join(root, "examples/snapshots/regresshion-lab.json"), "--out", filepath.Join(dir, "r5.json")); err == nil || !strings.Contains(out, "rolled-back") {
+		t.Fatalf("rollback accepted: %v %s", err, out)
+	}
+	os.WriteFile(filepath.Join(installed, "bundle.tar"), good, 0o644)
 	// Tampering with the stored bundle stops every later drill.
 	stored := filepath.Join(installed, "bundle.tar")
 	raw, _ := os.ReadFile(stored)
