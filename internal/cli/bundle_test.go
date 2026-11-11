@@ -75,7 +75,7 @@ func TestBundleBuildInstallDrill(t *testing.T) {
 	oldRaw, _ := os.ReadFile(older)
 	os.WriteFile(filepath.Join(installed, "bundle.tar"), oldRaw, 0o644)
 	if out, err := run("drill", "--kb", installed, "--pubkey", pub, "--cve", "CVE-2024-6387",
-		"--snapshot", filepath.Join(root, "examples/snapshots/regresshion-lab.json"), "--out", filepath.Join(dir, "r5.json")); err == nil || !strings.Contains(out, "rolled-back") {
+		"--snapshot", filepath.Join(root, "examples/snapshots/regresshion-lab.json"), "--out", filepath.Join(dir, "r5.json")); err == nil || !strings.Contains(err.Error(), "rolled-back") {
 		t.Fatalf("rollback accepted: %v %s", err, out)
 	}
 	os.WriteFile(filepath.Join(installed, "bundle.tar"), good, 0o644)
