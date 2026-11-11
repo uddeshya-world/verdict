@@ -827,18 +827,21 @@ func (c *k8sCluster) asset(w *k8sWorkload, opt K8sOptions, exp exposureSet) (sna
 
 // admissionWebhook decides ingress_nginx.admission_webhook for a controller.
 // true: a ValidatingWebhookConfiguration points at a Service selecting this
-// workload, or a controller container runs with --validating-webhook (the
+// workload, or any controller argv element mentions validating-webhook (the
 // listener is the CVE-2025-1974 attack surface even without the webhook
-// object). false: webhook objects are in the input, every one resolves to a
-// Service in the input, none selects this workload, and no container has the
-// flag. Anything else is unknown and the fact is omitted.
+// object). false: every controller container has an explicit argv without
+// that flag, webhook objects are in the input, every one resolves to a
+// Service in the input, and none selects this workload. A shell wrapper or
+// an image entrypoint (empty command and args) hides the real argv, so it
+// leaves the fact unknown. Anything else is unknown and the fact is omitted.
 func (c *k8sCluster) admissionWebhook(w *k8sWorkload) (string, bool) {
-	flag := false
-	for _, spec := range w.specs {
-		for _, ctr := range spec.Containers {
-			if hasValidatingWebhookFlag(ctr) {
-				flag = true
-			}
+	flag, opaque := false, false
+	for _, ctr := range controllerContainers(w) {
+		switch {
+		case mentionsValidatingWebhook(ctr):
+			flag = true
+		case argvOpaque(ctr):
+			opaque = true
 		}
 	}
 	match, unresolved := false, false
@@ -862,6 +865,9 @@ func (c *k8sCluster) admissionWebhook(w *k8sWorkload) (string, bool) {
 	switch {
 	case match || flag:
 		return "true", true
+	case opaque:
+		c.note("%s: controller argv is a shell wrapper or the image entrypoint; %s omitted (unknown)", w.key(), IngressNginxAdmissionFact)
+		return "", false
 	case !c.sawWebhooks:
 		c.note("%s: no ValidatingWebhookConfiguration in input; %s omitted (unknown)", w.key(), IngressNginxAdmissionFact)
 		return "", false
@@ -872,20 +878,56 @@ func (c *k8sCluster) admissionWebhook(w *k8sWorkload) (string, bool) {
 	return "false", true
 }
 
-func hasValidatingWebhookFlag(ctr k8sContainer) bool {
-	argv := append(append([]string{}, ctr.Command...), ctr.Args...)
-	for i, a := range argv {
-		if v, ok := strings.CutPrefix(a, "--validating-webhook="); ok {
-			if v != "" {
-				return true
+// controllerContainers are the containers running an ingress-nginx image.
+// If none can be identified, every container counts.
+func controllerContainers(w *k8sWorkload) []k8sContainer {
+	var all, ctrl []k8sContainer
+	for _, spec := range w.specs {
+		for _, ctr := range spec.Containers {
+			all = append(all, ctr)
+			if strings.Contains(strings.ToLower(ctr.Image), "ingress-nginx") {
+				ctrl = append(ctrl, ctr)
 			}
-			continue
 		}
-		if a == "--validating-webhook" && i+1 < len(argv) && argv[i+1] != "" {
+	}
+	if len(ctrl) == 0 {
+		return all
+	}
+	return ctrl
+}
+
+// mentionsValidatingWebhook is deliberately loose: any argv element that
+// contains the flag name counts, including inside a shell -c string.
+func mentionsValidatingWebhook(ctr k8sContainer) bool {
+	for _, a := range append(append([]string{}, ctr.Command...), ctr.Args...) {
+		if strings.Contains(a, "validating-webhook") {
 			return true
 		}
 	}
 	return false
+}
+
+var shells = map[string]struct{}{"sh": {}, "bash": {}, "ash": {}, "dash": {}, "zsh": {}, "ksh": {}, "busybox": {}, "dumb-init": {}, "tini": {}}
+
+// argvOpaque reports whether the process arguments cannot be read from the
+// spec: no command and no args (the image entrypoint decides), or a shell or
+// init wrapper that runs a string or another program.
+func argvOpaque(ctr k8sContainer) bool {
+	argv := append(append([]string{}, ctr.Command...), ctr.Args...)
+	if len(argv) == 0 {
+		return true
+	}
+	for _, a := range argv {
+		if a == "-c" {
+			return true
+		}
+	}
+	first := argv[0]
+	if i := strings.LastIndex(first, "/"); i >= 0 {
+		first = first[i+1:]
+	}
+	_, ok := shells[first]
+	return ok
 }
 
 type imageRef struct {

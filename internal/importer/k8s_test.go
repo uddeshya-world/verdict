@@ -200,17 +200,53 @@ func TestWebhookAbsentOmitsFact(t *testing.T) {
 	}
 }
 
-func TestWebhookFalseOnlyWhenEverythingResolves(t *testing.T) {
-	otherVWC := strings.NewReplacer("ingress-nginx-controller-admission", "other-webhook", "ingress-nginx-admission", "other").Replace(vwc)
-	otherSvc := `{"apiVersion": "v1", "kind": "Service", "metadata": {"name": "other-webhook", "namespace": "ingress-nginx"},
-	  "spec": {"selector": {"app": "other"}, "ports": [{"port": 443}]}}`
+// An unrelated, fully resolvable webhook (cert-manager).
+const certManagerVWC = `{"apiVersion": "admissionregistration.k8s.io/v1", "kind": "ValidatingWebhookConfiguration",
+  "metadata": {"name": "cert-manager-webhook"},
+  "webhooks": [{"name": "webhook.cert-manager.io",
+    "clientConfig": {"service": {"namespace": "cert-manager", "name": "cert-manager-webhook", "port": 443}}}]}`
+
+const certManagerSvc = `{"apiVersion": "v1", "kind": "Service", "metadata": {"name": "cert-manager-webhook", "namespace": "cert-manager"},
+  "spec": {"selector": {"app.kubernetes.io/name": "webhook"}, "ports": [{"port": 443, "targetPort": 10250}]}}`
+
+func TestWebhookOpaqueArgv(t *testing.T) {
 	img := "registry.k8s.io/ingress-nginx/controller:v1.11.4"
-	got := runK8s(t, k8sOpt(), list(controller(img, `[]`), otherVWC, otherSvc))
+	withCommand := func(cmd string) string {
+		return strings.Replace(controller(img, `[]`), `"args": []`, `"command": `+cmd, 1)
+	}
+	cases := []struct {
+		name, deploy, want string
+	}{
+		{"shell wrapper with flag", withCommand(`["/bin/sh", "-c", "/nginx-ingress-controller --validating-webhook=:8443 --ingress-class=nginx"]`), "true"},
+		{"shell wrapper without flag", withCommand(`["/bin/sh", "-c", "/nginx-ingress-controller --ingress-class=nginx"]`), ""},
+		{"shell script without -c", withCommand(`["bash", "/start.sh"]`), ""},
+		{"empty command and args", controller(img, `[]`), ""},
+	}
+	for _, tc := range cases {
+		got := runK8s(t, k8sOpt(), list(tc.deploy, certManagerVWC, certManagerSvc))
+		f := admissionFact(got.Snapshot.Assets[0])
+		switch {
+		case tc.want == "" && f != nil:
+			t.Errorf("%s: want omitted, got %+v", tc.name, f)
+		case tc.want != "" && (f == nil || f.Value != tc.want):
+			t.Errorf("%s: want %s, got %+v", tc.name, tc.want, f)
+		}
+		if tc.want == "" && !strings.Contains(strings.Join(got.Skipped, "\n"), "shell wrapper or the image entrypoint") {
+			t.Errorf("%s: no note: %v", tc.name, got.Skipped)
+		}
+	}
+}
+
+func TestWebhookFalseOnlyWhenEverythingResolves(t *testing.T) {
+	otherVWC, otherSvc := certManagerVWC, certManagerSvc
+	img := "registry.k8s.io/ingress-nginx/controller:v1.11.4"
+	explicit := `["/nginx-ingress-controller", "--ingress-class=nginx"]`
+	got := runK8s(t, k8sOpt(), list(controller(img, explicit), otherVWC, otherSvc))
 	if f := admissionFact(got.Snapshot.Assets[0]); f == nil || f.Value != "false" {
-		t.Fatalf("want false: %+v", f)
+		t.Fatalf("explicit argv without the flag plus unrelated VWC: want false, got %+v", f)
 	}
 	// Same, but the webhook's Service is not in the input: unknown.
-	got = runK8s(t, k8sOpt(), list(controller(img, `[]`), otherVWC))
+	got = runK8s(t, k8sOpt(), list(controller(img, explicit), otherVWC))
 	if f := admissionFact(got.Snapshot.Assets[0]); f != nil {
 		t.Fatalf("unresolved webhook must leave the fact unknown: %+v", f)
 	}
