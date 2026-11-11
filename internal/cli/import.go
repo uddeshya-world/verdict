@@ -27,6 +27,7 @@ are not copied. Advisory status is a separate local file you write.`,
 	cmd.AddCommand(newImportAdvisories(stderr))
 	cmd.AddCommand(newImportJar(stdout, stderr))
 	cmd.AddCommand(newImportK8s(stdout, stderr))
+	cmd.AddCommand(newImportHost(stdout, stderr))
 	return cmd
 }
 
