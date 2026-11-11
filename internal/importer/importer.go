@@ -35,9 +35,12 @@ type InventoryOptions struct {
 }
 
 // Result is a snapshot plus packages that were skipped.
+// Notes explain facts an importer chose not to emit. They do not block
+// --complete; Skipped does.
 type Result struct {
 	Snapshot *snapshot.Snapshot
 	Skipped  []string
+	Notes    []string
 }
 
 // CycloneDX reads one CycloneDX JSON BOM into one asset.
