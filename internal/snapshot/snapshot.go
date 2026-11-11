@@ -130,7 +130,7 @@ func validate(s *Snapshot) error {
 		}
 		seen[a.ID] = struct{}{}
 		switch a.Kind {
-		case "host", "container", "pod", "image", "appliance", "app":
+		case "host", "container", "pod", "image", "appliance", "app", "k8s_workload":
 		default:
 			return fmt.Errorf("snapshot: asset %s kind %q is invalid", a.ID, a.Kind)
 		}
