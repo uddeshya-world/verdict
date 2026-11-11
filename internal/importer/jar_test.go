@@ -131,6 +131,28 @@ func TestJarClassRemovedAbsent(t *testing.T) {
 	if f == nil || f.Value != "absent" {
 		t.Fatalf("%+v", f)
 	}
+	// Without --complete other classpath archives may exist: below the not_affected bar.
+	if f.Confidence != "medium" {
+		t.Fatalf("absent without --complete has confidence %s", f.Confidence)
+	}
+	noted := false
+	for _, n := range got.Notes {
+		if strings.Contains(n, "below the not_affected bar") {
+			noted = true
+		}
+	}
+	if !noted {
+		t.Fatalf("%v", got.Notes)
+	}
+	opt := jarOpts()
+	opt.Complete = true
+	got, err = Jar([]JarInput{{Name: "log4j-core.jar", Data: log4jCore(t, "2.14.1", false)}}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f == nil || f.Value != "absent" || f.Confidence != "high" {
+		t.Fatalf("%+v", f)
+	}
 }
 
 func TestJarNoLog4jOmitsFact(t *testing.T) {
@@ -171,14 +193,53 @@ func TestJarWarNested(t *testing.T) {
 	if f := fact(a, JndiLookupFactKey); f == nil || f.Value != "present" || !strings.Contains(f.Source, "app.war!/WEB-INF/lib/log4j-core-2.17.1.jar") {
 		t.Fatalf("%+v", f)
 	}
-	// The WAR itself has no coordinates, so it is skipped and --complete is refused.
-	if len(got.Skipped) != 1 || !strings.HasPrefix(got.Skipped[0], "app.war:") {
+	// The WAR has no coordinates of its own, but every nested library was
+	// identified, so it is a scanned container and --complete is usable.
+	if len(got.Skipped) != 0 {
+		t.Fatalf("%v", got.Skipped)
+	}
+	opt := jarOpts()
+	opt.Complete = true
+	done, err := Jar([]JarInput{{Name: "app.war", Data: war}}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !done.Snapshot.Assets[0].Inventory.Complete {
+		t.Fatal("complete flag dropped")
+	}
+}
+
+func TestJarContainerWithUnidentifiedLibraryIsSkipped(t *testing.T) {
+	war := buildZip(t,
+		zentry{name: "WEB-INF/lib/log4j-core-2.17.1.jar", body: log4jCore(t, "2.17.1", true), store: true},
+		zentry{name: "WEB-INF/lib/mystery.jar", body: buildZip(t, class("x/Y.class")), store: true},
+	)
+	got, err := Jar([]JarInput{{Name: "app.war", Data: war}}, jarOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Skipped) != 2 {
 		t.Fatalf("%v", got.Skipped)
 	}
 	opt := jarOpts()
 	opt.Complete = true
 	if _, err := Jar([]JarInput{{Name: "app.war", Data: war}}, opt); err == nil || !strings.Contains(err.Error(), "cannot be complete") {
 		t.Fatal(err)
+	}
+	// A bare archive with no nested libraries is never a container.
+	lone := buildZip(t, class("x/Y.class"))
+	got, err = Jar([]JarInput{{Name: "app.war", Data: war}, {Name: "lone.jar", Data: lone}}, jarOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, s := range got.Skipped {
+		if strings.HasPrefix(s, "lone.jar:") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("%v", got.Skipped)
 	}
 }
 

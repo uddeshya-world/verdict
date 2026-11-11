@@ -11,8 +11,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/uddeshya-world/verdict/internal/engine"
+	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/policy"
+	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
 func writeLog4jJar(t *testing.T, path string, withJndi bool) {
@@ -139,5 +143,67 @@ func TestImportJarRejectsTraversal(t *testing.T) {
 	}
 	if _, statErr := os.Stat(out); !os.IsNotExist(statErr) {
 		t.Fatal("snapshot written for a refused archive")
+	}
+}
+
+// evalReviewed drills a snapshot against the log4j pack with the reviewed bar
+// applied in memory, the way internal/bench does. The pack file is unchanged.
+func evalReviewed(t *testing.T, root, snapPath string) engine.Verdict {
+	t.Helper()
+	packPath := filepath.Join(root, "packs/draft/ecp-cve-2021-44228-log4j.yaml")
+	pdata, err := os.ReadFile(packPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := pack.Load(packPath, pdata)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.Metadata.Status = "reviewed"
+	p.Metadata.Reviewers = []pack.Person{{Name: "synthetic-reviewer-alpha"}, {Name: "synthetic-reviewer-beta"}}
+	poldata, err := os.ReadFile(filepath.Join(root, "examples/policy/lab-zones.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pol, err := policy.Load(poldata)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sdata, err := os.ReadFile(snapPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	snap, err := snapshot.Load(sdata)
+	if err != nil {
+		t.Fatal(err)
+	}
+	evalAt, err := time.Parse(time.RFC3339, snap.EvaluationTime)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep, err := engine.Evaluate(engine.Input{Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: snap.KBVersion})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rep.Verdicts[0]
+}
+
+// A host can carry log4j-core on a classpath the operator did not pass, such
+// as an application server lib directory. Without --complete, a removed class
+// in the scanned archives must not clear the CVE even under a reviewed pack.
+func TestImportJarClassRemovedNeverNotAffectedWithoutComplete(t *testing.T) {
+	root := moduleRoot(t)
+	dir := t.TempDir()
+	importAndDrill(t, root, dir, "jar-partial", false)
+	v := evalReviewed(t, root, filepath.Join(dir, "jar-partial.json"))
+	if v.State == "not_affected" || v.VEXStatus == "not_affected" {
+		t.Fatalf("partial classpath produced not_affected under a reviewed pack: %+v", v)
+	}
+	// Control: the same bytes declared complete do reach the reviewed bar, so the
+	// assertion above is held by the medium confidence and not by something else.
+	importAndDrill(t, root, dir, "jar-complete", false, "--complete")
+	v = evalReviewed(t, root, filepath.Join(dir, "jar-complete.json"))
+	if v.State != "not_affected" {
+		t.Fatalf("control: complete classpath with class removed: state=%s vex=%s reasons=%v", v.State, v.VEXStatus, v.Reasons)
 	}
 }

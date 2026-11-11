@@ -111,6 +111,8 @@ type archiveScan struct {
 	jndiPath   string
 	coreClass  bool
 	identified bool // carries log4j-core coordinates
+	children   []*archiveScan
+	childErr   bool // a nested archive could not be read
 }
 
 type jarScanner struct {
@@ -158,13 +160,13 @@ func Jar(inputs []JarInput, opt JarOptions) (*Result, error) {
 		}
 		sum := sha256.Sum256(in.Data)
 		inv.Write(sum[:])
-		if err := sc.scan(in.Data, label, 0); err != nil {
+		if _, err := sc.scan(in.Data, label, 0); err != nil {
 			return nil, fmt.Errorf("import jar: %w", err)
 		}
 	}
 
 	pkgs, skipped := sc.packages()
-	fact, notes := sc.jndiFact(opt.ObservedAt)
+	fact, notes := sc.jndiFact(opt.ObservedAt, opt.Complete)
 	if opt.Complete && len(skipped) > 0 {
 		return nil, fmt.Errorf("import jar: inventory cannot be complete: %d components skipped (%s)", len(skipped), strings.Join(skipped, "; "))
 	}
@@ -245,25 +247,25 @@ func JavaMajor(v string) (int, error) {
 	return first, nil
 }
 
-func (sc *jarScanner) scan(data []byte, where string, depth int) error {
+func (sc *jarScanner) scan(data []byte, where string, depth int) (*archiveScan, error) {
 	if depth > sc.lim.MaxDepth {
-		return fmt.Errorf("%s: %w: nesting depth exceeds %d", where, ErrJarLimit, sc.lim.MaxDepth)
+		return nil, fmt.Errorf("%s: %w: nesting depth exceeds %d", where, ErrJarLimit, sc.lim.MaxDepth)
 	}
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil && !errors.Is(err, zip.ErrInsecurePath) {
-		return fmt.Errorf("%s: not a readable zip archive: %w", where, err)
+		return nil, fmt.Errorf("%s: not a readable zip archive: %w", where, err)
 	}
 	if zr == nil {
-		return fmt.Errorf("%s: not a readable zip archive", where)
+		return nil, fmt.Errorf("%s: not a readable zip archive", where)
 	}
 	sc.entries += len(zr.File)
 	if sc.entries > sc.lim.MaxEntries {
-		return fmt.Errorf("%s: %w: more than %d entries", where, ErrJarLimit, sc.lim.MaxEntries)
+		return nil, fmt.Errorf("%s: %w: more than %d entries", where, ErrJarLimit, sc.lim.MaxEntries)
 	}
 	// Names are checked before anything is read, so one bad name refuses the whole archive.
 	for _, f := range zr.File {
 		if err := checkEntryName(f.Name); err != nil {
-			return fmt.Errorf("%s: %w: %v", where, ErrJarLimit, err)
+			return nil, fmt.Errorf("%s: %w: %v", where, ErrJarLimit, err)
 		}
 	}
 	sum := sha256.Sum256(data)
@@ -291,13 +293,13 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) error {
 		case name == "META-INF/MANIFEST.MF":
 			body, err := sc.read(f, where)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			as.manifest = manifestCoord(body, where+"!/"+name)
 		case isPomProperties(name):
 			body, err := sc.read(f, where)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			c, perr := pomCoord(name, body)
 			if perr != nil {
@@ -322,16 +324,20 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) error {
 	for _, ch := range children {
 		body, err := sc.read(ch.f, where)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if err := sc.scan(body, where+"!/"+ch.name, depth+1); err != nil {
+		child, err := sc.scan(body, where+"!/"+ch.name, depth+1)
+		if err != nil {
 			if errors.Is(err, ErrJarLimit) {
-				return err
+				return nil, err
 			}
+			as.childErr = true
 			sc.skipped = append(sc.skipped, err.Error())
+			continue
 		}
+		as.children = append(as.children, child)
 	}
-	return nil
+	return as, nil
 }
 
 // read returns one entry, bounded by the per-entry and total caps. The
@@ -461,13 +467,9 @@ func (sc *jarScanner) packages() ([]snapshot.Package, []string) {
 	byPURL := map[string]snapshot.Package{}
 	for _, as := range sc.scans {
 		skipped = append(skipped, as.pomErrs...)
-		coords := as.poms
-		if len(coords) == 0 && len(as.pomErrs) == 0 {
-			if as.manifest != nil {
-				coords = []coord{*as.manifest}
-			} else {
-				skipped = append(skipped, as.where+": no pom.properties and the manifest does not name a known component")
-			}
+		coords := as.coords()
+		if len(coords) == 0 && len(as.pomErrs) == 0 && !as.container() {
+			skipped = append(skipped, as.where+": no pom.properties and the manifest does not name a known component")
 		}
 		for _, c := range coords {
 			pkg, err := packageFromPURL("pkg:maven/"+c.group+"/"+c.artifact+"@"+c.version, "")
@@ -492,21 +494,56 @@ func (sc *jarScanner) packages() ([]snapshot.Package, []string) {
 	return pkgs, skipped
 }
 
+// coords is what identifies this archive: its pom.properties, or the
+// manifest fallback when it has none.
+func (as *archiveScan) coords() []coord {
+	if len(as.poms) > 0 || len(as.pomErrs) > 0 {
+		return as.poms
+	}
+	if as.manifest != nil {
+		return []coord{*as.manifest}
+	}
+	return nil
+}
+
+// container reports an archive without its own coordinates (a WAR, EAR, or
+// fat jar) that is accepted as scanned rather than skipped. Every nested
+// archive must have been read and be identified or itself such a container,
+// and it must not hold log4j-core classes of its own. An archive with no
+// nested archives is never a container.
+func (as *archiveScan) container() bool {
+	if len(as.children) == 0 || as.childErr || as.coreClass {
+		return false
+	}
+	for _, ch := range as.children {
+		if len(ch.pomErrs) > 0 || (len(ch.coords()) == 0 && !ch.container()) {
+			return false
+		}
+	}
+	return true
+}
+
 // jndiFact applies the Log4Shell class rule:
 // present if the class is in any scanned archive; absent only if every
 // identified log4j-core copy holds other log4j-core classes but not this
 // one and no unidentified log4j-core classes were seen; otherwise omitted.
-func (sc *jarScanner) jndiFact(observedAt string) (*snapshot.Fact, []string) {
-	mk := func(value string, as *archiveScan, inner string) *snapshot.Fact {
+//
+// absent only describes the archives that were passed in. Another archive
+// on the same classpath (an application server lib directory, for example)
+// may still carry the class, so absent is high confidence only when the
+// operator marked the inventory complete. Otherwise it is medium, which is
+// below the not_affected bar.
+func (sc *jarScanner) jndiFact(observedAt string, complete bool) (*snapshot.Fact, []string) {
+	mk := func(value string, as *archiveScan, inner, confidence string) *snapshot.Fact {
 		return &snapshot.Fact{
-			Key: JndiLookupFactKey, Value: value, Basis: "observed", Confidence: "high",
+			Key: JndiLookupFactKey, Value: value, Basis: "observed", Confidence: confidence,
 			ObservedAt: observedAt, EvidenceID: "e-jar-" + shortHash([]byte(as.sum+"\x00"+inner)),
 			Source: jarFactSource + " " + as.where,
 		}
 	}
 	for _, as := range sc.scans {
 		if as.jndiPath != "" {
-			return mk("present", as, as.jndiPath), nil
+			return mk("present", as, as.jndiPath, "high"), nil
 		}
 	}
 	var copies []*archiveScan
@@ -527,7 +564,11 @@ func (sc *jarScanner) jndiFact(observedAt string) (*snapshot.Fact, []string) {
 			return nil, []string{JndiLookupFactKey + " omitted: " + as.where + " names log4j-core but holds no log4j-core classes, so the class may live elsewhere"}
 		}
 	}
-	return mk("absent", copies[0], "absent:"+jndiLookupClass), nil
+	if !complete {
+		return mk("absent", copies[0], "absent:"+jndiLookupClass, "medium"),
+			[]string{JndiLookupFactKey + " absent at medium confidence, below the not_affected bar: other archives on this classpath were not scanned. Pass every classpath archive with --complete to record it at high"}
+	}
+	return mk("absent", copies[0], "absent:"+jndiLookupClass, "high"), nil
 }
 
 func shortHash(b []byte) string {

@@ -30,7 +30,9 @@ Anything else is listed as skipped and no version is invented.
 
 jar.class.org.apache.logging.log4j.core.lookup.JndiLookup is present when the
 class is in any scanned archive, absent only when every identified log4j-core
-copy lacks it, and omitted otherwise. runtime.jdk9_or_newer is written only
+copy lacks it, and omitted otherwise. absent is high confidence only with
+--complete (every classpath archive passed); otherwise it is medium, below the
+not_affected bar. runtime.jdk9_or_newer is written only
 from --java-version, as an attested operator statement. Class file versions
 are a compile target and are not read as the runtime.
 
@@ -91,7 +93,7 @@ that exceeds a cap or holds an unsafe entry name is refused.`,
 	cmd.Flags().StringVar(&assetName, "asset-name", "", "snapshot asset name")
 	cmd.Flags().StringVar(&kind, "kind", "app", "asset kind")
 	cmd.Flags().StringSliceVar(&zones, "zone", nil, "asset zone label; repeat for more than one. This is not an exposure observation")
-	cmd.Flags().BoolVar(&complete, "complete", false, "mark the inventory complete; refused when anything was skipped")
+	cmd.Flags().BoolVar(&complete, "complete", false, "assert every classpath archive was passed; refused when anything was skipped. Required for a high-confidence JndiLookup absent")
 	cmd.Flags().StringVar(&kb, "kb-version", "", "knowledge-bundle version string")
 	cmd.Flags().StringVar(&evalAt, "evaluation-time", "", "RFC3339 evaluation time; the clock is not read")
 	cmd.Flags().StringVar(&observedAt, "observed-at", "", "RFC3339 time the archives were read; defaults to --evaluation-time")
