@@ -1,0 +1,24 @@
+{
+  "schema": "verdict.collect-host/v1",
+  "collector": "collect-host.sh",
+  "hostname": "lab-ubuntu-sshd",
+  "collected_at": "2026-11-08T11:00:00Z",
+  "os": {"id": "ubuntu", "version_id": "22.04"},
+  "packages": [
+    {"manager": "dpkg", "name": "libc6", "version": "2.35-0ubuntu3.15", "purl": "pkg:deb/ubuntu/libc6@2.35-0ubuntu3.15?arch=arm64&distro=ubuntu-22.04"},
+    {"manager": "dpkg", "name": "liblzma5", "version": "5.2.5-2ubuntu1.2", "purl": "pkg:deb/ubuntu/liblzma5@5.2.5-2ubuntu1.2?arch=arm64&distro=ubuntu-22.04"},
+    {"manager": "dpkg", "name": "openssh-client", "version": "1:8.9p1-3ubuntu0.18", "purl": "pkg:deb/ubuntu/openssh-client@1:8.9p1-3ubuntu0.18?arch=arm64&distro=ubuntu-22.04"},
+    {"manager": "dpkg", "name": "openssh-server", "version": "1:8.9p1-3ubuntu0.18", "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.18?arch=arm64&distro=ubuntu-22.04"},
+    {"manager": "dpkg", "name": "xz-utils", "version": "5.2.5-2ubuntu1.2", "purl": "pkg:deb/ubuntu/xz-utils@5.2.5-2ubuntu1.2?arch=arm64&distro=ubuntu-22.04"}
+  ],
+  "unparsed": [],
+  "facts": {
+    "libc.family": "glibc",
+    "process.sshd.links_liblzma": "true",
+    "process.listening.sshd": "true",
+    "service.socket_activation.sshd": "false",
+    "config.sshd.LoginGraceTime": "120"
+  },
+  "listening": [{"port": 22, "proto": "tcp", "process": "sshd"}],
+  "notes": ["listening sockets from ss -ltnp", "LoginGraceTime from sshd -T"]
+}

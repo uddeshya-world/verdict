@@ -1,6 +1,6 @@
 # Evidence trust boundary
 
-v0.1 does not collect evidence. It evaluates evidence you put in a JSON snapshot.
+v0.1 does not collect evidence. It evaluates evidence you put in a JSON snapshot. `scripts/collect-host.sh` is a script you run on a host yourself. Its output is imported as `observed` and `high`, but Verdict cannot tell that the file came from that script or that host, so it is caller-asserted like any other snapshot input.
 
 `evidence_trust` must be the string `caller_asserted`. Any other value, including `verified`, `signed`, or `high`, is rejected. The report then labels every verdict `evidence_trust: caller_asserted_unverified`.
 

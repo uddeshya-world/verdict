@@ -26,6 +26,7 @@ are not copied. Advisory status is a separate local file you write.`,
 	cmd.AddCommand(newImportSBOM("trivy", stdout, stderr, importer.Trivy))
 	cmd.AddCommand(newImportAdvisories(stderr))
 	cmd.AddCommand(newImportJar(stdout, stderr))
+	cmd.AddCommand(newImportHost(stdout, stderr))
 	return cmd
 }
 
