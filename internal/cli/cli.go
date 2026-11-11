@@ -18,6 +18,7 @@ import (
 	"github.com/uddeshya-world/verdict/internal/canonjson"
 	"github.com/uddeshya-world/verdict/internal/engine"
 	"github.com/uddeshya-world/verdict/internal/export/openvex"
+	"github.com/uddeshya-world/verdict/internal/osv"
 	"github.com/uddeshya-world/verdict/internal/pack"
 	"github.com/uddeshya-world/verdict/internal/policy"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
@@ -205,21 +206,43 @@ func loadPolicy(packPath, rel string) (*policy.Policy, error) {
 }
 
 func newDrill(stdout, stderr io.Writer) *cobra.Command {
-	var packPath, snapPath, policyPath, outPath, vexPath, author, evalFlag, kbFlag, asset string
+	var packPath, snapPath, policyPath, outPath, vexPath, author, evalFlag, kbFlag, asset, cveFlag, osvProto string
+	var osvPaths []string
+	var osvPort int
 	cmd := &cobra.Command{
 		Use:   "drill",
-		Short: "Evaluate one pack against a local snapshot",
+		Short: "Evaluate one pack, or a version-only OSV fallback, against a local snapshot",
+		Long: `drill evaluates a condition pack against a local snapshot.
+
+When no pack exists for a CVE, pass --osv with local OSV records instead of
+--pack. Verdict builds a version-only fallback in memory: a draft with a low
+confidence ceiling. An in-range package is affected. An absent or
+out-of-range package is needs_review, never not_affected. Distro ecosystems
+are skipped and need an advisory fact.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if packPath == "" || snapPath == "" {
-				return &ExitError{Code: 2, Err: fmt.Errorf("--pack and --snapshot are required")}
+			if snapPath == "" || (packPath == "") == (len(osvPaths) == 0) {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and exactly one of --pack or --osv are required")}
 			}
-			pdata, err := os.ReadFile(packPath)
-			if err != nil {
-				return &ExitError{Code: 2, Err: err}
-			}
-			p, err := pack.Load(packPath, pdata)
-			if err != nil {
-				return &ExitError{Code: 2, Err: err}
+			var p *pack.Pack
+			if packPath != "" {
+				pdata, err := os.ReadFile(packPath)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+				p, err = pack.Load(packPath, pdata)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+			} else {
+				fb, err := loadFallback(osvPaths, cveFlag, osvPort, osvProto)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+				p = fb.Pack
+				fmt.Fprintf(stderr, "fallback %s: version-only from OSV, draft, confidence ceiling low. It cannot say not_affected.\n", p.Metadata.ID)
+				for _, s := range fb.Skipped {
+					fmt.Fprintf(stderr, "fallback skipped: %s\n", s)
+				}
 			}
 			sdata, err := os.ReadFile(snapPath)
 			if err != nil {
@@ -310,6 +333,10 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&packPath, "pack", "", "condition pack YAML")
+	cmd.Flags().StringArrayVar(&osvPaths, "osv", nil, "local OSV record JSON (repeatable); builds a version-only fallback instead of --pack")
+	cmd.Flags().StringVar(&cveFlag, "cve", "", "CVE id to select from the OSV records; inferred when they name exactly one")
+	cmd.Flags().IntVar(&osvPort, "port", 1, "service port for the fallback exposure check; the default matches no service, so exposure stays unknown")
+	cmd.Flags().StringVar(&osvProto, "proto", "tcp", "service protocol for the fallback exposure check")
 	cmd.Flags().StringVar(&snapPath, "snapshot", "", "local inventory snapshot JSON")
 	cmd.Flags().StringVar(&policyPath, "policy", "", "site zone policy JSON; without it exposure stays unknown")
 	cmd.Flags().StringVar(&outPath, "out", "", "write the JSON report here instead of stdout")
@@ -319,6 +346,31 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 	cmd.Flags().StringVar(&kbFlag, "kb-version", "", "override snapshot kb_version")
 	cmd.Flags().StringVar(&asset, "asset", "", "evaluate a single asset id")
 	return cmd
+}
+
+func loadFallback(paths []string, cve string, port int, proto string) (*osv.Build, error) {
+	var recs []osv.Record
+	var raws [][]byte
+	for _, path := range paths {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		rs, err := osv.Parse(raw)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+		recs = append(recs, rs...)
+		raws = append(raws, raw)
+	}
+	if cve == "" {
+		var err error
+		cve, err = osv.CVEOf(recs)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return osv.BuildPack(recs, cve, raws, port, proto)
 }
 
 func newOpenVEX() *cobra.Command {

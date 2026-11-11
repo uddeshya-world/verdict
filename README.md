@@ -70,6 +70,8 @@ Offline demo (also exercised by `scripts/demo.sh` and by tests):
 
 The drill reads `evaluation_time` and `kb_version` from the snapshot. Pass `--evaluation-time` and `--kb-version` only to override those explicit inputs. The CLI does not substitute the current clock.
 
+**No pack for this CVE yet?** `verdict drill --osv <record.json> --snapshot ... --policy ...` builds a version-only fallback in memory from local OSV records (download them on a connected machine, e.g. from osv.dev, and carry them in). It is always a draft with a low confidence ceiling. An in-range package is `affected`; an absent or out-of-range one is `needs_review`, never `not_affected`. Maven, npm, Go and crates.io ranges are compared. Distro ecosystems (Debian, Ubuntu, Alpine, Red Hat) are skipped and listed on stderr, because distro builds need an advisory fact. `--port`/`--proto` set the service to check exposure for; without them exposure is unknown and fails closed.
+
 `verdict bench --corpus bench/corpus.json` scores every labeled fixture, including socket activation, a skipped CycloneDX component with `--complete`, an advisory for a different package URL, and the backdoored xz build with sshd down. It exits non-zero on a false `not_affected`. The reviewed bar is applied in memory. See [bench/README.md](bench/README.md).
 
 `verdict import cyclonedx` and `verdict import trivy` read a JSON file you already have and write a snapshot. Packages without a package URL are skipped. A Trivy `Vulnerabilities` array is not copied, so a scanner's fixed/affected decision does not become an advisory fact. The inventory defaults to `attested` and `medium`. `--complete` is refused when any component was skipped. `verdict import advisories` merges a local file of `affected`, `fixed`, or `not_affected` rows and warns when a row's package URL is not in that asset's inventory. That path does not download a USN or RHSA feed. Import canonicalizes package URLs by decoding percent-escapes and sorting qualifiers. Qualifiers stay part of the match. `verdict snapshot merge` joins those snapshots when the evaluation time and knowledge-bundle version are the same.
@@ -164,7 +166,7 @@ Threat model (design, with implemented versus planned controls separated): [docs
 Implemented in this foundation:
 
 - [x] Public documentation, license, threat model, ADRs, contributor and reviewer policy
-- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill`, `openvex validate`, `import`, `bench`
+- [x] Go / Cobra CLI: `pack lint`, `pack test`, `drill` (pack or OSV fallback), `openvex validate`, `import`, `bench`
 - [x] Deterministic Kleene engine and strict `not_affected` proof
 - [x] Strict pack loader and linter
 - [x] Local snapshot input and offline demo
