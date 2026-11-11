@@ -43,7 +43,7 @@ An operator runs `verdict` on a machine they control, against a pack file and a 
 | A12 | Pack contains a shell command or probe and the CLI runs it | Remote code execution via untrusted pack | **Implemented:** no such field; probes are not representable |
 | A13 | CLI phones home with inventory | Data leaves an air-gapped host | **Implemented** on the current command set: no dial. A test walks production imports |
 | A14 | Demo snapshot is mistaken for a real assessment | Wrong operational decision | **Implemented** in documentation and in `evidence_trust`. Examples use `lab-` and `syn-` ids |
-| A15 | Malicious reviewed pack from a future distribution channel | Systematic false `not_affected` | **Planned.** Not mitigated by signatures, because signing is not built. In-tree policy is a review rule, not a technical control against a pack the operator passes by path |
+| A15 | Malicious or swapped pack in transit to the air-gapped side | Systematic false `not_affected` | **Partial.** `verdict bundle` signs a manifest of SHA-256 hashes with Ed25519. `bundle verify`/`install` and `drill --kb` reject a bad signature, an unlisted, missing, duplicate, non-regular, hidden, or traversing member, and a key_id mismatch, and re-verify the stored tar on every drill. `drill --kb` also requires the signed kb_version to equal the install directory name, so a validly signed older bundle copied over an install is refused. A whole install directory swapped for an older one is not detected (no freshness or monotonic-version check). One trusted key per invocation; no key rotation, revocation, or transparency log. A pack passed by `--pack` path is still unsigned input. A signed pack that is wrong is still wrong: signing proves origin, not correctness |
 | A16 | Tool database of exploitable hosts is stolen | Map of weaknesses | **Not applicable.** No database is implemented. Reports written to disk have the sensitivity of their inputs; the CLI does not encrypt them |
 | A17 | Secrets in a snapshot land in the report | Disclosure via the JSON the operator asked to write | **Partial.** The engine copies evidence ids and fact values that a check compared, and it does not have a secret scanner. Do not put secrets in snapshots. There is no log file |
 | A18 | Dependency confusion or a compromised module at build time | Malicious binary | **Partial.** `go.sum` pins modules for this commit. There is no signed release and no SLSA provenance |
@@ -54,7 +54,7 @@ An operator runs `verdict` on a machine they control, against a pack file and a 
 
 These appear in the design notes and are recorded so readers do not assume they exist:
 
-- Signed packs and signed knowledge bundles, customer trust roots, re-signing
+- Customer trust roots, key rotation and revocation, re-signing, OCI distribution
 - Read-only collectors with a command allowlist
 - Encryption at rest, authentication, authorization, audit log
 - SBOM and provenance for the Verdict binary itself

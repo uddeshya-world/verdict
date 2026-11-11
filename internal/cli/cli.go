@@ -60,6 +60,7 @@ bundle version are explicit inputs.`,
 	root.AddCommand(newImport(stdout, stderr))
 	root.AddCommand(newSnapshot(stdout))
 	root.AddCommand(newBench(stdout, stderr))
+	root.AddCommand(newBundle(stdout, stderr))
 	return root
 }
 
@@ -206,7 +207,7 @@ func loadPolicy(packPath, rel string) (*policy.Policy, error) {
 }
 
 func newDrill(stdout, stderr io.Writer) *cobra.Command {
-	var packPath, snapPath, policyPath, outPath, vexPath, author, evalFlag, kbFlag, asset, cveFlag, osvProto string
+	var packPath, snapPath, policyPath, outPath, vexPath, author, evalFlag, kbFlag, asset, cveFlag, osvProto, kbDir, pubPath string
 	var osvPaths []string
 	var osvPort int
 	cmd := &cobra.Command{
@@ -220,11 +221,28 @@ confidence ceiling. An in-range package is affected. An absent or
 out-of-range package is needs_review, never not_affected. Distro ecosystems
 are skipped and need an advisory fact.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if snapPath == "" || (packPath == "") == (len(osvPaths) == 0) {
-				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and exactly one of --pack or --osv are required")}
+			sources := 0
+			for _, set := range []bool{packPath != "", len(osvPaths) > 0, kbDir != ""} {
+				if set {
+					sources++
+				}
+			}
+			if snapPath == "" || sources != 1 {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and exactly one of --pack, --osv, or --kb are required")}
 			}
 			var p *pack.Pack
-			if packPath != "" {
+			kbFromBundle := ""
+			if kbDir != "" {
+				res, err := resolveFromKB(kbDir, pubPath, cveFlag, osvPort, osvProto)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+				p = res.Pack
+				kbFromBundle = res.KBVersion
+				for _, n := range res.Notes {
+					fmt.Fprintln(stderr, n)
+				}
+			} else if packPath != "" {
 				pdata, err := os.ReadFile(packPath)
 				if err != nil {
 					return &ExitError{Code: 2, Err: err}
@@ -286,6 +304,9 @@ are skipped and need an advisory fact.`,
 					return &ExitError{Code: 2, Err: fmt.Errorf("--evaluation-time: %w", err)}
 				}
 			}
+			if kbFromBundle != "" {
+				kb = kbFromBundle
+			}
 			if kbFlag != "" {
 				kb = kbFlag
 			}
@@ -334,6 +355,8 @@ are skipped and need an advisory fact.`,
 	}
 	cmd.Flags().StringVar(&packPath, "pack", "", "condition pack YAML")
 	cmd.Flags().StringArrayVar(&osvPaths, "osv", nil, "local OSV record JSON (repeatable); builds a version-only fallback instead of --pack")
+	cmd.Flags().StringVar(&kbDir, "kb", "", "installed knowledge version directory (from bundle install); re-verified with --pubkey, then the pack for --cve or its OSV fallback is used")
+	cmd.Flags().StringVar(&pubPath, "pubkey", "", "trusted PEM Ed25519 public key for --kb")
 	cmd.Flags().StringVar(&cveFlag, "cve", "", "CVE id to select from the OSV records; inferred when they name exactly one")
 	cmd.Flags().IntVar(&osvPort, "port", 1, "service port for the fallback exposure check; the default matches no service, so exposure stays unknown")
 	cmd.Flags().StringVar(&osvProto, "proto", "tcp", "service protocol for the fallback exposure check")
