@@ -80,6 +80,15 @@ The drill reads `evaluation_time` and `kb_version` from the snapshot. Pass `--ev
 
 `verdict import jar --input app.war [--input lib.jar ...]` opens JAR, WAR, and EAR files in memory and recurses into nested archives such as `WEB-INF/lib`, `BOOT-INF/lib`, and EAR modules. Nothing is extracted to disk and nothing is fetched. Components come from `META-INF/maven/<group>/<artifact>/pom.properties`. A manifest is used only when its `Implementation-Title` is in a small fixed table. A WAR, EAR, or fat jar without its own coordinates counts as a scanned container, not a skip, when every nested library in it was identified. Any other unidentified archive is listed as skipped, and a version is never taken from a file name. `jar.class.org.apache.logging.log4j.core.lookup.JndiLookup` is `present` when the class is in any scanned archive, including a shaded jar without log4j-core coordinates (that copy's package is skipped, so the version stays unknown). It is `absent` only when every identified log4j-core copy has other log4j-core classes but not `JndiLookup`, and it is omitted when no log4j-core is found. `absent` describes only the archives you passed. Another archive on the same classpath, such as an application server `lib` directory, may still carry the class. So `absent` is `high` only with `--complete`, which asserts every classpath archive was passed. Without it, `absent` is `medium`, which is below the `not_affected` bar. `runtime.jdk9_or_newer` is written only from `--java-version`, as an `attested` operator statement. Class-file versions are a compile target and are not read as the runtime. The inventory is `observed` and `high`, `complete` is false unless `--complete` is passed, and `--complete` is refused when anything was skipped. Evidence ids hash the archive bytes plus the path inside. Depth (4), entry count, per-entry size, and total uncompressed size are capped, and an entry name that is absolute or contains `..` refuses the whole import.
 
+`verdict import k8s` reads kubectl JSON that you exported with your own credentials, for example `kubectl get pods,services,ingresses,networkpolicies,deployments,daemonsets,statefulsets,validatingwebhookconfigurations -A -o json > cluster.json`. It never contacts the cluster. Pass `--input` once per file. Each Deployment, DaemonSet, StatefulSet, or unowned Pod becomes a `k8s_workload` asset with its images as `pkg:oci` package URLs. The inventory is always `complete: false`, because an image is opaque. An upstream `registry.k8s.io/ingress-nginx/controller` image with a clean `vX.Y.Z` tag also gets `pkg:generic/ingress-nginx@vX.Y.Z`. A digest-only, mirrored, or oddly tagged image gets no app version, so the version check stays unknown. `ingress_nginx.admission_webhook` is `true` when a ValidatingWebhookConfiguration points at a Service selecting the controller or the controller runs with `--validating-webhook`. It is `false` only when webhook objects are in the input, every one resolves, and none reaches the controller. Otherwise it is omitted. Exposure comes from Services and Ingresses through selectors. ClusterIP and declared container ports are zone `cluster-internal`, which your site policy has to classify (for CVE-2025-1974 the pod network is the attack path, so do not list it as trusted lightly). LoadBalancer, NodePort/hostPort, and Ingress backends take the zones from `--untrusted-zone-for-loadbalancer`, `--untrusted-zone-for-nodeport`, and `--untrusted-zone-for-ingress`. A missing flag writes `unknown`, which is treated as exposed. NetworkPolicy is not used to narrow exposure in this version.
+
+```sh
+./verdict import k8s --input examples/k8s/cluster.json --out /tmp/k8s.json --cluster lab \
+  --kb-version demo-2026.11.08 --evaluation-time 2026-11-08T12:00:00Z --observed-at 2026-11-08T11:00:00Z \
+  --untrusted-zone-for-loadbalancer internet --untrusted-zone-for-ingress internet
+./verdict drill --pack packs/draft/ecp-cve-2025-1974-ingress-nginx.yaml --snapshot /tmp/k8s.json --policy examples/policy/lab-zones.json
+```
+
 A human-readable line per asset is written to stderr. The JSON report is the canonical record.
 
 Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affected`):
@@ -188,7 +197,8 @@ Not implemented (do not treat design-plan milestones as done):
 - [ ] Fixtures built from images, or a signed bundle
 - [x] Offline CycloneDX and Trivy JSON import. Scanner vulnerability lists are ignored
 - [x] Offline JAR/WAR/EAR inspection (`import jar`) for Maven coordinates and the Log4j `JndiLookup` class
-- [ ] Grype importer, SSH collector, Kubernetes collector
+- [x] Offline Kubernetes import from kubectl JSON. NetworkPolicy does not narrow exposure
+- [ ] Grype importer, SSH collector, live Kubernetes collector
 - [ ] Distro advisory feeds (RHSA, USN, DSA, Alpine, SUSE) as downloaded data. A local advisory file is the only input today
 - [ ] Knowledge-bundle import, signature verification, customer trust roots
 - [ ] Web UI, API, authn, audit log, SQLite/Postgres, ticket export, PDF
