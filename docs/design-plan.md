@@ -287,7 +287,7 @@ tests:                          # REQUIRED for status=reviewed; CI builds and ru
 ### 5.3 Environment model (stored locally)
 
 ```
-Asset(id, kind[host|container|pod|image|appliance|app], name, owner_team, zones[], criticality, labels)
+Asset(id, kind[host|container|pod|image|appliance|app|k8s_workload], name, owner_team, zones[], criticality, labels)
 Software(asset_id, purl, version, distro_release, source[sbom|collector|import], observed_at)
 Fact(asset_id, key, value, source, observed_at)               # host facts, config values, processes
 Exposure(asset_id, port, proto, reachable_from_zone, evidence_ref, method[k8s|lb|batfish|zone_label|manual])
