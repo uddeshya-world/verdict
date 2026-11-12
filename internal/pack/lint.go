@@ -237,11 +237,24 @@ func lintCheck(id string, c Check, component []string) error {
 		if c.AdvisoryFact != "" && !factKeyRE.MatchString(c.AdvisoryFact) {
 			add("check %s: advisory_fact key is invalid", id)
 		}
+		if len(c.AbsenceContradictedBy) > 16 {
+			add("check %s: absence_contradicted_by exceeds 16 keys", id)
+		}
+		seenKeys := map[string]bool{}
+		for _, k := range c.AbsenceContradictedBy {
+			if !factKeyRE.MatchString(k) {
+				add("check %s: absence_contradicted_by key %q is not a well-formed fact key", id, k)
+			}
+			if seenKeys[k] {
+				add("check %s: absence_contradicted_by repeats %q", id, k)
+			}
+			seenKeys[k] = true
+		}
 	case "host_fact", "config_value", "env_var", "manual_attestation":
 		if !factKeyRE.MatchString(c.Key) || c.Equals == "" {
 			add("check %s: key and equals are required", id)
 		}
-		if c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.Process != "" || c.Path != "" || c.AbsenceJustification != "" {
+		if c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.Process != "" || c.Path != "" || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 {
 			add("check %s: inapplicable fields are set", id)
 		}
 		if c.Type == "manual_attestation" && c.WhenPackage != nil {
@@ -254,14 +267,14 @@ func lintCheck(id string, c Check, component []string) error {
 		if !procRE.MatchString(c.Process) {
 			add("check %s: process name %q is invalid", id, c.Process)
 		}
-		if c.Key != "" || c.Equals != "" || c.Path != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || c.WhenPackage != nil {
+		if c.Key != "" || c.Equals != "" || c.Path != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || c.WhenPackage != nil {
 			add("check %s: inapplicable fields are set", id)
 		}
 	case "file_exists":
 		if c.Path == "" || !strings.HasPrefix(c.Path, "/") || strings.ContainsAny(c.Path, "\n\r\t") {
 			add("check %s: path must be an absolute path without whitespace", id)
 		}
-		if c.Key != "" || c.Equals != "" || c.Process != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || c.WhenPackage != nil || c.AdvisoryFact != "" {
+		if c.Key != "" || c.Equals != "" || c.Process != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || c.WhenPackage != nil || c.AdvisoryFact != "" {
 			add("check %s: inapplicable fields are set", id)
 		}
 	}

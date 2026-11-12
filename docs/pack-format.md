@@ -21,6 +21,8 @@ Allowed `type` values:
 
 Every check requires `negation_justification`, one of the five OpenVEX labels. `package_version` also requires `absence_justification` for the complete-inventory, package-missing case (usually `component_not_present`).
 
+`package_version` may also set `absence_contradicted_by`, a list of fact keys such as `process.listening.sshd`. If the inventory has no matching package but any listed fact on the asset is `true`, the check is unknown (`component_absent_but_in_use`) instead of an absence proof.
+
 `tradeoff` is optional text. When a sufficient false proof includes that check, the verdict sets `mitigation_dependent` and copies the text into `impact_statement`, including on the OpenVEX document. Nothing in v0.1 re-evaluates that mitigation later.
 
 There is no `missing_means: true`. An absent fact is `unknown`. v0.1 will not invent a vendor default. That includes LoginGraceTime and Log4j lookup settings: put the effective value in the snapshot or accept `needs_review`.

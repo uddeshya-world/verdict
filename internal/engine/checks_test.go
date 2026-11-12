@@ -483,3 +483,77 @@ func TestPrimaryPURLIsMatchedComponent(t *testing.T) {
 		t.Fatalf("caller primary_purl wins: %s", got)
 	}
 }
+
+// N1: a name that is a homoglyph or compat spelling of the component, or holds
+// a rune the skeleton does not map, is never absent.
+func TestHomoglyphNamesAreNotAbsence(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	for _, raw := range []string{
+		"pkg:generic/%D0%BEpenssh@9.6p1",
+		"pkg:generic/\u043epenssh@9.6p1",
+		"pkg:generic/\uff4f\uff50\uff45\uff4e\uff53\uff53\uff48@9.6p1",
+		"pkg:generic/open\u017f\u017fh@9.6p1",
+		"pkg:generic/opensshd@9.6p1",
+		"pkg:generic/openssh9@9.6p1",
+		"pkg:npm/zlib\u200b@1.0.0", // unmapped non-ASCII: unknown for every pattern
+	} {
+		p, err := purl.Parse(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := evalPackage("C1", ch, nil, freshInventory(snapshot.Package{PURL: raw, Version: p.Version}), eval, mustAge())
+		if got.Leaf.Value != logic.Unknown {
+			t.Errorf("%s: must be unknown, got %+v", raw, got)
+		}
+	}
+}
+
+func TestAbsenceContradictedByRunningFact(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	ch.AbsenceContradictedBy = []string{"process.listening.sshd", "service.socket_activation.sshd"}
+	inv := func(key, value, basis string) snapshot.Asset {
+		a := freshInventory(snapshot.Package{PURL: "pkg:generic/sshd@9.6p1", Version: "9.6p1"})
+		if key != "" {
+			a.Facts = []snapshot.Fact{{Key: key, Value: value, Basis: basis, Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-run", Source: "t"}}
+		}
+		return a
+	}
+	for _, c := range []struct{ key, value, basis string }{
+		{"process.listening.sshd", "true", "observed"},
+		{"service.socket_activation.sshd", "true", "attested"},
+		{"process.listening.sshd", "true", "inferred"},
+	} {
+		got := evalPackage("C1", ch, nil, inv(c.key, c.value, c.basis), eval, mustAge())
+		if got.Leaf.Value != logic.Unknown || got.Reason != "component_absent_but_in_use" {
+			t.Errorf("%+v: %+v", c, got)
+		}
+		found := false
+		for _, id := range got.Leaf.EvidenceIDs {
+			found = found || id == "e-run"
+		}
+		if !found {
+			t.Errorf("%+v: evidence id of the fact missing: %v", c, got.Leaf.EvidenceIDs)
+		}
+	}
+	// Unrelated package name so the inventory really has no match.
+	plain := freshInventory(snapshot.Package{PURL: "pkg:generic/zlib@1.3", Version: "1.3"})
+	plain.Facts = []snapshot.Fact{{Key: "process.listening.sshd", Value: "true", Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-run", Source: "t"}}
+	if got := evalPackage("C1", ch, nil, plain, eval, mustAge()); got.Reason != "component_absent_but_in_use" || got.Leaf.Value != logic.Unknown {
+		t.Fatalf("sshd listening with no openssh package: %+v", got)
+	}
+	// A false fact, a missing fact, or no listed key still proves absence.
+	plain.Facts[0].Value = "false"
+	if got := evalPackage("C1", ch, nil, plain, eval, mustAge()); got.Leaf.Value != logic.False {
+		t.Fatalf("false fact must not block: %+v", got)
+	}
+	plain.Facts = nil
+	if got := evalPackage("C1", ch, nil, plain, eval, mustAge()); got.Leaf.Value != logic.False {
+		t.Fatalf("no fact must not block: %+v", got)
+	}
+	plain.Facts = []snapshot.Fact{{Key: "process.listening.sshd", Value: "true", Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-run", Source: "t"}}
+	if got := evalPackage("C1", opensshCheck(), nil, plain, eval, mustAge()); got.Leaf.Value != logic.False {
+		t.Fatalf("a pack that lists no key is unchanged: %+v", got)
+	}
+}
