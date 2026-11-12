@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -90,5 +91,93 @@ func TestMaxSnapshotBytes(t *testing.T) {
 		if _, err := run(args...); err == nil || !strings.Contains(err.Error(), "max-snapshot-bytes") {
 			t.Errorf("%v: %v", args, err)
 		}
+	}
+}
+
+// Every command that writes a snapshot takes --max-snapshot-bytes, refuses
+// output over it, and rejects an out-of-range cap with a clear error.
+func TestImportCommandsMaxSnapshotBytes(t *testing.T) {
+	root := moduleRoot(t)
+	dir := t.TempDir()
+	jar := filepath.Join(dir, "log4j.jar")
+	writeLog4jJar(t, jar, true)
+	common := []string{"--kb-version", "kb1", "--evaluation-time", "2026-11-08T12:00:00Z"}
+	sbom := []string{"--asset-id", "a1", "--asset-name", "a1", "--input", filepath.Join(root, "examples/import/cyclonedx-openssh.json")}
+	cmds := map[string][]string{
+		"cyclonedx": sbom,
+		"trivy":     sbom, // refused on cap (or parse) before anything is written; see below
+		"jar":       {"--asset-id", "a1", "--asset-name", "a1", "--input", jar},
+		"host":      {"--asset-id", "a1", "--input", filepath.Join(root, "examples/collect/lab-ubuntu-sshd.json")},
+		"k8s":       {"--cluster", "lab", "--input", filepath.Join(root, "examples/k8s/cluster.json")},
+	}
+	run := func(sub string, extra ...string) (string, error) {
+		args := append([]string{"import", sub, "--out", filepath.Join(dir, sub+".json")}, cmds[sub]...)
+		args = append(args, common...)
+		args = append(args, extra...)
+		var o, e bytes.Buffer
+		err := Execute(args, &o, &e)
+		return o.String() + e.String(), err
+	}
+	for sub := range cmds {
+		for _, bad := range []string{"0", "-5", "9223372036854775807", "1099511627777"} {
+			if _, err := run(sub, "--max-snapshot-bytes", bad); err == nil || !strings.Contains(err.Error(), "--max-snapshot-bytes must be between 1 and 1099511627776") {
+				t.Errorf("import %s cap %s: %v", sub, bad, err)
+			}
+		}
+		if sub == "trivy" {
+			continue
+		}
+		_ = os.Remove(filepath.Join(dir, sub+".json"))
+		if out, err := run(sub, "--max-snapshot-bytes", "64"); err == nil || !strings.Contains(err.Error(), "over the 64-byte cap") {
+			t.Errorf("import %s over cap: %v\n%s", sub, err, out)
+		}
+		if _, err := os.Stat(filepath.Join(dir, sub+".json")); err == nil {
+			t.Errorf("import %s wrote output over the cap", sub)
+		}
+		if out, err := run(sub); err != nil {
+			t.Errorf("import %s default cap: %v\n%s", sub, err, out)
+		}
+	}
+}
+
+// A cap of MaxInt64 used to wrap cap+1 and surface as "empty document".
+func TestSnapshotCapRange(t *testing.T) {
+	dir := t.TempDir()
+	path := bigSnapshot(t, dir, "s", 1)
+	for _, c := range []int64{0, -1, 1<<40 + 1, 1<<63 - 1} {
+		if _, err := loadSnapshotFile(path, c); err == nil || !strings.Contains(err.Error(), "must be between 1 and") {
+			t.Errorf("cap %d: %v", c, err)
+		}
+	}
+	if _, err := loadSnapshotFile(path, 1<<40); err != nil {
+		t.Errorf("cap 1 TiB refused: %v", err)
+	}
+}
+
+// A file over the cap is refused from its size, before it is read.
+func TestLoadSnapshotFileOversizeNotRead(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "big.json")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Truncate(64 << 20); err != nil { // sparse: reading it would allocate 64 MiB
+		t.Fatal(err)
+	}
+	f.Close()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	_, err = loadSnapshotFile(path, 1<<20)
+	runtime.ReadMemStats(&after)
+	if err == nil || !strings.Contains(err.Error(), "over the 1048576-byte cap") {
+		t.Fatalf("%v", err)
+	}
+	if grown := after.TotalAlloc - before.TotalAlloc; grown > 8<<20 {
+		t.Fatalf("refusal allocated %d bytes", grown)
+	}
+	// A non-regular source is bounded by the reader instead.
+	if _, err := loadSnapshotFile("/dev/zero", 1<<20); err == nil || !strings.Contains(err.Error(), "over the 1048576-byte cap") {
+		t.Fatalf("/dev/zero: %v", err)
 	}
 }

@@ -638,3 +638,41 @@ func TestJarUnscannedArchiveSkipped(t *testing.T) {
 		}
 	}
 }
+
+// A zip whose name is not on the suffix list (a library renamed .dat) is
+// scanned by its magic bytes under the same caps.
+func TestJarZipMagicUnlistedName(t *testing.T) {
+	inner := log4jCore(t, "2.14.1", true)
+	war := buildZip(t, zentry{name: "WEB-INF/lib/libs.dat", body: inner, store: true})
+	got, err := Jar([]JarInput{{Name: "app.war", Data: war}}, jarOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := got.Snapshot.Assets[0]
+	if !hasPURL(a, "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1") {
+		t.Fatalf("%+v", a.Inventory.Packages)
+	}
+	if f := fact(a, JndiLookupFactKey); f == nil || f.Value != "present" || !strings.Contains(f.Source, "libs.dat") {
+		t.Fatalf("%+v", f)
+	}
+	// Without the magic the same name is not scanned.
+	plain := buildZip(t, log4jEntryStore("log4j-core.jar", log4jCore(t, "2.14.1", false)),
+		zentry{name: "notes.dat", body: []byte("PK not really a zip, just text here........")})
+	if _, err := Jar([]JarInput{{Name: "app.war", Data: plain}}, completeOpts()); err != nil {
+		t.Fatal(err) // "PK n" is not a zip header: not scanned, not skipped
+	}
+	// Magic with a broken body is skipped, which refuses --complete.
+	bad := buildZip(t, log4jEntryStore("log4j-core.jar", log4jCore(t, "2.14.1", false)),
+		zentry{name: "broken.dat", body: append([]byte("PK\x03\x04"), make([]byte, 40)...)})
+	if _, err := Jar([]JarInput{{Name: "app.war", Data: bad}}, completeOpts()); err == nil || !strings.Contains(err.Error(), "broken.dat") {
+		t.Fatalf("%v", err)
+	}
+	// Caps still apply: nesting depth.
+	data := buildZip(t, class("a/B.class"))
+	for i := 0; i < 6; i++ {
+		data = buildZip(t, zentry{name: "n.dat", body: data, store: true})
+	}
+	if _, err := Jar([]JarInput{{Name: "deep.zip", Data: data}}, jarOpts()); !errors.Is(err, ErrJarLimit) {
+		t.Fatalf("%v", err)
+	}
+}

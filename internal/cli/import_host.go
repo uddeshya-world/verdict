@@ -11,12 +11,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uddeshya-world/verdict/internal/canonjson"
 	"github.com/uddeshya-world/verdict/internal/importer"
+	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
 func newImportHost(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
 	var input, out, assetID, assetName, kind, kb, evalAt string
 	var zones, reachable []string
 	var complete bool
+	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   "host",
 		Short: "Import one scripts/collect-host.sh JSON document as one snapshot asset",
@@ -30,6 +32,9 @@ with --reachable-from, which is your statement of which zones reach the host.`,
 			}
 			if _, err := time.Parse(time.RFC3339, evalAt); err != nil {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--evaluation-time: %w", err)}
+			}
+			if err := snapshot.ValidateCap(maxBytes); err != nil {
+				return &ExitError{Code: 2, Err: err}
 			}
 			data, err := os.ReadFile(input)
 			if err != nil {
@@ -52,7 +57,7 @@ with --reachable-from, which is your statement of which zones reach the host.`,
 			if err != nil {
 				return err
 			}
-			if err := os.WriteFile(out, body, 0o644); err != nil {
+			if err := writeSnapshot(out, body, maxBytes); err != nil {
 				return err
 			}
 			a := got.Snapshot.Assets[0]
@@ -71,5 +76,6 @@ with --reachable-from, which is your statement of which zones reach the host.`,
 	cmd.Flags().BoolVar(&complete, "complete", false, "mark the package list complete; refused if any package line was unparsed")
 	cmd.Flags().StringVar(&kb, "kb-version", "", "knowledge-bundle version string")
 	cmd.Flags().StringVar(&evalAt, "evaluation-time", "", "RFC3339 evaluation time; the clock is not read")
+	addMaxSnapshotBytes(cmd, &maxBytes)
 	return cmd
 }

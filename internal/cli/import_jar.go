@@ -12,12 +12,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uddeshya-world/verdict/internal/canonjson"
 	"github.com/uddeshya-world/verdict/internal/importer"
+	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
 func newImportJar(stdout, stderr io.Writer) *cobra.Command {
 	var inputs, zones []string
 	var out, assetID, assetName, kind, kb, evalAt, observedAt, javaVersion string
 	var complete bool
+	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   "jar",
 		Short: "Inspect local JAR, WAR, EAR, or ZIP files in memory and write one snapshot asset",
@@ -54,6 +56,9 @@ that exceeds a cap or holds an unsafe entry name is refused.`,
 			if _, err := time.Parse(time.RFC3339, observedAt); err != nil {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--observed-at: %w", err)}
 			}
+			if err := snapshot.ValidateCap(maxBytes); err != nil {
+				return &ExitError{Code: 2, Err: err}
+			}
 			limits := importer.DefaultJarLimits()
 			var archives []importer.JarInput
 			for _, p := range inputs {
@@ -81,7 +86,7 @@ that exceeds a cap or holds an unsafe entry name is refused.`,
 			if err != nil {
 				return err
 			}
-			if err := os.WriteFile(out, body, 0o644); err != nil {
+			if err := writeSnapshot(out, body, maxBytes); err != nil {
 				return err
 			}
 			a := got.Snapshot.Assets[0]
@@ -101,6 +106,7 @@ that exceeds a cap or holds an unsafe entry name is refused.`,
 	cmd.Flags().StringVar(&evalAt, "evaluation-time", "", "RFC3339 evaluation time; the clock is not read")
 	cmd.Flags().StringVar(&observedAt, "observed-at", "", "RFC3339 time the archives were read; defaults to --evaluation-time")
 	cmd.Flags().StringVar(&javaVersion, "java-version", "", "runtime java.version you state, such as 17.0.2 or 1.8.0_292; omitted means runtime.jdk9_or_newer is not written")
+	addMaxSnapshotBytes(cmd, &maxBytes)
 	return cmd
 }
 

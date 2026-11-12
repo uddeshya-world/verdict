@@ -18,6 +18,18 @@ import (
 // snapshot files take --max-snapshot-bytes and call LoadMax instead.
 const DefaultMaxBytes int64 = 256 * 1024 * 1024
 
+// MaxCapBytes is the largest --max-snapshot-bytes accepted (1 TiB). It keeps
+// cap+1 from overflowing and rejects values no real snapshot approaches.
+const MaxCapBytes int64 = 1 << 40
+
+// ValidateCap rejects a size cap outside [1, MaxCapBytes].
+func ValidateCap(maxBytes int64) error {
+	if maxBytes < 1 || maxBytes > MaxCapBytes {
+		return fmt.Errorf("--max-snapshot-bytes must be between 1 and %d (got %d)", MaxCapBytes, maxBytes)
+	}
+	return nil
+}
+
 var idRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
 
 // Snapshot is the explicit input to a drill besides the pack.
@@ -91,11 +103,11 @@ func Load(data []byte) (*Snapshot, error) {
 
 // LoadMax is Load with a caller-chosen size cap in bytes.
 func LoadMax(data []byte, maxBytes int64) (*Snapshot, error) {
+	if err := ValidateCap(maxBytes); err != nil {
+		return nil, fmt.Errorf("snapshot: %w", err)
+	}
 	if len(data) == 0 {
 		return nil, fmt.Errorf("snapshot: empty document")
-	}
-	if maxBytes < 1 {
-		return nil, fmt.Errorf("snapshot: size cap must be positive")
 	}
 	if int64(len(data)) > maxBytes {
 		return nil, fmt.Errorf("snapshot: document is %d bytes, over the %d-byte cap; raise it with --max-snapshot-bytes", len(data), maxBytes)
