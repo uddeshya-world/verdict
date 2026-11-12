@@ -105,7 +105,7 @@ func TestAdvisoryOverlayIsExplicit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, warnings, err := ApplyAdvisories(sbom.Snapshot, doc)
+	out, rep, err := ApplyAdvisories(sbom.Snapshot, doc, AdvisoryOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,12 +113,16 @@ func TestAdvisoryOverlayIsExplicit(t *testing.T) {
 	if len(f) != 1 || f[0].Value != "not_affected" || f[0].PURL == "" {
 		t.Fatalf("%+v", f)
 	}
-	if len(warnings) != 0 {
-		t.Fatalf("matching purl should not warn: %v", warnings)
+	if len(rep.Unmatched) != 0 || len(rep.Matched) != 1 {
+		t.Fatalf("matching purl: %+v", rep)
 	}
 	doc.Facts[0].PURL = "pkg:deb/ubuntu/openssh-server@1:8.9p1-3ubuntu0.6"
-	if _, warnings, err = ApplyAdvisories(sbom.Snapshot, doc); err != nil || len(warnings) != 1 {
-		t.Fatalf("unmatched purl warning: %v %v", warnings, err)
+	if _, _, err = ApplyAdvisories(sbom.Snapshot, doc, AdvisoryOptions{}); err == nil || !strings.Contains(err.Error(), "match no inventory package") {
+		t.Fatalf("unmatched row must fail: %v", err)
+	}
+	out, rep, err = ApplyAdvisories(sbom.Snapshot, doc, AdvisoryOptions{AllowUnmatched: true})
+	if err != nil || len(rep.Unmatched) != 1 || len(out.Assets[0].Facts) != 0 {
+		t.Fatalf("--allow-unmatched drops the row: %v %+v", err, rep)
 	}
 	if _, err := ParseAdvisories([]byte(`{"facts":[{"asset_id":"a","key":"k","purl":"pkg:deb/ubuntu/openssh-server@1","value":"patched","basis":"observed","confidence":"high","observed_at":"2026-11-08T11:00:00Z","evidence_id":"e","source":"s"}]}`)); err == nil {
 		t.Fatal("patched is not an advisory value")

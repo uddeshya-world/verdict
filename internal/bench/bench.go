@@ -39,7 +39,11 @@ type Case struct {
 	ImportFormat    string `json:"import_format,omitempty"`
 	ImportInput     string `json:"import_input,omitempty"`
 	ImportComplete  bool   `json:"import_complete,omitempty"`
-	Note            string `json:"note,omitempty"`
+	// ImportAdvisories is an advisory overlay applied to the imported
+	// snapshot. Its rows use asset_id "imported".
+	ImportAdvisories     string `json:"import_advisories,omitempty"`
+	ImportAllowUnmatched bool   `json:"import_allow_unmatched,omitempty"`
+	Note                 string `json:"note,omitempty"`
 }
 
 // Row is the result of one case.
@@ -109,6 +113,9 @@ func LoadCorpus(data []byte) ([]Case, error) {
 		case "drill":
 			if c.Snapshot == "" || c.Asset == "" {
 				return nil, fmt.Errorf("bench: %s needs snapshot and asset", c.ID)
+			}
+			if c.ImportAdvisories != "" || c.ImportAllowUnmatched {
+				return nil, fmt.Errorf("bench: %s import_advisories needs kind import", c.ID)
 			}
 		case "import":
 			if c.ImportInput == "" || (c.ImportFormat != "cyclonedx" && c.ImportFormat != "trivy") {
@@ -232,6 +239,23 @@ func runImport(root string, c Case, row Row, p *pack.Pack, pol *policy.Policy) (
 		got, err = importer.Trivy(data, opt)
 	default:
 		err = fmt.Errorf("import format %q", c.ImportFormat)
+	}
+	var adv *importer.AdvisoryDocument
+	if c.ImportAdvisories != "" {
+		raw, rerr := os.ReadFile(filepath.Join(root, c.ImportAdvisories))
+		if rerr != nil {
+			return row, fmt.Errorf("bench %s: %w", c.ID, rerr)
+		}
+		if adv, rerr = importer.ParseAdvisories(raw); rerr != nil {
+			return row, fmt.Errorf("bench %s: %w", c.ID, rerr)
+		}
+	}
+	if err == nil && adv != nil {
+		var snap *snapshot.Snapshot
+		snap, _, err = importer.ApplyAdvisories(got.Snapshot, adv, importer.AdvisoryOptions{AllowUnmatched: c.ImportAllowUnmatched})
+		if err == nil {
+			got = &importer.Result{Snapshot: snap, Skipped: got.Skipped, Notes: got.Notes}
+		}
 	}
 	if err != nil {
 		row.State = "import_rejected"
