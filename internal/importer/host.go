@@ -298,3 +298,14 @@ func sshdSeconds(v string) (string, error) {
 	}
 	return strconv.FormatInt(total, 10), nil
 }
+
+// ValidateHostFact checks a value against the collector's rule for key. known
+// is false for a key the collector never writes; its value is not checked here.
+func ValidateHostFact(key, value string) (known bool, err error) {
+	check, ok := hostFacts[key]
+	if !ok {
+		return false, nil
+	}
+	_, err = check(value)
+	return true, err
+}
