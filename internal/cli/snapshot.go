@@ -14,10 +14,10 @@ import (
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
-func newSnapshot(stdout interface{ Write([]byte) (int, error) }) *cobra.Command {
+func newSnapshot(stdout io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "snapshot",
-		Short: "Combine local snapshot files",
+		Short: "Combine and edit local snapshot files",
 	}
 	var out string
 	var maxBytes int64
@@ -57,7 +57,7 @@ func newSnapshot(stdout interface{ Write([]byte) (int, error) }) *cobra.Command 
 	}
 	merge.Flags().StringVar(&out, "out", "", "snapshot JSON to write")
 	addMaxSnapshotBytes(merge, &maxBytes)
-	cmd.AddCommand(merge)
+	cmd.AddCommand(merge, newSnapshotSetFact(stdout), newSnapshotSetExposure(stdout), newSnapshotApply(stdout))
 	return cmd
 }
 
