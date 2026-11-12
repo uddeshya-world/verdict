@@ -1,0 +1,135 @@
+name: release
+
+# Tag push (v*) builds, attests and uploads static binaries to the GitHub
+# release for that tag. workflow_dispatch with `tag` backfills an existing tag
+# (for example v0.1.0, which was published without assets): the tag's own
+# source is built, not the branch the workflow was dispatched from.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and upload assets for (e.g. v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  GO_VERSION: "1.22.2"
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  verify:
+    name: gates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: validate tag
+        run: |
+          case "$TAG" in
+            v[0-9]*) ;;
+            *) echo "tag must look like v1.2.3, got: $TAG" >&2; exit 1 ;;
+          esac
+          if ! printf '%s' "$TAG" | grep -Eq '^v[0-9A-Za-z.+_-]+$'; then
+            echo "tag contains unexpected characters" >&2; exit 1
+          fi
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: gofmt
+        run: test -z "$(gofmt -l .)"
+      - name: vet
+        run: go vet ./...
+      - name: unit property golden schema
+        run: go test ./...
+      - name: loader fuzz
+        run: go test -fuzz=FuzzLoad -fuzztime=5s ./internal/pack
+      - name: offline demo
+        run: |
+          go build -o verdict ./cmd/verdict
+          ./scripts/demo.sh
+      - name: verdict-bench false not_affected gate
+        run: ./verdict bench --corpus bench/corpus.json
+
+  build:
+    name: build ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: build, archive, SBOM
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: ./scripts/release-build.sh "$TAG" "$GOOS" "$GOARCH" dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dist-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: checksums, provenance, upload
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release if missing and upload assets
+      id-token: write # sigstore signing for the provenance attestation
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: dist-*
+          merge-multiple: true
+          path: dist
+      - name: SHA256SUMS
+        working-directory: dist
+        run: |
+          ls -1
+          sha256sum verdict_* | LC_ALL=C sort -k2 > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: |
+            dist/verdict_*.tar.gz
+            dist/verdict_*.zip
+      - name: upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          fi
+          gh release upload "$TAG" dist/* --clobber
