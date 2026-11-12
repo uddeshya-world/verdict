@@ -5,8 +5,10 @@ package engine
 
 import (
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/uddeshya-world/verdict/internal/factkeys"
 	"github.com/uddeshya-world/verdict/internal/logic"
 	"github.com/uddeshya-world/verdict/internal/pack"
 	"github.com/uddeshya-world/verdict/internal/purl"
@@ -69,6 +71,22 @@ func findFact(asset snapshot.Asset, key string) *snapshot.Fact {
 	for i := range asset.Facts {
 		if asset.Facts[i].Key == key && asset.Facts[i].PURL == "" {
 			return &asset.Facts[i]
+		}
+	}
+	return nil
+}
+
+func foldKey(k string) string { return strings.ToLower(strings.TrimSpace(k)) }
+
+// foldedKeyFact returns a fact whose key differs from key only by case or
+// surrounding white space. Such a fact is not the fact the pack asked for, and
+// the leaf must be unknown rather than missing or falsified.
+func foldedKeyFact(asset snapshot.Asset, key string) *snapshot.Fact {
+	fk := foldKey(key)
+	for i := range asset.Facts {
+		f := &asset.Facts[i]
+		if f.PURL == "" && f.Key != key && foldKey(f.Key) == fk {
+			return f
 		}
 	}
 	return nil
@@ -197,6 +215,9 @@ func evalCheck(id string, ch pack.Check, component []string, ac *assetCtx, eval 
 func evalBoolFact(id string, ch pack.Check, key string, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
 	fact := findFact(asset, key)
 	if fact == nil {
+		if v := foldedKeyFact(asset, key); v != nil {
+			return unknownLeaf(id, "fact_key_not_canonical", key, []string{v.EvidenceID})
+		}
 		return unknownLeaf(id, "missing_fact", key, nil)
 	}
 	usable, observed, conf, reason := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
@@ -241,6 +262,9 @@ func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, ac *as
 	}
 	fact := findFact(asset, key)
 	if fact == nil {
+		if v := foldedKeyFact(asset, key); v != nil {
+			return unknownLeaf(id, "fact_key_not_canonical", key, []string{v.EvidenceID})
+		}
 		return unknownLeaf(id, "missing_fact", key, nil)
 	}
 	if requireExpiry && fact.ExpiresAt == "" {
@@ -253,6 +277,17 @@ func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, ac *as
 	value := logic.False
 	if fact.Value == ch.Equals {
 		value = logic.True
+	} else {
+		a, e := fact.Value, ch.Equals
+		switch {
+		case strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(e)):
+			return unknownLeaf(id, "fact_value_not_canonical", key, []string{fact.EvidenceID})
+		case (e == "true" || e == "false") && a != "true" && a != "false":
+			return unknownLeaf(id, "fact_value_not_boolean", key, []string{fact.EvidenceID})
+		}
+		if ok, known := factkeys.InDomain(key, a); known && !ok {
+			return unknownLeaf(id, "fact_value_out_of_domain", key, []string{fact.EvidenceID})
+		}
 	}
 	weak := ""
 	if !observed {
@@ -382,9 +417,19 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 			return unknownLeaf(id, why, "", ev)
 		}
 		for _, key := range ch.AbsenceContradictedBy {
-			if f := findFact(asset, key); f != nil && f.Value == "true" {
-				// The pack names a fact that says the component runs here.
-				// No matching package is then a gap in the inventory, not absence.
+			for i := range asset.Facts {
+				f := &asset.Facts[i]
+				// Any spelling of the key, scoped or not, on any basis or age,
+				// with any value other than exactly "false" says the component
+				// may run here. Contradiction is fail-safe.
+				if f.Key != key && foldKey(f.Key) != foldKey(key) {
+					continue
+				}
+				if f.Value == "false" {
+					// Only the canonical value clears; " False " or "FALSE"
+					// is not a value the collector writes, so it blocks.
+					continue
+				}
 				return unknownLeaf(id, "component_absent_but_in_use", key, append(ev, f.EvidenceID))
 			}
 		}
