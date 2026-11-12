@@ -41,6 +41,11 @@ type AdvisoryReport struct {
 // and the subpath must be equal. The fact carries the package's exact purl.
 //
 // A row that matches nothing is an error unless opt.AllowUnmatched is set.
+// A row that matches nothing exactly but names an inventory package under
+// case folding or a lookalike skeleton is always an error: it is a spelling
+// variant of a package that is there, not a package that is absent. Two rows
+// for one asset and key that fold to the same package and differ in value
+// are always an error.
 // Two rows with the same key and different values on one package are an
 // error. The importer never invents a status for a package that is not named.
 func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument, opt AdvisoryOptions) (*snapshot.Snapshot, *AdvisoryReport, error) {
@@ -54,6 +59,7 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument, opt AdvisoryOp
 		index[next.Assets[i].ID] = i
 	}
 	rep := &AdvisoryReport{}
+	rowValues := map[string]rowValue{}
 	for _, f := range doc.Facts {
 		i, ok := index[f.AssetID]
 		if !ok {
@@ -68,8 +74,21 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument, opt AdvisoryOp
 		if err != nil {
 			return nil, nil, fmt.Errorf("import advisories: %s: %w", f.Key, err)
 		}
+		// Two rows that fold to one package identity and disagree are a
+		// conflict even when neither names an inventory package exactly:
+		// a case or lookalike variant must not be droppable.
+		id := f.AssetID + "\x00" + f.Key + "\x00" + foldedIdentity(rowKey)
+		if prev, seen := rowValues[id]; seen && prev.value != f.Value {
+			return nil, nil, fmt.Errorf("import advisories: asset %s key %s: rows %s and %s name the same package under different spellings and disagree (%s vs %s)", f.AssetID, f.Key, prev.purl, canon, prev.value, f.Value)
+		}
+		if _, seen := rowValues[id]; !seen {
+			rowValues[id] = rowValue{value: f.Value, purl: canon}
+		}
 		targets := matchInventory(asset, rowKey)
 		if len(targets) == 0 {
+			if variant := foldedInventoryMatch(asset, rowKey); variant != "" {
+				return nil, nil, fmt.Errorf("import advisories: asset %s key %s: row %s matches no inventory package exactly but is a case or lookalike variant of %s; fix the row purl, --allow-unmatched does not drop it", f.AssetID, f.Key, canon, variant)
+			}
 			rep.Unmatched = append(rep.Unmatched, fmt.Sprintf("asset %s key %s purl %s", f.AssetID, f.Key, canon))
 			continue
 		}
@@ -112,6 +131,50 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument, opt AdvisoryOp
 		return nil, nil, fmt.Errorf("import advisories: %w", err)
 	}
 	return checked, rep, nil
+}
+
+type rowValue struct{ value, purl string }
+
+// folded returns the key with type, namespace, name, version, and qualifiers
+// compared as case-folded skeletons.
+func (k purlKey) folded() purlKey {
+	k.typ = strings.ToLower(k.typ)
+	k.namespace = strings.ToLower(k.namespace)
+	k.name = purl.FoldName(k.name)
+	k.evr = strings.ToLower(k.evr)
+	k.distro = strings.ToLower(k.distro)
+	k.other = strings.ToLower(k.other)
+	k.subpath = strings.ToLower(k.subpath)
+	return k
+}
+
+func foldedIdentity(k purlKey) string {
+	f := k.folded()
+	d := "-"
+	if f.hasDist {
+		d = "+" + f.distro
+	}
+	return strings.Join([]string{f.typ, f.namespace, f.name, f.evr, d, f.other, f.subpath}, "\x00")
+}
+
+// foldedInventoryMatch returns the purl of an inventory package the row names
+// under case folding and lookalike skeletons, or "".
+func foldedInventoryMatch(asset snapshot.Asset, row purlKey) string {
+	fr := row.folded()
+	for _, pkg := range asset.Inventory.Packages {
+		canon, err := purl.Canonical(pkg.PURL)
+		if err != nil {
+			continue
+		}
+		k, err := parseKey(canon)
+		if err != nil {
+			continue
+		}
+		if fr.matches(k.folded()) {
+			return canon
+		}
+	}
+	return ""
 }
 
 func matchInventory(asset snapshot.Asset, row purlKey) []string {

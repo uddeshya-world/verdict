@@ -107,3 +107,70 @@ func TestRelated(t *testing.T) {
 		}
 	}
 }
+
+func TestSkeleton(t *testing.T) {
+	for in, want := range map[string]string{
+		"openssh":      "openssh",
+		"  OpenSSH ":   "openssh",
+		"%D0%BEpenssh": "openssh", // Cyrillic o, encoded
+		"оpenssh":      "openssh", // Cyrillic o
+		"opеnssh":      "openssh", // Cyrillic e
+		"οpenssh":      "openssh", // Greek omicron
+		"ΟPENSSH":      "openssh", // Greek capital omicron
+		"ｏｐｅｎｓｓｈ":      "openssh", // fullwidth
+		"%EF%BD%8F%EF%BD%90%EF%BD%85%EF%BD%8E%EF%BD%93%EF%BD%93%EF%BD%88": "openssh",
+		"openſſh":     "openssh", // long s
+		"open%2573sh": "openssh", // double-encoded s
+		"Ｏpenssh":     "openssh", // fullwidth capital
+	} {
+		if got := Skeleton(in); got != want {
+			t.Errorf("Skeleton(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if !NonASCII("open​ssh") || !NonASCII("%FF") || NonASCII("%D0%BEpenssh") || NonASCII("openssh") {
+		t.Error("NonASCII is about what survives the skeleton")
+	}
+}
+
+func TestRelatedValidatorNames(t *testing.T) {
+	patterns := []string{"pkg:generic/openssh", "pkg:deb/openssh-server"}
+	related := []string{
+		"pkg:generic/%D0%BEpenssh@9.6p1",
+		"pkg:generic/оpenssh@9.6p1",
+		"pkg:generic/opеnssh@9.6p1",
+		"pkg:generic/οpenssh@9.6p1",
+		"pkg:generic/ｏｐｅｎｓｓｈ@9.6p1",
+		"pkg:generic/%EF%BD%8F%EF%BD%90%EF%BD%85%EF%BD%8E%EF%BD%93%EF%BD%93%EF%BD%88@9.6p1",
+		"pkg:generic/openſſh@9.6p1",
+		"pkg:generic/opensshd@9.6p1",
+		"pkg:generic/openssh9@9.6p1",
+		"pkg:generic/openssh-portable@9.6p1",
+	}
+	for _, raw := range related {
+		p, err := Parse(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ok := false
+		for _, pat := range patterns {
+			ok = ok || Related(pat, p)
+		}
+		if !ok {
+			t.Errorf("%s must be related", raw)
+		}
+	}
+	// Names that share nothing with the pattern stay unrelated here. sshd and
+	// ssh-server are covered by absence_contradicted_by, not by Related.
+	for _, raw := range []string{
+		"pkg:generic/sshd@9.6p1",
+		"pkg:generic/ssh-server@9.6p1",
+		"pkg:generic/zlib@1.3",
+		"pkg:npm/openssh9@1.0.0",
+		"pkg:deb/ubuntu/openssh-client@1:8.9p1-3",
+	} {
+		p, _ := Parse(raw)
+		if Related("pkg:generic/openssh", p) {
+			t.Errorf("%s must not be related to openssh", raw)
+		}
+	}
+}

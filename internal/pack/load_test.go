@@ -105,3 +105,26 @@ func mustRoot(t *testing.T) string {
 	}
 	return root
 }
+
+func TestAbsenceContradictedByLint(t *testing.T) {
+	base, err := os.ReadFile(mustRoot(t) + "/packs/draft/ecp-cve-2024-6387-openssh.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(base)
+	if !strings.Contains(src, "      - process.listening.sshd\n") {
+		t.Fatal("openssh pack must list process.listening.sshd in absence_contradicted_by")
+	}
+	if _, err := Load("ok.yaml", base); err != nil {
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{
+		"bad key":          strings.Replace(src, "      - process.listening.sshd\n", "      - \"process listening\"\n", 1),
+		"duplicate":        strings.Replace(src, "      - process.listening.sshd\n", "      - process.listening.sshd\n      - process.listening.sshd\n", 1),
+		"wrong check type": strings.Replace(src, "    key: libc.family\n", "    key: libc.family\n    absence_contradicted_by:\n      - process.listening.sshd\n", 1),
+	} {
+		if _, err := Load("bad.yaml", []byte(body)); err == nil {
+			t.Errorf("%s: expected lint error", name)
+		}
+	}
+}

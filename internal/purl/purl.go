@@ -235,17 +235,68 @@ func DistroType(typ string) bool {
 	}
 }
 
-// FoldName is the comparison form of a package name: percent-decoded,
-// trimmed of white space and of leading or trailing separators, and case-folded.
-// It is used only to widen what counts as the same component, never to
-// prove that a package is a different one.
-func FoldName(name string) string {
-	if dec, err := unescape(name); err == nil {
+// lookalikes maps Cyrillic and Greek letters that render like a Latin letter
+// to that letter. It is applied after lowercasing, so uppercase forms are covered.
+var lookalikes = map[rune]rune{
+	// Cyrillic
+	'\u0430': 'a', '\u0435': 'e', '\u043e': 'o', '\u0440': 'p', '\u0441': 'c',
+	'\u0445': 'x', '\u0443': 'y', '\u0456': 'i', '\u0458': 'j', '\u0455': 's',
+	'\u043a': 'k', '\u043c': 'm', '\u043d': 'h', '\u0442': 't', '\u0432': 'b',
+	// Greek
+	'\u03bf': 'o', '\u03b1': 'a', '\u03b5': 'e', '\u03b9': 'i', '\u03ba': 'k',
+	'\u03bd': 'v', '\u03c1': 'p', '\u03c4': 't', '\u03c5': 'u', '\u03c7': 'x',
+}
+
+// Skeleton is the confusable-insensitive form of a name: percent-decoded
+// (repeatedly, so %2570 is p), trimmed of white space, fullwidth ASCII
+// (U+FF01-U+FF5E) and long s mapped to ASCII, lowercased, and Cyrillic and
+// Greek lookalikes mapped to Latin. It widens what counts as the same name
+// and is never used to prove two names differ. A name that still holds a
+// non-ASCII rune afterwards is one this table does not understand.
+func Skeleton(name string) string {
+	for i := 0; i < 4; i++ {
+		dec, err := unescape(name)
+		if err != nil || dec == name {
+			break
+		}
 		name = dec
 	}
 	name = strings.TrimSpace(name)
-	name = strings.Trim(name, "-_.+ \t")
-	return strings.ToLower(name)
+	name = strings.Map(func(r rune) rune {
+		switch {
+		case r >= 0xFF01 && r <= 0xFF5E:
+			return r - 0xFEE0
+		case r == '\u017f':
+			return 's'
+		}
+		return r
+	}, name)
+	name = strings.ToLower(name)
+	return strings.Map(func(r rune) rune {
+		if l, ok := lookalikes[r]; ok {
+			return l
+		}
+		return r
+	}, name)
+}
+
+// NonASCII reports whether a name still holds a non-ASCII rune after
+// Skeleton, including invalid UTF-8.
+func NonASCII(name string) bool {
+	for _, r := range Skeleton(name) {
+		if r > unicode.MaxASCII {
+			return true
+		}
+	}
+	return false
+}
+
+// FoldName is the comparison form of a package name: its Skeleton, trimmed
+// of leading or trailing separators.
+// It is used only to widen what counts as the same component, never to
+// prove that a package is a different one.
+func FoldName(name string) string {
+	return strings.Trim(Skeleton(name), "-_.+ \t")
 }
 
 func squash(folded string) string {
@@ -308,6 +359,12 @@ func SameFolded(a, b string) bool {
 //     generic (free-form names) or both types are distro types. Language
 //     ecosystems and distro packages against a generic pattern are excluded,
 //     because their names are curated and openssh-client is not sshd.
+//   - For the same type pairs, the squashed pattern name is a substring of
+//     the squashed package name (opensshd, openssh9), or the reverse when the
+//     pattern name has at least four characters.
+//
+// Names are compared as Skeleton forms, so Cyrillic, Greek, and fullwidth
+// lookalikes equal their Latin spelling.
 func Related(pattern string, p PURL) bool {
 	pat, err := Parse(pattern)
 	if err != nil {
@@ -324,7 +381,16 @@ func Related(pattern string, p PURL) bool {
 	if pt != "generic" && !(DistroType(pt) && DistroType(qt)) {
 		return false
 	}
-	return containsRun(tokens(pn), tokens(qn))
+	if containsRun(tokens(pn), tokens(qn)) {
+		return true
+	}
+	// Aliases that share no token run: opensshd, openssh9. A pattern name of
+	// four or more characters also matches a package name inside it.
+	ps, qs := squash(pn), squash(qn)
+	if strings.Contains(ps, qs) {
+		return true
+	}
+	return len(qs) >= 4 && strings.Contains(qs, ps)
 }
 
 func containsRun(hay, needle []string) bool {

@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-3094-xz",
-  "pack_sha256": "087c1f0b423a2addc8923872a645e23a392e223ec6b5b255e130f375efa9e53e",
+  "pack_sha256": "65f3b724e7fe781206c8efb4a35fa367a84714e6099e38be079da0b98e3240ec",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-3094",

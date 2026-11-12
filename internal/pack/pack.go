@@ -64,9 +64,13 @@ type Component struct {
 
 // Check is one typed predicate.
 type Check struct {
-	Type                  string       `yaml:"type"`
-	NegationJustification string       `yaml:"negation_justification"`
-	AbsenceJustification  string       `yaml:"absence_justification"`
+	Type                  string `yaml:"type"`
+	NegationJustification string `yaml:"negation_justification"`
+	AbsenceJustification  string `yaml:"absence_justification"`
+	// AbsenceContradictedBy lists fact keys (process.listening.sshd) that,
+	// when true on the asset, mean the component runs here and "no matching
+	// package" cannot be a proof of absence.
+	AbsenceContradictedBy []string     `yaml:"absence_contradicted_by"`
 	ResolutionHint        string       `yaml:"resolution_hint"`
 	Tradeoff              string       `yaml:"tradeoff"`
 	VersionScheme         string       `yaml:"version_scheme"`

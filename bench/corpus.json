@@ -664,5 +664,58 @@
     "ground_truth": "unknown",
     "expect_state": "import_rejected",
     "note": "Without --allow-unmatched, a row that lands on no package fails the import."
+  },
+  {
+    "id": "regresshion/name-cyrillic-o",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/name-variants.json",
+    "asset": "name-cyrillic-o",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "A Cyrillic-o spelling skeletons to openssh: unknown, not absent (N1)."
+  },
+  {
+    "id": "regresshion/name-fullwidth",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/name-variants.json",
+    "asset": "name-fullwidth",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "Fullwidth spelling skeletons to openssh: unknown, not absent (N1)."
+  },
+  {
+    "id": "regresshion/name-opensshd",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/name-variants.json",
+    "asset": "name-opensshd",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "opensshd contains openssh: unknown, not absent (N2)."
+  },
+  {
+    "id": "regresshion/name-sshd-listening",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/name-variants.json",
+    "asset": "name-sshd-listening",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "sshd shares no substring with openssh, but process.listening.sshd=true contradicts absence (N2)."
+  },
+  {
+    "id": "regresshion/import-advisory-case-conflict-allow",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "cyclonedx",
+    "import_input": "bench/fixtures/u22-syft-openssh.cdx.json",
+    "import_advisories": "bench/fixtures/adv-u22-case-conflict.json",
+    "import_allow_unmatched": true,
+    "ground_truth": "affected",
+    "expect_state": "import_rejected",
+    "note": "fixed on the exact purl and affected on a case variant. --allow-unmatched must not drop the variant and let fixed clear the host (N3)."
   }
 ]

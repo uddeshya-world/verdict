@@ -139,6 +139,11 @@ func classify(parsed purl.PURL, patterns []string) (exact, related bool) {
 			return true, false
 		}
 	}
+	if len(patterns) > 0 && purl.NonASCII(parsed.Name) {
+		// A name with a rune the skeleton table does not map could be a
+		// disguised spelling of anything. It is never absent.
+		return false, true
+	}
 	for _, pattern := range patterns {
 		if purl.Related(pattern, parsed) {
 			return false, true
@@ -386,6 +391,13 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 				why = "inventory_not_observed"
 			}
 			return unknownLeaf(id, why, "", ev)
+		}
+		for _, key := range ch.AbsenceContradictedBy {
+			if f := findFact(asset, key); f != nil && f.Value == "true" {
+				// The pack names a fact that says the component runs here.
+				// No matching package is then a gap in the inventory, not absence.
+				return unknownLeaf(id, "component_absent_but_in_use", key, append(ev, f.EvidenceID))
+			}
 		}
 		weak := ""
 		if conf < logic.ConfHigh {
