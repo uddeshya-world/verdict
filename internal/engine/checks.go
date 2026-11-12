@@ -436,7 +436,9 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 				if f.Key != key && foldKey(f.Key) != foldKey(key) {
 					continue
 				}
-				if foldKey(f.Value) == "false" {
+				if f.Value == "false" {
+					// Only the canonical value clears; " False " or "FALSE"
+					// is not a value the collector writes, so it blocks.
 					continue
 				}
 				return unknownLeaf(id, "component_absent_but_in_use", key, append(ev, f.EvidenceID))

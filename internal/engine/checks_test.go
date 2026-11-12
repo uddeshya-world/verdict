@@ -584,9 +584,12 @@ func TestAbsenceContradictedByAnyNonFalseValue(t *testing.T) {
 			t.Errorf("%+v must block absence: %+v", f, got)
 		}
 	}
-	for _, v := range []string{"false", " False ", "FALSE"} {
-		if got := evalPackage("C1", ch, nil, plain(hostFact(k, v, "")), eval, mustAge()); got.Leaf.Value != logic.False {
-			t.Errorf("%q must not block: %+v", v, got)
+	if got := evalPackage("C1", ch, nil, plain(hostFact(k, "false", "")), eval, mustAge()); got.Leaf.Value != logic.False {
+		t.Errorf("canonical false must not block: %+v", got)
+	}
+	for _, v := range []string{" False ", "FALSE", "false "} {
+		if got := evalPackage("C1", ch, nil, plain(hostFact(k, v, "")), eval, mustAge()); got.Leaf.Value == logic.False {
+			t.Errorf("non-canonical %q must block absence: %+v", v, got)
 		}
 	}
 	// Unrelated keys (residual M1: sshd2) are not matched.
