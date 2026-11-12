@@ -96,52 +96,39 @@ func foldedKeyFact(asset snapshot.Asset, key string) *snapshot.Fact {
 // package's purl. exact facts have the same canonical form; variants differ
 // only by case, white space, or separators in the name (FoldKey). Every
 // match is returned so the caller can be independent of fact order.
-func findAdvisories(asset snapshot.Asset, key, packagePURL string) (exact, variants []*snapshot.Fact) {
+func findAdvisories(ac *assetCtx, key, packagePURL string) (exact, variants []*snapshot.Fact) {
 	if key == "" || packagePURL == "" {
 		return nil, nil
 	}
-	for i := range asset.Facts {
-		f := &asset.Facts[i]
-		if f.Key != key || f.PURL == "" {
-			continue
-		}
-		switch {
-		case purl.Same(f.PURL, packagePURL):
-			exact = append(exact, f)
-		case purl.SameFolded(f.PURL, packagePURL):
-			variants = append(variants, f)
-		}
-	}
-	return exact, variants
+	return ac.findAdvisories(key, ac.ec.info(packagePURL))
 }
 
 // advisoryNamesPackage reports whether any purl-scoped advisory fact for key
 // names this inventory package, under any spelling.
-func advisoryNamesPackage(asset snapshot.Asset, key, packagePURL string) bool {
-	exact, variants := findAdvisories(asset, key, packagePURL)
+func advisoryNamesPackage(ac *assetCtx, key, packagePURL string) bool {
+	exact, variants := findAdvisories(ac, key, packagePURL)
 	return len(exact)+len(variants) > 0
 }
 
 // orphanAdvisory returns a purl-scoped advisory fact for key that names no
 // inventory package. With a complete inventory that is a contradiction, so
 // it blocks the absence proof.
-func orphanAdvisory(asset snapshot.Asset, key string) *snapshot.Fact {
+func orphanAdvisory(ac *assetCtx, key string) *snapshot.Fact {
 	if key == "" {
 		return nil
 	}
-	for i := range asset.Facts {
-		f := &asset.Facts[i]
-		if f.Key != key || f.PURL == "" {
-			continue
+	ix := ac.advIndex(key)
+	if len(ix.facts) == 0 {
+		return nil
+	}
+	if ac.named == nil {
+		ac.named = map[string]struct{}{}
+		for _, pkg := range ac.packages() {
+			ac.named[pkg.info.fold] = struct{}{}
 		}
-		named := false
-		for _, pkg := range asset.Inventory.Packages {
-			if purl.SameFolded(f.PURL, pkg.PURL) {
-				named = true
-				break
-			}
-		}
-		if !named {
+	}
+	for i, f := range ix.facts {
+		if _, named := ac.named[ix.infos[i].fold]; !named {
 			return f
 		}
 	}
@@ -151,19 +138,19 @@ func orphanAdvisory(asset snapshot.Asset, key string) *snapshot.Fact {
 // classify sorts one inventory package against the pack patterns.
 // exact: canonical type, namespace, and name match a pattern.
 // related: anything purl.Related says could be the component.
-func classify(parsed purl.PURL, patterns []string) (exact, related bool) {
+func classify(subj *purl.Subject, patterns []*purl.Pattern) (exact, related bool) {
 	for _, pattern := range patterns {
-		if purl.Match(pattern, parsed) {
+		if pattern.Match(subj.P) {
 			return true, false
 		}
 	}
-	if len(patterns) > 0 && purl.NonASCII(parsed.Name) {
+	if len(patterns) > 0 && subj.NonASCII() {
 		// A name with a rune the skeleton table does not map could be a
 		// disguised spelling of anything. It is never absent.
 		return false, true
 	}
 	for _, pattern := range patterns {
-		if purl.Related(pattern, parsed) {
+		if pattern.Related(subj) {
 			return false, true
 		}
 	}
@@ -198,19 +185,20 @@ func valueLeaf(id string, value logic.Value, conf logic.Confidence, observed boo
 	}
 }
 
-func evalChecks(p *pack.Pack, asset snapshot.Asset, eval time.Time) []leafEval {
+func evalChecks(p *pack.Pack, ac *assetCtx, eval time.Time) []leafEval {
 	ids := sortedCheckIDs(p)
 	out := make([]leafEval, 0, len(ids))
 	for _, id := range ids {
-		out = append(out, evalCheck(id, p.Checks[id], p.Component.Purls, asset, eval, p.MaxAge))
+		out = append(out, evalCheck(id, p.Checks[id], p.Component.Purls, ac, eval, p.MaxAge))
 	}
 	return out
 }
 
-func evalCheck(id string, ch pack.Check, component []string, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
+func evalCheck(id string, ch pack.Check, component []string, ac *assetCtx, eval time.Time, maxAge time.Duration) leafEval {
+	asset := ac.asset
 	switch ch.Type {
 	case "package_version":
-		return evalPackage(id, ch, component, asset, eval, maxAge)
+		return evalPackageCtx(id, ch, component, ac, eval, maxAge)
 	case "process_listening":
 		return evalBoolFact(id, ch, "process.listening."+ch.Process, asset, eval, maxAge)
 	case "process_running":
@@ -218,9 +206,9 @@ func evalCheck(id string, ch pack.Check, component []string, asset snapshot.Asse
 	case "file_exists":
 		return evalBoolFact(id, ch, "file.exists."+ch.Path, asset, eval, maxAge)
 	case "manual_attestation":
-		return evalEquals(id, ch, ch.Key, true, asset, eval, maxAge)
+		return evalEquals(id, ch, ch.Key, true, ac, eval, maxAge)
 	default:
-		return evalEquals(id, ch, ch.Key, false, asset, eval, maxAge)
+		return evalEquals(id, ch, ch.Key, false, ac, eval, maxAge)
 	}
 }
 
@@ -254,9 +242,10 @@ func evalBoolFact(id string, ch pack.Check, key string, asset snapshot.Asset, ev
 	return valueLeaf(id, value, conf, observed, ch.NegationJustification, []string{fact.EvidenceID}, weak, key)
 }
 
-func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
+func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, ac *assetCtx, eval time.Time, maxAge time.Duration) leafEval {
+	asset := ac.asset
 	if ch.WhenPackage != nil {
-		gate, gerr := evalWhen(*ch.WhenPackage, asset, eval, maxAge)
+		gate, gerr := evalWhen(*ch.WhenPackage, ac, eval, maxAge)
 		if gerr.Reason != "" {
 			gerr.ID = id
 			return gerr
@@ -316,30 +305,28 @@ type whenResult struct {
 	evidence   []string
 }
 
-func evalWhen(w pack.WhenPackage, asset snapshot.Asset, eval time.Time, maxAge time.Duration) (whenResult, leafEval) {
+func evalWhen(w pack.WhenPackage, ac *assetCtx, eval time.Time, maxAge time.Duration) (whenResult, leafEval) {
+	asset := ac.asset
+	patterns := ac.ec.patterns(w.PurlPatterns)
 	usable, observed, conf, reason := assess(observation{
 		asset.Inventory.Basis, asset.Inventory.Confidence, asset.Inventory.ObservedAt, "",
 	}, eval, maxAge)
 	var matched []snapshot.Package
 	var extras []snapshot.Package
-	for _, pkg := range asset.Inventory.Packages {
-		canon, err := purl.Canonical(pkg.PURL)
-		if err != nil {
+	for _, pkg := range ac.packages() {
+		pi := pkg.info
+		if pi.canonErr || pi.parseErr {
 			return whenResult{}, unknownLeaf("", "malformed_purl", pkg.PURL, nil)
 		}
-		parsed, err := purl.Parse(canon)
-		if err != nil {
-			return whenResult{}, unknownLeaf("", "malformed_purl", pkg.PURL, nil)
-		}
-		if parsed.Version != "" && parsed.Version != pkg.Version {
+		if pi.parsed.Version != "" && pi.parsed.Version != pkg.Version {
 			return whenResult{}, unknownLeaf("", "version_purl_mismatch", pkg.PURL, nil)
 		}
-		exact, related := classify(parsed, w.PurlPatterns)
+		exact, related := classify(&pi.subj, patterns)
 		switch {
 		case exact:
-			matched = append(matched, pkg)
+			matched = append(matched, pkg.Package)
 		case related:
-			extras = append(extras, pkg)
+			extras = append(extras, pkg.Package)
 		}
 	}
 	ev := []string{asset.Inventory.EvidenceID}
@@ -357,7 +344,7 @@ func evalWhen(w pack.WhenPackage, asset snapshot.Asset, eval time.Time, maxAge t
 	}
 	inRange := false
 	for _, pkg := range matched {
-		if purl.DistroType(mustType(pkg.PURL)) {
+		if ac.ec.info(pkg.PURL).rawIsDist {
 			return whenResult{}, unknownLeaf("", "distro_advisory_required", pkg.PURL, ev)
 		}
 		in, unknown := versionInRanges(w.VersionScheme, pkg.Version, w.AffectedRanges)
@@ -372,37 +359,39 @@ func evalWhen(w pack.WhenPackage, asset snapshot.Asset, eval time.Time, maxAge t
 }
 
 func evalPackage(id string, ch pack.Check, component []string, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
-	patterns := ch.PurlPatterns
-	if len(patterns) == 0 {
-		patterns = component
+	return evalPackageCtx(id, ch, component, newAssetCtx(newEvalCtx(), asset), eval, maxAge)
+}
+
+func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, eval time.Time, maxAge time.Duration) leafEval {
+	asset := ac.asset
+	patternList := ch.PurlPatterns
+	if len(patternList) == 0 {
+		patternList = component
 	}
+	patterns := ac.ec.patterns(patternList)
 	usable, observed, conf, reason := assess(observation{
 		asset.Inventory.Basis, asset.Inventory.Confidence, asset.Inventory.ObservedAt, "",
 	}, eval, maxAge)
 	var matched []snapshot.Package
 	var extras []snapshot.Package
-	for _, pkg := range asset.Inventory.Packages {
-		canon, err := purl.Canonical(pkg.PURL)
-		if err != nil {
+	for _, pkg := range ac.packages() {
+		pi := pkg.info
+		if pi.canonErr || pi.parseErr {
 			return unknownLeaf(id, "malformed_purl", pkg.PURL, []string{asset.Inventory.EvidenceID})
 		}
-		parsed, err := purl.Parse(canon)
-		if err != nil {
-			return unknownLeaf(id, "malformed_purl", pkg.PURL, []string{asset.Inventory.EvidenceID})
-		}
-		if parsed.Version != "" && parsed.Version != pkg.Version {
+		if pi.parsed.Version != "" && pi.parsed.Version != pkg.Version {
 			return unknownLeaf(id, "version_purl_mismatch", pkg.PURL, []string{asset.Inventory.EvidenceID})
 		}
-		exact, related := classify(parsed, patterns)
+		exact, related := classify(&pi.subj, patterns)
 		switch {
 		case exact:
-			matched = append(matched, pkg)
-		case related, advisoryNamesPackage(asset, ch.AdvisoryFact, pkg.PURL):
+			matched = append(matched, pkg.Package)
+		case related, advisoryNamesPackage(ac, ch.AdvisoryFact, pkg.PURL):
 			// A case, white-space, or separator variant of the component
 			// name, the same name under another type or namespace, a
 			// free-form alias, or a package an advisory for this CVE names.
 			// Absence is not proven, and the version is never sorted.
-			extras = append(extras, pkg)
+			extras = append(extras, pkg.Package)
 		}
 	}
 	var fact *snapshot.Fact
@@ -414,7 +403,7 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 		if fact != nil {
 			return applyAdvisory(id, ch, fact, nil, usable, observed, conf, reason, asset, eval, maxAge)
 		}
-		if orphan := orphanAdvisory(asset, ch.AdvisoryFact); orphan != nil {
+		if orphan := orphanAdvisory(ac, ch.AdvisoryFact); orphan != nil {
 			return unknownLeaf(id, "advisory_without_package", ch.AdvisoryFact, append(ev, orphan.EvidenceID))
 		}
 		if !asset.Inventory.Complete {
@@ -456,7 +445,7 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	var upstream []snapshot.Package
 	var distro []snapshot.Package
 	for _, pkg := range matched {
-		if purl.DistroType(mustType(pkg.PURL)) {
+		if ac.ec.info(pkg.PURL).rawIsDist {
 			distro = append(distro, pkg)
 			continue
 		}
@@ -481,7 +470,7 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	}
 	needsAdvisory := len(distro) > 0 || len(extras) > 0
 	if needsAdvisory {
-		return resolveDistroAdvisories(id, ch, distro, extras, sawUnknown, usable, observed, conf, reason, asset, eval, maxAge)
+		return resolveDistroAdvisories(id, ch, distro, extras, sawUnknown, usable, observed, conf, reason, ac, eval, maxAge)
 	}
 	if sawUnknown {
 		return unknownLeaf(id, "unsupported_version", "", ev)
@@ -495,7 +484,8 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	return valueLeaf(id, logic.False, conf, observed, ch.NegationJustification, ev, weak, "")
 }
 
-func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot.Package, sawUnknown, invUsable, invObserved bool, invConf logic.Confidence, invReason string, asset snapshot.Asset, eval time.Time, maxAge time.Duration) leafEval {
+func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot.Package, sawUnknown, invUsable, invObserved bool, invConf logic.Confidence, invReason string, ac *assetCtx, eval time.Time, maxAge time.Duration) leafEval {
+	asset := ac.asset
 	subjects := append(append([]snapshot.Package{}, distro...), extras...)
 	ev := []string{asset.Inventory.EvidenceID}
 	if !invUsable {
@@ -514,7 +504,7 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 		}
 	}
 	for _, pkg := range subjects {
-		exact, variants := findAdvisories(asset, ch.AdvisoryFact, pkg.PURL)
+		exact, variants := findAdvisories(ac, ch.AdvisoryFact, pkg.PURL)
 		if len(exact) == 0 && len(variants) == 0 {
 			if bare := findFact(asset, ch.AdvisoryFact); bare != nil {
 				note("advisory_purl_required", ch.AdvisoryFact)
