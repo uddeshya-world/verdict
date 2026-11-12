@@ -1,0 +1,455 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "purl-name-upper",
+      "name": "OpenSSH name case",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-purl-name-upper",
+        "packages": [
+          {
+            "purl": "pkg:generic/OpenSSH@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "purl-name-space",
+      "name": "trailing space in name",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-purl-name-space",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh%20@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "purl-alias-portable",
+      "name": "openssh-portable alias",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-purl-alias-portable",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh-portable@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "purl-type-upper",
+      "name": "GENERIC type case",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-purl-type-upper",
+        "packages": [
+          {
+            "purl": "pkg:GENERIC/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "purl-deb-upper-affected",
+      "name": "deb name case with affected advisory",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-purl-deb-upper-affected",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "purl-deb-upper-bare",
+      "name": "deb name case without advisory",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-purl-deb-upper-bare",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    }
+  ]
+}

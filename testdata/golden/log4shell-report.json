@@ -312,7 +312,7 @@
         {
           "check_id": "C_version",
           "reason": "distro_advisory_required",
-          "hint": "Check C_version cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: Provide the log4j-core package URL and, for distro builds, advisory.cve_2021_44228.status=affected or fixed."
+          "hint": "Check C_version cannot treat pkg:rpm/opensuse/log4j-core@2.15.0 as not-vulnerable by sorting versions. A deb, rpm, or apk build, the same component name under a different package type, a case, white-space, or separator variant of the name, or a free-form alias such as openssh-portable, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: Provide the log4j-core package URL and, for distro builds, advisory.cve_2021_44228.status=affected or fixed."
         }
       ],
       "leaves": [

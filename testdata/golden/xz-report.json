@@ -133,7 +133,7 @@
         {
           "check_id": "C_version",
           "reason": "distro_advisory_required",
-          "hint": "Check C_version cannot treat pkg:deb/debian/xz-utils@5.6.1-1 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_3094.status to affected, fixed, or not_affected on that package URL. Do not sort a distro revision into 5.6.0. sshd reachability does not replace this fact."
+          "hint": "Check C_version cannot treat pkg:deb/debian/xz-utils@5.6.1-1 as not-vulnerable by sorting versions. A deb, rpm, or apk build, the same component name under a different package type, a case, white-space, or separator variant of the name, or a free-form alias such as openssh-portable, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_3094.status to affected, fixed, or not_affected on that package URL. Do not sort a distro revision into 5.6.0. sshd reachability does not replace this fact."
         }
       ],
       "leaves": [

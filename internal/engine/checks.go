@@ -74,16 +74,77 @@ func findFact(asset snapshot.Asset, key string) *snapshot.Fact {
 	return nil
 }
 
-func findAdvisory(asset snapshot.Asset, key, packagePURL string) *snapshot.Fact {
+// findAdvisories returns every advisory fact for key whose purl is the
+// package's purl. exact facts have the same canonical form; variants differ
+// only by case, white space, or separators in the name (FoldKey). Every
+// match is returned so the caller can be independent of fact order.
+func findAdvisories(asset snapshot.Asset, key, packagePURL string) (exact, variants []*snapshot.Fact) {
 	if key == "" || packagePURL == "" {
+		return nil, nil
+	}
+	for i := range asset.Facts {
+		f := &asset.Facts[i]
+		if f.Key != key || f.PURL == "" {
+			continue
+		}
+		switch {
+		case purl.Same(f.PURL, packagePURL):
+			exact = append(exact, f)
+		case purl.SameFolded(f.PURL, packagePURL):
+			variants = append(variants, f)
+		}
+	}
+	return exact, variants
+}
+
+// advisoryNamesPackage reports whether any purl-scoped advisory fact for key
+// names this inventory package, under any spelling.
+func advisoryNamesPackage(asset snapshot.Asset, key, packagePURL string) bool {
+	exact, variants := findAdvisories(asset, key, packagePURL)
+	return len(exact)+len(variants) > 0
+}
+
+// orphanAdvisory returns a purl-scoped advisory fact for key that names no
+// inventory package. With a complete inventory that is a contradiction, so
+// it blocks the absence proof.
+func orphanAdvisory(asset snapshot.Asset, key string) *snapshot.Fact {
+	if key == "" {
 		return nil
 	}
 	for i := range asset.Facts {
-		if asset.Facts[i].Key == key && purl.Same(asset.Facts[i].PURL, packagePURL) {
-			return &asset.Facts[i]
+		f := &asset.Facts[i]
+		if f.Key != key || f.PURL == "" {
+			continue
+		}
+		named := false
+		for _, pkg := range asset.Inventory.Packages {
+			if purl.SameFolded(f.PURL, pkg.PURL) {
+				named = true
+				break
+			}
+		}
+		if !named {
+			return f
 		}
 	}
 	return nil
+}
+
+// classify sorts one inventory package against the pack patterns.
+// exact: canonical type, namespace, and name match a pattern.
+// related: anything purl.Related says could be the component.
+func classify(parsed purl.PURL, patterns []string) (exact, related bool) {
+	for _, pattern := range patterns {
+		if purl.Match(pattern, parsed) {
+			return true, false
+		}
+	}
+	for _, pattern := range patterns {
+		if purl.Related(pattern, parsed) {
+			return false, true
+		}
+	}
+	return false, false
 }
 
 func unknownLeaf(id, reason, detail string, evidence []string) leafEval {
@@ -233,15 +294,11 @@ func evalWhen(w pack.WhenPackage, asset snapshot.Asset, eval time.Time, maxAge t
 		if parsed.Version != "" && parsed.Version != pkg.Version {
 			return whenResult{}, unknownLeaf("", "version_purl_mismatch", pkg.PURL, nil)
 		}
-		hit := false
-		for _, pattern := range w.PurlPatterns {
-			if purl.Match(pattern, parsed) {
-				matched = append(matched, pkg)
-				hit = true
-				break
-			}
-		}
-		if !hit && nameMatchesPattern(parsed.Name, w.PurlPatterns) {
+		exact, related := classify(parsed, w.PurlPatterns)
+		switch {
+		case exact:
+			matched = append(matched, pkg)
+		case related:
 			extras = append(extras, pkg)
 		}
 	}
@@ -296,17 +353,15 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 		if parsed.Version != "" && parsed.Version != pkg.Version {
 			return unknownLeaf(id, "version_purl_mismatch", pkg.PURL, []string{asset.Inventory.EvidenceID})
 		}
-		hit := false
-		for _, pattern := range patterns {
-			if purl.Match(pattern, parsed) {
-				matched = append(matched, pkg)
-				hit = true
-				break
-			}
-		}
-		if !hit && nameMatchesPattern(parsed.Name, patterns) {
-			// Same component name under a type or namespace the pattern
-			// does not cover (a distro build, a fork). Absence is not proven.
+		exact, related := classify(parsed, patterns)
+		switch {
+		case exact:
+			matched = append(matched, pkg)
+		case related, advisoryNamesPackage(asset, ch.AdvisoryFact, pkg.PURL):
+			// A case, white-space, or separator variant of the component
+			// name, the same name under another type or namespace, a
+			// free-form alias, or a package an advisory for this CVE names.
+			// Absence is not proven, and the version is never sorted.
 			extras = append(extras, pkg)
 		}
 	}
@@ -318,6 +373,9 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	if len(matched) == 0 && len(extras) == 0 {
 		if fact != nil {
 			return applyAdvisory(id, ch, fact, nil, usable, observed, conf, reason, asset, eval, maxAge)
+		}
+		if orphan := orphanAdvisory(asset, ch.AdvisoryFact); orphan != nil {
+			return unknownLeaf(id, "advisory_without_package", ch.AdvisoryFact, append(ev, orphan.EvidenceID))
 		}
 		if !asset.Inventory.Complete {
 			return unknownLeaf(id, "inventory_incomplete", "", ev)
@@ -341,8 +399,7 @@ func evalPackage(id string, ch pack.Check, component []string, asset snapshot.As
 	var upstream []snapshot.Package
 	var distro []snapshot.Package
 	for _, pkg := range matched {
-		parsed, _ := purl.Parse(pkg.PURL)
-		if purl.DistroType(parsed.Type) {
+		if purl.DistroType(mustType(pkg.PURL)) {
 			distro = append(distro, pkg)
 			continue
 		}
@@ -400,8 +457,8 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 		}
 	}
 	for _, pkg := range subjects {
-		fact := findAdvisory(asset, ch.AdvisoryFact, pkg.PURL)
-		if fact == nil {
+		exact, variants := findAdvisories(asset, ch.AdvisoryFact, pkg.PURL)
+		if len(exact) == 0 && len(variants) == 0 {
 			if bare := findFact(asset, ch.AdvisoryFact); bare != nil {
 				note("advisory_purl_required", ch.AdvisoryFact)
 			} else {
@@ -409,23 +466,47 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 			}
 			continue
 		}
-		ev = append(ev, fact.EvidenceID)
-		usable, observed, conf, reason := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
-		if !usable || !observed {
-			why := reason
-			if why == "" {
-				why = "advisory_not_observed"
+		all := append(append([]*snapshot.Fact{}, exact...), variants...)
+		for _, f := range all {
+			ev = append(ev, f.EvidenceID)
+		}
+		// Every spelling of this package URL is considered, so the result
+		// does not depend on fact order. Disagreement is unknown.
+		conflict := false
+		for _, f := range all[1:] {
+			if f.Value != all[0].Value {
+				conflict = true
+				break
 			}
-			note(why, pkg.PURL)
+		}
+		if conflict {
+			note("conflicting_advisory", pkg.PURL)
 			continue
 		}
-		if conf < useConf {
-			useConf = conf
+		if len(exact) == 0 {
+			note("advisory_purl_variant", pkg.PURL)
+			continue
 		}
-		if !observed {
-			allObserved = false
+		bad := false
+		for _, f := range exact {
+			usable, observed, conf, reason := assess(observation{f.Basis, f.Confidence, f.ObservedAt, f.ExpiresAt}, eval, maxAge)
+			if !usable || !observed {
+				why := reason
+				if why == "" {
+					why = "advisory_not_observed"
+				}
+				note(why, pkg.PURL)
+				bad = true
+				break
+			}
+			if conf < useConf {
+				useConf = conf
+			}
 		}
-		switch fact.Value {
+		if bad {
+			continue
+		}
+		switch exact[0].Value {
 		case "affected":
 			anyTrue = true
 		case "fixed", "not_affected":
@@ -507,19 +588,6 @@ func versionInRanges(scheme, version string, ranges []string) (in bool, unknown 
 		}
 	}
 	return false, false
-}
-
-func nameMatchesPattern(name string, patterns []string) bool {
-	for _, pattern := range patterns {
-		parsed, err := purl.Parse(pattern)
-		if err != nil {
-			continue
-		}
-		if parsed.Name == name {
-			return true
-		}
-	}
-	return false
 }
 
 func mustType(raw string) string {
