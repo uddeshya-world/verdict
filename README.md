@@ -32,6 +32,20 @@ This repository is a foundation, not a finished fire-drill product.
 
 Market statistics and competitive claims in [docs/design-plan.md](docs/design-plan.md) are unvalidated design input. This README does not repeat them as findings.
 
+## Install
+
+Tagged releases attach static binaries (`CGO_ENABLED=0`, `-trimpath`) for linux, darwin (amd64, arm64) and windows/amd64, plus `SHA256SUMS` and a CycloneDX SBOM per binary. Replace `0.1.0` with the release you want. Assets exist only for tags built by the release workflow.
+
+```bash
+V=0.1.0; A=linux_amd64   # or linux_arm64, darwin_amd64, darwin_arm64
+gh release download "v$V" -R uddeshya-world/verdict -p "verdict_${V}_${A}.tar.gz" -p SHA256SUMS
+sha256sum --ignore-missing -c SHA256SUMS        # macOS: shasum -a 256 -c
+gh attestation verify "verdict_${V}_${A}.tar.gz" -R uddeshya-world/verdict
+tar xzf "verdict_${V}_${A}.tar.gz" && "./verdict_${V}_${A}/verdict" version
+```
+
+The checksum proves the download matches the release; the attestation proves it was built by this repository's release workflow from that tag. Builds are reproducible given Go 1.22.2: rebuilding a tag with `scripts/release-build.sh vX.Y.Z linux amd64 out` yields the same archive bytes.
+
 ## Quickstart
 
 Requires Go 1.22.x (this module is developed with Go 1.22.2). No network is required after dependencies are cached.
