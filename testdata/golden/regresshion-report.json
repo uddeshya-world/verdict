@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-6387-openssh",
-  "pack_sha256": "1cf78dbe70c6e0c6b03095984ef42d6c18acc4b53b21670527a79891448dc06d",
+  "pack_sha256": "194bc487231c2bce5cd6b3fa42237b2a37a3ac03896adc8c2c0576906a9eba43",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-6387",

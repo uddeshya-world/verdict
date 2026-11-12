@@ -23,6 +23,8 @@ Every check requires `negation_justification`, one of the five OpenVEX labels. `
 
 `package_version` may also set `absence_contradicted_by`, a list of fact keys such as `process.listening.sshd`. If the inventory has no matching package but any listed fact on the asset is `true`, the check is unknown (`component_absent_but_in_use`) instead of an absence proof.
 
+`package_version` may also set `aliases`, a list of purl patterns (no version, qualifier, or subpath; at most 32; no duplicates; none equal to a component or check pattern) for other names under which the same component ships, for example `pkg:generic/sshd`. An inventory package that matches an alias, exactly or by name similarity, and is not an exact component match is unknown (`distro_advisory_required` unless an observed advisory on its exact package URL decides it): never absent and never version-sorted. Aliases only widen what blocks an absence proof. They never make a check true or false by themselves, and they are part of the pack content hash. List only packages that ship the component: a client-only package is not an alias.
+
 `tradeoff` is optional text. When a sufficient false proof includes that check, the verdict sets `mitigation_dependent` and copies the text into `impact_statement`, including on the OpenVEX document. Nothing in v0.1 re-evaluates that mitigation later.
 
 There is no `missing_means: true`. An absent fact is `unknown`. v0.1 will not invent a vendor default. That includes LoginGraceTime and Log4j lookup settings: put the effective value in the snapshot or accept `needs_review`.

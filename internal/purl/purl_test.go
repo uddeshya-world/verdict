@@ -174,3 +174,31 @@ func TestRelatedValidatorNames(t *testing.T) {
 		}
 	}
 }
+
+func TestPatternAliasMatchAndRelated(t *testing.T) {
+	alias := NewPattern("pkg:generic/sshd")
+	cases := []struct {
+		pkg            string
+		match, related bool
+	}{
+		{"pkg:generic/sshd@9.6p1", true, true},
+		{"pkg:GENERIC/SSHD@9.6p1", false, true},
+		{"pkg:generic/sshd-session@9.8", false, true},
+		{"pkg:deb/ubuntu/sshd@1", false, true}, // same name under another type is related
+		{"pkg:generic/libssh@0.10.6", false, false},
+		{"pkg:deb/ubuntu/openssh-client@1:8.9p1-3", false, false},
+	}
+	for _, c := range cases {
+		p, err := Parse(c.pkg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := NewSubject(p)
+		if got := alias.Match(p); got != c.match {
+			t.Errorf("Match(%s) = %v, want %v", c.pkg, got, c.match)
+		}
+		if got := alias.Related(&s); got != c.related {
+			t.Errorf("Related(%s) = %v, want %v", c.pkg, got, c.related)
+		}
+	}
+}
