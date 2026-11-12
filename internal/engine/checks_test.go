@@ -626,7 +626,7 @@ func TestEqualsLeafNormalisedValues(t *testing.T) {
 	}
 	for _, c := range cases {
 		ch := pack.Check{Type: "host_fact", Key: c.key, Equals: c.equals}
-		got := evalCheck("C1", ch, nil, asset(c.fact), eval, mustAge())
+		got := evalCheck("C1", ch, nil, newAssetCtx(newEvalCtx(), asset(c.fact)), eval, mustAge())
 		if got.Leaf.Value != logic.Unknown || got.Reason != c.want {
 			t.Errorf("%s=%q vs %q: want unknown %s, got %+v", c.fact.Key, c.fact.Value, c.equals, c.want, got)
 		}
@@ -638,17 +638,17 @@ func TestEqualsLeafNormalisedValues(t *testing.T) {
 			hostFact("Process.Listening.sshd", "false", ""), hostFact("Process.Running.sshd", "false", ""),
 			hostFact("process.listening.sshd", "yes", ""), hostFact("process.running.sshd", "True", ""),
 		} {
-			if got := evalCheck("C1", ch, nil, asset(f), eval, mustAge()); got.Leaf.Value == logic.False {
+			if got := evalCheck("C1", ch, nil, newAssetCtx(newEvalCtx(), asset(f)), eval, mustAge()); got.Leaf.Value == logic.False {
 				t.Errorf("%s with %+v must not be false: %+v", typ, f, got)
 			}
 		}
 	}
 	// Controls: canonical values still evaluate.
 	ch := pack.Check{Type: "host_fact", Key: "libc.family", Equals: "musl"}
-	if got := evalCheck("C1", ch, nil, asset(hostFact("libc.family", "glibc", "")), eval, mustAge()); got.Leaf.Value != logic.False {
+	if got := evalCheck("C1", ch, nil, newAssetCtx(newEvalCtx(), asset(hostFact("libc.family", "glibc", ""))), eval, mustAge()); got.Leaf.Value != logic.False {
 		t.Errorf("glibc vs musl must stay false: %+v", got)
 	}
-	if got := evalCheck("C1", ch, nil, asset(hostFact("libc.family", "musl", "")), eval, mustAge()); got.Leaf.Value != logic.True {
+	if got := evalCheck("C1", ch, nil, newAssetCtx(newEvalCtx(), asset(hostFact("libc.family", "musl", ""))), eval, mustAge()); got.Leaf.Value != logic.True {
 		t.Errorf("musl vs musl must stay true: %+v", got)
 	}
 }
