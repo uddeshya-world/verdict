@@ -230,7 +230,7 @@ type kbResolution struct {
 
 // resolveFromKB re-verifies an installed bundle and picks the pack for cve,
 // falling back to its OSV records when no pack names the CVE.
-func resolveFromKB(kbDir, pubPath, cve string, port int, proto string, allowOlder bool) (*kbResolution, error) {
+func resolveFromKB(kbDir, pubPath, cve string, port int, proto string, allowOlder, requireFloor bool) (*kbResolution, error) {
 	if cve == "" {
 		return nil, fmt.Errorf("--cve is required with --kb")
 	}
@@ -244,25 +244,70 @@ func resolveFromKB(kbDir, pubPath, cve string, port int, proto string, allowOlde
 		return nil, fmt.Errorf("--kb %s holds a bundle signed as kb_version %s; refusing a mismatched or rolled-back install", kbDir, v.Manifest.KBVersion)
 	}
 	res := &kbResolution{KBVersion: v.Manifest.KBVersion, KeyID: v.Manifest.KeyID, CreatedAt: v.Manifest.CreatedAt}
-	// Monotonic floor: install records the newest version in <root>/LATEST.
+	// Monotonic floor, derived from signed data: verify every installed
+	// bundle under the root and take the newest signed created_at. LATEST is
+	// a cache and a hint that can only raise the floor.
 	root := filepath.Dir(filepath.Clean(kbDir))
+	pubRaw, err := os.ReadFile(pubPath)
+	if err != nil {
+		return nil, err
+	}
+	pub, err := bundle.ParsePublicKey(pubRaw)
+	if err != nil {
+		return nil, err
+	}
+	scan, err := bundle.ScanFloor(root, pub)
+	if err != nil {
+		return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
+	}
+	res.Notes = append(res.Notes, scan.Notes...)
 	latest, err := bundle.ReadLatest(root)
 	if err != nil {
 		return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
 	}
-	if latest == nil {
-		res.Notes = append(res.Notes, fmt.Sprintf("kb %s: no %s in %s; the rollback floor is not checked", res.KBVersion, bundle.LatestName, root))
-	} else {
-		older, err := latest.Older(res.CreatedAt)
-		if err != nil {
+	floor := &bundle.Latest{KBVersion: res.KBVersion, CreatedAt: res.CreatedAt}
+	if scan.Newest != nil {
+		floor = &bundle.Latest{KBVersion: scan.Newest.KBVersion, CreatedAt: scan.Newest.CreatedAt}
+	}
+	switch {
+	case latest == nil:
+		res.Notes = append(res.Notes, fmt.Sprintf("kb %s: no %s in %s; floor %s computed from signed bundles", res.KBVersion, bundle.LatestName, root, floor.KBVersion))
+	default:
+		claim := *latest
+		if signed, ok := scan.Created[latest.KBVersion]; ok {
+			claim.CreatedAt = signed // the signed time wins over the cache
+		}
+		if higher, err := floor.Before(claim.CreatedAt); err != nil {
 			return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
+		} else if higher {
+			if _, ok := scan.Created[latest.KBVersion]; !ok {
+				res.Notes = append(res.Notes, fmt.Sprintf("kb %s: %s names %s, which is not a verified install; honoring it as a floor", res.KBVersion, bundle.LatestName, latest.KBVersion))
+			}
+			floor = &claim
+		} else if claim.KBVersion != floor.KBVersion {
+			res.Notes = append(res.Notes, fmt.Sprintf("kb %s: %s names %s, below the signed floor %s; using the computed floor", res.KBVersion, bundle.LatestName, latest.KBVersion, floor.KBVersion))
 		}
-		if older && !allowOlder {
-			return nil, fmt.Errorf("--kb %s is kb_version %s (created %s), older than %s %s (created %s); pass --allow-older-kb to use it anyway", kbDir, res.KBVersion, res.CreatedAt, bundle.LatestName, latest.KBVersion, latest.CreatedAt)
+	}
+	if requireFloor {
+		others := 0
+		for _, v := range scan.Verified {
+			if v != res.KBVersion {
+				others++
+			}
 		}
-		if older {
-			res.Notes = append(res.Notes, fmt.Sprintf("kb %s: older than %s %s; used because --allow-older-kb was given", res.KBVersion, bundle.LatestName, latest.KBVersion))
+		if others == 0 {
+			return nil, fmt.Errorf("--kb %s: --require-floor needs at least one other verified bundle under %s; none found", kbDir, root)
 		}
+	}
+	older, err := floor.Older(res.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
+	}
+	if older && !allowOlder {
+		return nil, fmt.Errorf("--kb %s is kb_version %s (created %s), older than the signed floor %s (created %s); pass --allow-older-kb to use it anyway", kbDir, res.KBVersion, res.CreatedAt, floor.KBVersion, floor.CreatedAt)
+	}
+	if older {
+		res.Notes = append(res.Notes, fmt.Sprintf("kb %s: older than the floor %s; used because --allow-older-kb was given", res.KBVersion, floor.KBVersion))
 	}
 	var matches []*pack.Pack
 	for _, p := range v.PackPaths() {

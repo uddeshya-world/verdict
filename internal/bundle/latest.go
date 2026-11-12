@@ -14,10 +14,10 @@ import (
 )
 
 // LatestName is the file in a knowledge-base root that names the newest
-// installed version. It is a monotonic floor: install only moves it forward
-// (by signed created_at) and drill --kb refuses an older version. It is not
-// signed. It guards against pointing a drill at a stale install by mistake,
-// not against someone who can already write to the knowledge-base root.
+// installed version. It is a cache and a hint: install only moves it forward
+// (by signed created_at). It is not signed, so drill --kb does not trust it
+// to lower the floor. The floor is the newest created_at among the bundles
+// that ScanFloor verifies; LATEST can only raise it.
 const LatestName = "LATEST"
 
 // Latest is the content of LATEST.
@@ -64,6 +64,19 @@ func (l *Latest) Older(createdAt string) (bool, error) {
 		return false, err
 	}
 	return at.Before(floor), nil
+}
+
+// Before reports whether the floor is strictly earlier than createdAt.
+func (l *Latest) Before(createdAt string) (bool, error) {
+	floor, err := time.Parse(time.RFC3339, l.CreatedAt)
+	if err != nil {
+		return false, err
+	}
+	at, err := time.Parse(time.RFC3339, createdAt)
+	if err != nil {
+		return false, err
+	}
+	return floor.Before(at), nil
 }
 
 // UpdateLatest moves the floor in root to m when m is newer by created_at
