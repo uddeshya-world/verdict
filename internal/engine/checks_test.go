@@ -467,19 +467,19 @@ func TestPrimaryPURLIsMatchedComponent(t *testing.T) {
 	p.Component.Purls = []string{"pkg:generic/openssh"}
 	base := snapshot.Package{PURL: "pkg:apk/alpine/alpine-baselayout-data@3.6.5-r0", Version: "3.6.5-r0"}
 	ssh := snapshot.Package{PURL: "pkg:apk/alpine/openssh-server@9.6_p1-r0", Version: "9.6_p1-r0"}
-	if got := primaryPURL(p, freshInventory(base)); got != "" {
+	if got := primaryPURL(p, newAssetCtx(newEvalCtx(), freshInventory(base))); got != "" {
 		t.Fatalf("no component: want empty, got %s", got)
 	}
-	if got := primaryPURL(p, freshInventory(base, ssh)); got != ssh.PURL {
+	if got := primaryPURL(p, newAssetCtx(newEvalCtx(), freshInventory(base, ssh))); got != ssh.PURL {
 		t.Fatalf("want matched component, got %s", got)
 	}
 	two := freshInventory(base, ssh, snapshot.Package{PURL: "pkg:generic/openssh@9.6p1", Version: "9.6p1"})
-	if got := primaryPURL(p, two); got != "" {
+	if got := primaryPURL(p, newAssetCtx(newEvalCtx(), two)); got != "" {
 		t.Fatalf("ambiguous: want empty, got %s", got)
 	}
 	asset := freshInventory(base)
 	asset.PrimaryPURL = "pkg:oci/app@sha256%3Aabc"
-	if got := primaryPURL(p, asset); got != asset.PrimaryPURL {
+	if got := primaryPURL(p, newAssetCtx(newEvalCtx(), asset)); got != asset.PrimaryPURL {
 		t.Fatalf("caller primary_purl wins: %s", got)
 	}
 }

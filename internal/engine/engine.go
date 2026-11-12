@@ -153,8 +153,9 @@ func Evaluate(in Input) (*Report, error) {
 		Verdicts:       []Verdict{},
 	}
 	node := toNode(in.Pack.Conditions)
+	ec := newEvalCtx()
 	for _, asset := range in.Snapshot.Assets {
-		report.Verdicts = append(report.Verdicts, evalAsset(in.Pack, in.Policy, asset, node, meta, in.EvaluationTime))
+		report.Verdicts = append(report.Verdicts, evalAsset(in.Pack, in.Policy, newAssetCtx(ec, asset), node, meta, in.EvaluationTime))
 	}
 	sort.Slice(report.Verdicts, func(i, j int) bool {
 		return report.Verdicts[i].AssetID < report.Verdicts[j].AssetID
@@ -187,8 +188,9 @@ func policyHash(p *policy.Policy) string {
 	return p.SHA256
 }
 
-func evalAsset(p *pack.Pack, pol *policy.Policy, asset snapshot.Asset, node logic.Node, meta Meta, eval time.Time) Verdict {
-	leaves := evalChecks(p, asset, eval)
+func evalAsset(p *pack.Pack, pol *policy.Policy, ac *assetCtx, node logic.Node, meta Meta, eval time.Time) Verdict {
+	asset := ac.asset
+	leaves := evalChecks(p, ac, eval)
 	leafMap := map[string]logic.Leaf{}
 	for _, l := range leaves {
 		leafMap[l.ID] = l.Leaf
@@ -204,7 +206,7 @@ func evalAsset(p *pack.Pack, pol *policy.Policy, asset snapshot.Asset, node logi
 		AssetName:           asset.Name,
 		AssetKind:           asset.Kind,
 		Zones:               append([]string{}, asset.Zones...),
-		PrimaryPURL:         primaryPURL(p, asset),
+		PrimaryPURL:         primaryPURL(p, ac),
 		State:               d.State,
 		VEXStatus:           d.VEX,
 		Justification:       d.Justification,
@@ -329,27 +331,25 @@ func actionStatement(p *pack.Pack, state string) string {
 // matches the pack component or a package_version pattern. With none, or
 // more than one, it is empty and the statement carries no identifier rather
 // than naming an unrelated package.
-func primaryPURL(p *pack.Pack, asset snapshot.Asset) string {
+func primaryPURL(p *pack.Pack, ac *assetCtx) string {
+	asset := ac.asset
 	if asset.PrimaryPURL != "" {
 		return asset.PrimaryPURL
 	}
-	patterns := append([]string{}, p.Component.Purls...)
+	list := append([]string{}, p.Component.Purls...)
 	for _, id := range sortedCheckIDs(p) {
 		if ch := p.Checks[id]; ch.Type == "package_version" {
-			patterns = append(patterns, ch.PurlPatterns...)
+			list = append(list, ch.PurlPatterns...)
 		}
 	}
+	patterns := ac.ec.patterns(list)
 	found := ""
-	for _, pkg := range asset.Inventory.Packages {
-		canon, err := purl.Canonical(pkg.PURL)
-		if err != nil {
+	for _, pkg := range ac.packages() {
+		pi := pkg.info
+		if pi.canonErr || pi.parseErr {
 			continue
 		}
-		parsed, err := purl.Parse(canon)
-		if err != nil {
-			continue
-		}
-		if exact, _ := classify(parsed, patterns); !exact {
+		if exact, _ := classify(&pi.subj, patterns); !exact {
 			continue
 		}
 		if found != "" && !purl.Same(found, pkg.PURL) {
