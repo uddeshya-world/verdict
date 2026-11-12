@@ -37,7 +37,7 @@ func TestBundleBuildInstallDrill(t *testing.T) {
 	}
 	steps := [][]string{
 		{"bundle", "keygen", "--private-key", priv, "--public-key", pub},
-		{"bundle", "build", "--dir", src, "--kb-version", "t1", "--created-at", "2026-11-09T06:00:00Z", "--key", priv, "--out", tarball},
+		{"bundle", "build", "--dir", src, "--kb-version", "t1", "--created-at", "2026-11-08T06:00:00Z", "--key", priv, "--out", tarball},
 		{"bundle", "verify", "--bundle", tarball, "--pubkey", pub},
 		{"bundle", "install", "--bundle", tarball, "--pubkey", pub, "--dir", kb},
 	}

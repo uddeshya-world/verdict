@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uddeshya-world/verdict/internal/canonjson"
 	"github.com/uddeshya-world/verdict/internal/importer"
-	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
 func newImport(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
@@ -110,6 +109,7 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 func newImportAdvisories(stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
 	var snapPath, advPath, out string
 	var allowUnmatched bool
+	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   "advisories",
 		Short: "Merge a local advisory file into a snapshot",
@@ -126,11 +126,7 @@ fails the import unless --allow-unmatched, which drops it.`,
 			if snapPath == "" || advPath == "" || out == "" {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot, --advisories, and --out are required")}
 			}
-			sraw, err := os.ReadFile(snapPath)
-			if err != nil {
-				return &ExitError{Code: 2, Err: err}
-			}
-			snap, err := snapshot.Load(sraw)
+			snap, err := loadSnapshotFile(snapPath, maxBytes)
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
@@ -156,6 +152,9 @@ fails the import unless --allow-unmatched, which drops it.`,
 			if err != nil {
 				return err
 			}
+			if err := checkSnapshotSize(body, maxBytes); err != nil {
+				return &ExitError{Code: 2, Err: err}
+			}
 			if err := os.WriteFile(out, body, 0o644); err != nil {
 				return err
 			}
@@ -168,5 +167,6 @@ fails the import unless --allow-unmatched, which drops it.`,
 	cmd.Flags().StringVar(&advPath, "advisories", "", "local advisory JSON")
 	cmd.Flags().StringVar(&out, "out", "", "snapshot JSON to write")
 	cmd.Flags().BoolVar(&allowUnmatched, "allow-unmatched", false, "drop rows that match no inventory package instead of failing")
+	addMaxSnapshotBytes(cmd, &maxBytes)
 	return cmd
 }

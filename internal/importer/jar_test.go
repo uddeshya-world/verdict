@@ -454,3 +454,187 @@ func TestJavaMajor(t *testing.T) {
 		t.Fatalf("%+v", f)
 	}
 }
+
+// pluginCache writes a Log4j2Plugins.dat in PluginCache.writeCache format.
+func pluginCache(entries ...[2]string) []byte {
+	var b bytes.Buffer
+	i32 := func(n int) { b.Write([]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)}) }
+	utf := func(s string) { b.Write([]byte{byte(len(s) >> 8), byte(len(s))}); b.WriteString(s) }
+	i32(1)
+	utf("lookup")
+	i32(len(entries))
+	for _, e := range entries {
+		utf(e[0])
+		utf(e[1])
+		utf(e[0])
+		b.Write([]byte{0, 0})
+	}
+	return b.Bytes()
+}
+
+const pluginCachePath = "META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat"
+
+func log4jCoreWith(t *testing.T, extra ...zentry) []byte {
+	es := []zentry{
+		pom("org.apache.logging.log4j", "log4j-core", "2.14.1"),
+		class("org/apache/logging/log4j/core/Logger.class"),
+		class("org/apache/logging/log4j/core/lookup/MainMapLookup.class"),
+	}
+	return buildZip(t, append(es, extra...)...)
+}
+
+func completeOpts() JarOptions {
+	o := jarOpts()
+	o.Complete = true
+	return o
+}
+
+// F11: JndiLookup moved to another package must never yield absent, with or
+// without --complete.
+func TestJarRelocatedJndiLookupNeverAbsent(t *testing.T) {
+	cases := map[string][]byte{
+		"relocated class":           log4jCoreWith(t, class("com/acme/shade/lookup/JndiLookup.class")),
+		"relocated class, odd case": log4jCoreWith(t, class("com/acme/shade/lookup/jndilookup.CLASS")),
+		"plugin cache names relocated class": log4jCoreWith(t, zentry{name: pluginCachePath, body: pluginCache(
+			[2]string{"date", "org.apache.logging.log4j.core.lookup.DateLookup"},
+			[2]string{"jndi", "com.acme.shade.lookup.JndiLookup"})}),
+		"unparsed plugin cache mentions jndi": log4jCoreWith(t, zentry{name: pluginCachePath, body: []byte("\x00garbage jndi")}),
+		"relocated in a separate jar": buildZip(t, zentry{name: "a.jar", body: log4jCore(t, "2.14.1", false), store: true},
+			zentry{name: "b.jar", body: buildZip(t, pom("com.acme", "x", "1"), class("com/acme/JndiLookup.class")), store: true}),
+	}
+	for name, data := range cases {
+		for _, opt := range []JarOptions{jarOpts(), completeOpts()} {
+			got, err := Jar([]JarInput{{Name: "app.jar", Data: data}}, opt)
+			if err != nil {
+				if opt.Complete && strings.Contains(err.Error(), "cannot be complete") {
+					continue
+				}
+				t.Fatalf("%s: %v", name, err)
+			}
+			if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f != nil && f.Value == "absent" {
+				t.Fatalf("%s complete=%v: absent claimed: %+v", name, opt.Complete, f)
+			}
+		}
+	}
+	// The relocated class does not hide the canonical one.
+	got, err := Jar([]JarInput{{Name: "x.jar", Data: log4jCoreWith(t, class(jndiLookupClass), class("com/acme/JndiLookup.class"))}}, completeOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f == nil || f.Value != "present" {
+		t.Fatalf("%+v", f)
+	}
+}
+
+// Removing the class with zip -d leaves the canonical plugin cache entry
+// behind. That is the documented mitigation and must still read as absent.
+func TestJarPluginCacheCanonicalEntryKeepsAbsent(t *testing.T) {
+	data := log4jCoreWith(t, zentry{name: pluginCachePath, body: pluginCache(
+		[2]string{"date", "org.apache.logging.log4j.core.lookup.DateLookup"},
+		[2]string{"jndi", jndiLookupFQCN})})
+	got, err := Jar([]JarInput{{Name: "log4j-core.jar", Data: data}}, completeOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f == nil || f.Value != "absent" || f.Confidence != "high" {
+		t.Fatalf("%+v", f)
+	}
+}
+
+// F12: a nested .zip is scanned like a jar.
+func TestJarNestedZipScanned(t *testing.T) {
+	inner := buildZip(t, zentry{name: "lib/log4j-core-2.14.1.jar", body: log4jCore(t, "2.14.1", true), store: true})
+	war := buildZip(t,
+		zentry{name: "WEB-INF/web.xml", body: []byte("<web-app/>")},
+		zentry{name: "WEB-INF/lib/bundle.zip", body: inner, store: true},
+	)
+	for _, opt := range []JarOptions{jarOpts(), completeOpts()} {
+		got, err := Jar([]JarInput{{Name: "app.war", Data: war}}, opt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		a := got.Snapshot.Assets[0]
+		if f := fact(a, JndiLookupFactKey); f == nil || f.Value != "present" || !strings.Contains(f.Source, "bundle.zip!/lib/log4j-core-2.14.1.jar") {
+			t.Fatalf("%+v", f)
+		}
+		if !hasPURL(a, "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1") {
+			t.Fatalf("%+v", a.Inventory.Packages)
+		}
+	}
+	// A zip of loose classes (classpath-style) is scanned too; with JndiLookup it is present.
+	loose := buildZip(t, zentry{name: "classes.zip", body: buildZip(t, class(jndiLookupClass)), store: true})
+	got, err := Jar([]JarInput{{Name: "app.jar", Data: loose}}, jarOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f == nil || f.Value != "present" {
+		t.Fatalf("%+v", f)
+	}
+	// A zip with unidentified classes is skipped, so --complete is refused.
+	mystery := buildZip(t, log4jEntryStore("log4j-core.jar", log4jCore(t, "2.14.1", false)),
+		zentry{name: "extra.zip", body: buildZip(t, class("x/Y.class")), store: true})
+	if _, err := Jar([]JarInput{{Name: "app.jar", Data: mystery}}, completeOpts()); err == nil || !strings.Contains(err.Error(), "cannot be complete") {
+		t.Fatalf("complete accepted with an unidentified nested zip: %v", err)
+	}
+	// A zip of resources only is not a component and does not block --complete.
+	res := buildZip(t, log4jEntryStore("log4j-core.jar", log4jCore(t, "2.14.1", false)),
+		zentry{name: "static/assets.zip", body: buildZip(t, zentry{name: "logo.png", body: []byte("png")}), store: true})
+	got, err = Jar([]JarInput{{Name: "app.war", Data: res}}, completeOpts())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f == nil || f.Value != "absent" {
+		t.Fatalf("%+v", f)
+	}
+	// A .zip name that is not a readable zip is skipped.
+	bad := buildZip(t, log4jEntryStore("log4j-core.jar", log4jCore(t, "2.14.1", false)),
+		zentry{name: "broken.zip", body: []byte("not a zip")})
+	if _, err := Jar([]JarInput{{Name: "app.war", Data: bad}}, completeOpts()); err == nil || !strings.Contains(err.Error(), "broken.zip") {
+		t.Fatalf("%v", err)
+	}
+}
+
+func log4jEntryStore(name string, body []byte) zentry {
+	return zentry{name: name, body: body, store: true}
+}
+
+// Nested zips obey the same depth cap as jars.
+func TestJarNestedZipDepthRejected(t *testing.T) {
+	data := buildZip(t, class("a/B.class"))
+	for i := 0; i < 6; i++ {
+		data = buildZip(t, zentry{name: "n.zip", body: data, store: true})
+	}
+	_, err := Jar([]JarInput{{Name: "deep.zip", Data: data}}, jarOpts())
+	if !errors.Is(err, ErrJarLimit) || !strings.Contains(err.Error(), "nesting depth") {
+		t.Fatalf("%v", err)
+	}
+}
+
+// Archive formats that are not read are listed as skipped, so --complete is refused.
+func TestJarUnscannedArchiveSkipped(t *testing.T) {
+	for _, name := range []string{"WEB-INF/lib/extra.tar.gz", "lib/x.TGZ", "y.7z", "z.jmod", "w.tar"} {
+		war := buildZip(t,
+			log4jEntryStore("WEB-INF/lib/log4j-core.jar", log4jCore(t, "2.14.1", false)),
+			zentry{name: name, body: []byte("opaque")},
+		)
+		got, err := Jar([]JarInput{{Name: "app.war", Data: war}}, jarOpts())
+		if err != nil {
+			t.Fatal(err)
+		}
+		found := false
+		for _, s := range got.Skipped {
+			if strings.Contains(s, name) && strings.Contains(s, "not scanned") {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("%s: %v", name, got.Skipped)
+		}
+		if f := fact(got.Snapshot.Assets[0], JndiLookupFactKey); f != nil && f.Confidence == "high" && f.Value == "absent" {
+			t.Fatalf("%s: high-confidence absent without --complete", name)
+		}
+		if _, err := Jar([]JarInput{{Name: "app.war", Data: war}}, completeOpts()); err == nil || !strings.Contains(err.Error(), "cannot be complete") {
+			t.Fatalf("%s: complete accepted: %v", name, err)
+		}
+	}
+}
