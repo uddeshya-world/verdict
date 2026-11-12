@@ -321,7 +321,9 @@ func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Sna
 	if err != nil {
 		return nil, nil, err
 	}
-	checked, err := snapshot.Load(raw)
+	// The input snapshot was loaded under the caller's cap; re-validate the
+	// result at its own size and let the caller cap what it writes.
+	checked, err := snapshot.LoadMax(raw, int64(len(raw)))
 	if err != nil {
 		return nil, nil, fmt.Errorf("import advisories: %w", err)
 	}

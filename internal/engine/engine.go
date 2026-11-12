@@ -24,6 +24,8 @@ type Report struct {
 	ReportVersion  string    `json:"report_version"`
 	Tool           string    `json:"tool"`
 	KBVersion      string    `json:"kb_version"`
+	KBKeyID        string    `json:"kb_key_id,omitempty"`
+	KBCreatedAt    string    `json:"kb_created_at,omitempty"`
 	EvaluationTime string    `json:"evaluation_time"`
 	PackID         string    `json:"pack_id"`
 	PackSHA256     string    `json:"pack_sha256"`
@@ -107,6 +109,10 @@ type Input struct {
 	Snapshot       *snapshot.Snapshot
 	EvaluationTime time.Time
 	KBVersion      string
+	// KBKeyID and KBCreatedAt name the signed bundle the pack came from
+	// (drill --kb). Empty for a pack or OSV file given directly.
+	KBKeyID     string
+	KBCreatedAt string
 }
 
 // Evaluate returns a deterministic report.
@@ -135,6 +141,8 @@ func Evaluate(in Input) (*Report, error) {
 		ReportVersion:  "0.1.0",
 		Tool:           buildinfo.ModulePath + " " + buildinfo.Version,
 		KBVersion:      in.KBVersion,
+		KBKeyID:        in.KBKeyID,
+		KBCreatedAt:    in.KBCreatedAt,
 		EvaluationTime: in.EvaluationTime.UTC().Format("2006-01-02T15:04:05.000000000Z"),
 		PackID:         in.Pack.Metadata.ID,
 		PackSHA256:     in.Pack.SHA256,

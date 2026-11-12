@@ -207,3 +207,85 @@ func TestImportJarClassRemovedNeverNotAffectedWithoutComplete(t *testing.T) {
 		t.Fatalf("control: complete classpath with class removed: state=%s vex=%s reasons=%v", v.State, v.VEXStatus, v.Reasons)
 	}
 }
+
+func zipBytes(t *testing.T, files [][2]string) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	for _, f := range files {
+		fw, err := w.CreateHeader(&zip.FileHeader{Name: f[0], Method: zip.Store})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := fw.Write([]byte(f[1])); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func importJarFile(t *testing.T, dir, id string, data []byte, extra ...string) (string, error) {
+	t.Helper()
+	in := filepath.Join(dir, id+".jar")
+	if err := os.WriteFile(in, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, id+".json")
+	var stdout, stderr bytes.Buffer
+	err := Execute(append([]string{
+		"import", "jar", "--input", in, "--out", out,
+		"--asset-id", id, "--asset-name", id, "--zone", "internet",
+		"--kb-version", "demo-2026.11.08",
+		"--evaluation-time", "2026-11-08T12:00:00Z",
+		"--observed-at", "2026-11-08T11:00:00Z",
+	}, extra...), &stdout, &stderr)
+	return out, err
+}
+
+var log4jCoreFiles = [][2]string{
+	{"META-INF/maven/org.apache.logging.log4j/log4j-core/pom.properties", "groupId=org.apache.logging.log4j\nartifactId=log4j-core\nversion=2.14.1\n"},
+	{"org/apache/logging/log4j/core/Logger.class", "\xca\xfe\xba\xbe"},
+}
+
+// F11: log4j-core coordinates and classes, JndiLookup relocated by a shading
+// plugin. Even with --complete under a reviewed pack it is never not_affected.
+func TestImportJarRelocatedJndiLookupNeverNotAffected(t *testing.T) {
+	root := moduleRoot(t)
+	dir := t.TempDir()
+	data := zipBytes(t, append(append([][2]string{}, log4jCoreFiles...), [2]string{"com/acme/shade/lookup/JndiLookup.class", "\xca\xfe\xba\xbe"}))
+	snap, err := importJarFile(t, dir, "jar-relocated", data, "--complete")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := evalReviewed(t, root, snap); v.State == "not_affected" || v.VEXStatus == "not_affected" {
+		t.Fatalf("relocated JndiLookup produced not_affected: %+v", v)
+	}
+}
+
+// F12: log4j-core with JndiLookup inside a nested .zip is found, and an
+// archive format that is not read refuses --complete.
+func TestImportJarNestedZip(t *testing.T) {
+	root := moduleRoot(t)
+	dir := t.TempDir()
+	core := zipBytes(t, append(append([][2]string{}, log4jCoreFiles...), [2]string{"org/apache/logging/log4j/core/lookup/JndiLookup.class", "\xca\xfe\xba\xbe"}))
+	outer := zipBytes(t, [][2]string{{"lib/deps.zip", string(zipBytes(t, [][2]string{{"log4j-core-2.14.1.jar", string(core)}}))}})
+	snap, err := importJarFile(t, dir, "jar-nested-zip", outer, "--complete")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := evalReviewed(t, root, snap); v.State != "exploitable" {
+		t.Fatalf("nested zip: state=%s reasons=%v", v.State, v.Reasons)
+	}
+	removed := zipBytes(t, log4jCoreFiles)
+	tarred := zipBytes(t, [][2]string{{"log4j-core.jar", string(removed)}, {"lib/more.tar.gz", "opaque"}})
+	out, err := importJarFile(t, dir, "jar-tarball", tarred, "--complete")
+	if err == nil || !strings.Contains(err.Error(), "cannot be complete") {
+		t.Fatalf("--complete accepted with an unscanned tarball: %v", err)
+	}
+	if _, statErr := os.Stat(out); !os.IsNotExist(statErr) {
+		t.Fatal("snapshot written for a refused --complete")
+	}
+}
