@@ -248,7 +248,7 @@ func TestKBWithoutLatestStillRuns(t *testing.T) {
 		t.Fatal(err)
 	}
 	out, err := l.drillKB("t1")
-	if err != nil || !strings.Contains(out, "rollback floor is not checked") {
+	if err != nil || !strings.Contains(out, "computed from signed bundles") {
 		t.Fatalf("%v\n%s", err, out)
 	}
 	if err := os.WriteFile(filepath.Join(l.kb, bundle.LatestName), []byte("garbage"), 0o644); err != nil {
@@ -269,5 +269,105 @@ func TestParseAge(t *testing.T) {
 		if _, err := parseAge(bad); err == nil {
 			t.Errorf("parseAge(%q) accepted", bad)
 		}
+	}
+}
+
+// A37: the floor comes from signed bundles, not from LATEST alone.
+func TestKBFloorFromSignedBundles(t *testing.T) {
+	l := newKBLab(t)
+	orig := nowFunc
+	t.Cleanup(func() { nowFunc = orig })
+	nowFunc = func() time.Time { return time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC) }
+	l.install("t0", "2026-11-01T06:00:00Z")
+	l.install("t1", "2026-11-08T06:00:00Z")
+	latestPath := filepath.Join(l.kb, bundle.LatestName)
+
+	// Lowered LATEST (names t0) is ignored: t0 is still refused.
+	if err := os.WriteFile(latestPath, []byte(`{"kb_version":"t0","created_at":"2026-11-01T06:00:00Z"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := l.drillKB("t0")
+	if err == nil || !strings.Contains(err.Error(), "signed floor t1") {
+		t.Fatalf("older kb accepted with lowered LATEST: %v\n%s", err, out)
+	}
+	// A forged-low created_at for the true newest version does not help either.
+	if err := os.WriteFile(latestPath, []byte(`{"kb_version":"t1","created_at":"2026-10-01T00:00:00Z"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := l.drillKB("t0"); err == nil {
+		t.Fatalf("older kb accepted with forged LATEST time: %s", out)
+	}
+	// Deleted LATEST still enforces the floor.
+	if err := os.Remove(latestPath); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := l.drillKB("t0"); err == nil {
+		t.Fatalf("older kb accepted with LATEST deleted: %s", out)
+	}
+	if out, err := l.drillKB("t1"); err != nil || !strings.Contains(out, "computed from signed bundles") {
+		t.Fatalf("newest with LATEST deleted: %v\n%s", err, out)
+	}
+	if out, err := l.drillKB("t0", "--allow-older-kb"); err != nil {
+		t.Fatalf("--allow-older-kb: %v\n%s", err, out)
+	}
+}
+
+func TestKBTamperedNewerBundleNotCounted(t *testing.T) {
+	l := newKBLab(t)
+	orig := nowFunc
+	t.Cleanup(func() { nowFunc = orig })
+	nowFunc = func() time.Time { return time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC) }
+	l.install("t0", "2026-11-01T06:00:00Z")
+	t1 := l.install("t1", "2026-11-08T06:00:00Z")
+	// Flip a byte in the newer bundle: it no longer verifies, so it cannot
+	// raise the floor, and t0 (now the newest verified) runs with a note.
+	// LATEST is removed so the unsigned hint is not what is being tested.
+	tarPath := filepath.Join(t1, "bundle.tar")
+	raw, err := os.ReadFile(tarPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw[len(raw)/2] ^= 0xff
+	if err := os.WriteFile(tarPath, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(l.kb, bundle.LatestName)); err != nil {
+		t.Fatal(err)
+	}
+	out, err := l.drillKB("t0")
+	if err != nil || !strings.Contains(out, "floor scan: t1 not counted") {
+		t.Fatalf("tampered newer bundle: %v\n%s", err, out)
+	}
+	// A validly signed bundle copied under a different directory name is not counted.
+	raw2, _ := os.ReadFile(filepath.Join(l.kb, "t0", "bundle.tar"))
+	if err := os.MkdirAll(filepath.Join(l.kb, "t9"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(l.kb, "t9", "bundle.tar"), raw2, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := l.drillKB("t0"); err != nil || !strings.Contains(out, "t9 not counted: signed as kb_version t0") {
+		t.Fatalf("misnamed dir: %v\n%s", err, out)
+	}
+}
+
+func TestKBRequireFloor(t *testing.T) {
+	l := newKBLab(t)
+	orig := nowFunc
+	t.Cleanup(func() { nowFunc = orig })
+	nowFunc = func() time.Time { return time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC) }
+	l.install("t1", "2026-11-08T06:00:00Z")
+	if out, err := l.drillKB("t1", "--require-floor"); err == nil || !strings.Contains(err.Error(), "--require-floor") {
+		t.Fatalf("sole bundle accepted with --require-floor: %v\n%s", err, out)
+	}
+	if out, err := l.drillKB("t1"); err != nil {
+		t.Fatalf("without --require-floor: %v\n%s", err, out)
+	}
+	l.install("t0", "2026-11-01T06:00:00Z")
+	if out, err := l.drillKB("t1", "--require-floor"); err != nil {
+		t.Fatalf("two bundles with --require-floor: %v\n%s", err, out)
+	}
+	if out, err := l.run("drill", "--osv", filepath.Join(l.src, "osv", "conflict.json"), "--snapshot", l.snapshot, "--require-floor"); err == nil {
+		t.Fatalf("--require-floor without --kb accepted: %s", out)
 	}
 }
