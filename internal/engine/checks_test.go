@@ -653,6 +653,77 @@ func TestEqualsLeafNormalisedValues(t *testing.T) {
 	}
 }
 
+func opensshAliasCheck() pack.Check {
+	ch := opensshCheck()
+	ch.Aliases = []string{"pkg:generic/sshd", "pkg:generic/ssh-server"}
+	return ch
+}
+
+func TestAliasBlocksAbsenceNeverProves(t *testing.T) {
+	eval := mustTime(t)
+	for _, purlStr := range []string{
+		"pkg:generic/sshd@9.6p1",
+		"pkg:GENERIC/SSHD@9.6p1",
+		"pkg:generic/sshd-session@9.6p1",
+	} {
+		a := freshInventory(snapshot.Package{PURL: purlStr, Version: "9.6p1"})
+		// Without the alias the inventory is complete and the component
+		// absent: the proof the alias exists to block.
+		base := evalPackage("C1", opensshCheck(), nil, a, eval, mustAge())
+		if base.Leaf.Value != logic.False || base.Leaf.Justification != "component_not_present" {
+			t.Fatalf("%s: expected absence without alias, got %+v", purlStr, base)
+		}
+		got := evalPackage("C1", opensshAliasCheck(), nil, a, eval, mustAge())
+		if got.Leaf.Value != logic.Unknown {
+			t.Fatalf("%s: alias must make the leaf unknown, got %+v", purlStr, got)
+		}
+	}
+}
+
+func TestAliasNeverVersionSortedOrTrue(t *testing.T) {
+	eval := mustTime(t)
+	// 9.6p1 is inside the affected range; as an alias it must not be True.
+	a := freshInventory(snapshot.Package{PURL: "pkg:generic/sshd@9.6p1", Version: "9.6p1"})
+	got := evalPackage("C1", opensshAliasCheck(), nil, a, eval, mustAge())
+	if got.Leaf.Value != logic.Unknown {
+		t.Fatalf("in-range alias must stay unknown, got %+v", got)
+	}
+	// 9.9p1 is fixed upstream; as an alias it must not be False either.
+	a = freshInventory(snapshot.Package{PURL: "pkg:generic/sshd@9.9p1", Version: "9.9p1"})
+	got = evalPackage("C1", opensshAliasCheck(), nil, a, eval, mustAge())
+	if got.Leaf.Value != logic.Unknown {
+		t.Fatalf("fixed-version alias must stay unknown, got %+v", got)
+	}
+	// An exact component match still decides, aliases present or not.
+	a = freshInventory(
+		snapshot.Package{PURL: "pkg:generic/sshd@9.6p1", Version: "9.6p1"},
+		snapshot.Package{PURL: "pkg:generic/openssh@9.6p1", Version: "9.6p1"},
+	)
+	if got := evalPackage("C1", opensshAliasCheck(), nil, a, eval, mustAge()); got.Leaf.Value != logic.True {
+		t.Fatalf("exact in-range match must stay true: %+v", got)
+	}
+	a = freshInventory(
+		snapshot.Package{PURL: "pkg:generic/sshd@9.6p1", Version: "9.6p1"},
+		snapshot.Package{PURL: "pkg:generic/openssh@9.9p1", Version: "9.9p1"},
+	)
+	if got := evalPackage("C1", opensshAliasCheck(), nil, a, eval, mustAge()); got.Leaf.Value == logic.False {
+		t.Fatalf("fixed exact match must not clear an alias package: %+v", got)
+	}
+}
+
+func TestAliasIgnoresUnrelatedPackages(t *testing.T) {
+	eval := mustTime(t)
+	a := freshInventory(
+		snapshot.Package{PURL: "pkg:deb/ubuntu/openssh-client@1:8.9p1-3", Version: "1:8.9p1-3"},
+		snapshot.Package{PURL: "pkg:generic/libssh@0.10.6", Version: "0.10.6"},
+	)
+	want := evalPackage("C1", opensshCheck(), nil, a, eval, mustAge())
+	got := evalPackage("C1", opensshAliasCheck(), nil, a, eval, mustAge())
+	if want.Leaf.Value != got.Leaf.Value || got.Leaf.Value != logic.False {
+		t.Fatalf("aliases changed an unrelated inventory: %+v vs %+v", want.Leaf, got.Leaf)
+	}
+}
+
 // A leaf resting on an operator-edited fact is marked; an unedited asset has
 // no marks and no count. A not_affected that relies on it says so.
 func TestOperatorEditedLeafMarked(t *testing.T) {

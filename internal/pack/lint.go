@@ -250,11 +250,12 @@ func lintCheck(id string, c Check, component []string) error {
 			}
 			seenKeys[k] = true
 		}
+		lintAliases(id, c.Aliases, append(append([]string{}, patterns...), component...), add)
 	case "host_fact", "config_value", "env_var", "manual_attestation":
 		if !factKeyRE.MatchString(c.Key) || c.Equals == "" {
 			add("check %s: key and equals are required", id)
 		}
-		if c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.Process != "" || c.Path != "" || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 {
+		if c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.Process != "" || c.Path != "" || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || len(c.Aliases) != 0 {
 			add("check %s: inapplicable fields are set", id)
 		}
 		if c.Type == "manual_attestation" && c.WhenPackage != nil {
@@ -267,14 +268,14 @@ func lintCheck(id string, c Check, component []string) error {
 		if !procRE.MatchString(c.Process) {
 			add("check %s: process name %q is invalid", id, c.Process)
 		}
-		if c.Key != "" || c.Equals != "" || c.Path != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || c.WhenPackage != nil {
+		if c.Key != "" || c.Equals != "" || c.Path != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || c.AdvisoryFact != "" || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || len(c.Aliases) != 0 || c.WhenPackage != nil {
 			add("check %s: inapplicable fields are set", id)
 		}
 	case "file_exists":
 		if c.Path == "" || !strings.HasPrefix(c.Path, "/") || strings.ContainsAny(c.Path, "\n\r\t") {
 			add("check %s: path must be an absolute path without whitespace", id)
 		}
-		if c.Key != "" || c.Equals != "" || c.Process != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || c.WhenPackage != nil || c.AdvisoryFact != "" {
+		if c.Key != "" || c.Equals != "" || c.Process != "" || c.VersionScheme != "" || len(c.AffectedRanges) != 0 || len(c.PurlPatterns) != 0 || c.AbsenceJustification != "" || len(c.AbsenceContradictedBy) != 0 || len(c.Aliases) != 0 || c.WhenPackage != nil || c.AdvisoryFact != "" {
 			add("check %s: inapplicable fields are set", id)
 		}
 	}
@@ -282,6 +283,37 @@ func lintCheck(id string, c Check, component []string) error {
 		return fmt.Errorf("%s", strings.Join(errs, "; "))
 	}
 	return nil
+}
+
+// MaxAliases caps check.aliases.
+const MaxAliases = 32
+
+// lintAliases requires well-formed, unique patterns that differ from every
+// component pattern. Comparison is case-insensitive on the whole string, so
+// a re-spelled duplicate is rejected too.
+func lintAliases(id string, aliases, patterns []string, add func(string, ...any)) {
+	if len(aliases) > MaxAliases {
+		add("check %s: aliases exceeds %d entries", id, MaxAliases)
+	}
+	own := map[string]bool{}
+	for _, p := range patterns {
+		own[strings.ToLower(strings.TrimSpace(p))] = true
+	}
+	seen := map[string]bool{}
+	for _, a := range aliases {
+		if err := lintPurlPattern(a); err != nil {
+			add("check %s: alias: %v", id, err)
+			continue
+		}
+		k := strings.ToLower(strings.TrimSpace(a))
+		if own[k] {
+			add("check %s: alias %q equals a component pattern", id, a)
+		}
+		if seen[k] {
+			add("check %s: aliases repeats %q", id, a)
+		}
+		seen[k] = true
+	}
 }
 
 func lintWhen(id string, w *WhenPackage) error {

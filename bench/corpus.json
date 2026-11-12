@@ -747,5 +747,35 @@
     "ground_truth": "unknown",
     "expect_state": "needs_review",
     "note": "libc.family is \"Glibc\", which is not glibc or musl: out-of-domain, so the libc leaf is unknown, not false."
+  },
+  {
+    "id": "regresshion/alias-sshd-only-inrange",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/pack-aliases.json",
+    "asset": "alias-sshd-only-inrange",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "Declared alias (A35): a package named only by a pack alias, with a complete inventory and no contradicting runtime fact, blocks the absence proof. Never version-sorted, never not_affected."
+  },
+  {
+    "id": "regresshion/alias-sshd-only-fixed",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/pack-aliases.json",
+    "asset": "alias-sshd-only-fixed",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "Declared alias (A35): a package named only by a pack alias, with a complete inventory and no contradicting runtime fact, blocks the absence proof. Never version-sorted, never not_affected."
+  },
+  {
+    "id": "regresshion/alias-sshd-upper",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/pack-aliases.json",
+    "asset": "alias-sshd-upper",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "Declared alias (A35): a package named only by a pack alias, with a complete inventory and no contradicting runtime fact, blocks the absence proof. Never version-sorted, never not_affected."
   }
 ]

@@ -4,6 +4,7 @@
 package pack
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -126,5 +127,62 @@ func TestAbsenceContradictedByLint(t *testing.T) {
 		if _, err := Load("bad.yaml", []byte(body)); err == nil {
 			t.Errorf("%s: expected lint error", name)
 		}
+	}
+}
+
+func TestAliasesLintAndHash(t *testing.T) {
+	base, err := os.ReadFile(mustRoot(t) + "/packs/draft/ecp-cve-2024-6387-openssh.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(base)
+	if _, err := Load("ok.yaml", base); err != nil {
+		t.Fatal(err)
+	}
+	anchor := "      - pkg:generic/sshd\n"
+	if !strings.Contains(src, anchor) {
+		t.Fatal("openssh pack must list pkg:generic/sshd as an alias")
+	}
+	var many strings.Builder
+	for i := 0; i < 33; i++ {
+		many.WriteString("      - pkg:generic/alias" + strings.Repeat("x", i) + "\n")
+	}
+	for name, body := range map[string]string{
+		"duplicate":            strings.Replace(src, anchor, anchor+anchor, 1),
+		"duplicate other case": strings.Replace(src, anchor, anchor+"      - pkg:GENERIC/SSHD\n", 1),
+		"equals component":     strings.Replace(src, anchor, anchor+"      - pkg:generic/openssh\n", 1),
+		"equals check pattern": strings.Replace(src, anchor, anchor+"      - pkg:deb/openssh-server\n", 1),
+		"malformed":            strings.Replace(src, anchor, anchor+"      - generic/nope\n", 1),
+		"with version":         strings.Replace(src, anchor, anchor+"      - pkg:generic/nope@1\n", 1),
+		"over cap":             strings.Replace(src, anchor, many.String(), 1),
+		"wrong check type":     strings.Replace(src, "    key: libc.family\n", "    key: libc.family\n    aliases:\n      - pkg:generic/sshd\n", 1),
+	} {
+		if _, err := Load("bad.yaml", []byte(body)); err == nil {
+			t.Errorf("%s: expected lint error", name)
+		}
+	}
+	// The content hash covers aliases, and a pack without aliases hashes as
+	// it did before the field existed (omitempty).
+	p1, _ := Load("a.yaml", base)
+	p2, err := Load("b.yaml", []byte(strings.Replace(src, anchor, anchor+"      - pkg:generic/ssh-extra\n", 1)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h1, _ := ContentSHA256(p1)
+	h2, _ := ContentSHA256(p2)
+	if h1 == h2 {
+		t.Fatal("content hash must change when aliases change")
+	}
+	p3 := *p1
+	c := p3.Checks["C1_vulnerable_build"]
+	c.Aliases = nil
+	p3.Checks = map[string]Check{}
+	for k, v := range p1.Checks {
+		p3.Checks[k] = v
+	}
+	p3.Checks["C1_vulnerable_build"] = c
+	raw, _ := json.Marshal(&p3)
+	if strings.Contains(string(raw), "Aliases") && strings.Count(string(raw), "Aliases") != 0 {
+		t.Fatalf("empty aliases must be omitted from the hashed JSON")
 	}
 }

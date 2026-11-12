@@ -70,18 +70,25 @@ type Check struct {
 	// AbsenceContradictedBy lists fact keys (process.listening.sshd) that,
 	// when true on the asset, mean the component runs here and "no matching
 	// package" cannot be a proof of absence.
-	AbsenceContradictedBy []string     `yaml:"absence_contradicted_by"`
-	ResolutionHint        string       `yaml:"resolution_hint"`
-	Tradeoff              string       `yaml:"tradeoff"`
-	VersionScheme         string       `yaml:"version_scheme"`
-	AffectedRanges        []string     `yaml:"affected_ranges"`
-	AdvisoryFact          string       `yaml:"advisory_fact"`
-	PurlPatterns          []string     `yaml:"purl_patterns"`
-	Key                   string       `yaml:"key"`
-	Equals                string       `yaml:"equals"`
-	Process               string       `yaml:"process"`
-	Path                  string       `yaml:"path"`
-	WhenPackage           *WhenPackage `yaml:"when_package"`
+	AbsenceContradictedBy []string `yaml:"absence_contradicted_by"`
+	// Aliases are purl patterns for other names under which the same
+	// component ships (a name that shares no token with the component
+	// patterns). An inventory package that matches one is never absent and
+	// never version-sorted. An alias only widens what blocks an absence
+	// proof; it never makes a check true or false. omitempty keeps the
+	// content hash of a pack without aliases unchanged.
+	Aliases        []string     `yaml:"aliases" json:"Aliases,omitempty"`
+	ResolutionHint string       `yaml:"resolution_hint"`
+	Tradeoff       string       `yaml:"tradeoff"`
+	VersionScheme  string       `yaml:"version_scheme"`
+	AffectedRanges []string     `yaml:"affected_ranges"`
+	AdvisoryFact   string       `yaml:"advisory_fact"`
+	PurlPatterns   []string     `yaml:"purl_patterns"`
+	Key            string       `yaml:"key"`
+	Equals         string       `yaml:"equals"`
+	Process        string       `yaml:"process"`
+	Path           string       `yaml:"path"`
+	WhenPackage    *WhenPackage `yaml:"when_package"`
 }
 
 // WhenPackage restricts a check to packages inside a range.

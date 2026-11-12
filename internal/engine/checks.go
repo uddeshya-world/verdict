@@ -157,6 +157,18 @@ func classify(subj *purl.Subject, patterns []*purl.Pattern) (exact, related bool
 	return false, false
 }
 
+// aliasHit reports whether a package that is not an exact component match
+// is the pack's declared alias, by exact match or by purl.Related. It can
+// only move a package into the unknown set; it never matches a component.
+func aliasHit(subj *purl.Subject, aliases []*purl.Pattern) bool {
+	for _, a := range aliases {
+		if a.Match(subj.P) || a.Related(subj) {
+			return true
+		}
+	}
+	return false
+}
+
 func unknownLeaf(id, reason, detail string, evidence []string) leafEval {
 	return leafEval{
 		ID: id,
@@ -369,6 +381,7 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 		patternList = component
 	}
 	patterns := ac.ec.patterns(patternList)
+	aliases := ac.ec.patterns(ch.Aliases)
 	usable, observed, conf, reason := assess(observation{
 		asset.Inventory.Basis, asset.Inventory.Confidence, asset.Inventory.ObservedAt, "",
 	}, eval, maxAge)
@@ -386,7 +399,7 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 		switch {
 		case exact:
 			matched = append(matched, pkg.Package)
-		case related, advisoryNamesPackage(ac, ch.AdvisoryFact, pkg.PURL):
+		case related, aliasHit(&pi.subj, aliases), advisoryNamesPackage(ac, ch.AdvisoryFact, pkg.PURL):
 			// A case, white-space, or separator variant of the component
 			// name, the same name under another type or namespace, a
 			// free-form alias, or a package an advisory for this CVE names.
