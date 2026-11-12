@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/uddeshya-world/verdict/internal/factkeys"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
@@ -72,11 +73,13 @@ type hostDoc struct {
 // hostFacts is every key the collector may write and how its value is checked.
 // A key outside this list is malformed input, not something to pass through.
 var hostFacts = map[string]func(string) (string, error){
-	"libc.family":                    oneOf("glibc", "musl"),
-	"process.listening.sshd":         oneOf("true", "false"),
-	"service.socket_activation.sshd": oneOf("true", "false"),
-	"process.sshd.links_liblzma":     oneOf("true", "false"),
-	"config.sshd.LoginGraceTime":     sshdSeconds,
+	"config.sshd.LoginGraceTime": sshdSeconds,
+}
+
+func init() {
+	for k, allowed := range factkeys.Closed {
+		hostFacts[k] = oneOf(allowed...)
+	}
 }
 
 // Host reads one collect-host.sh JSON document into one asset.

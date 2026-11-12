@@ -557,3 +557,95 @@ func TestAbsenceContradictedByRunningFact(t *testing.T) {
 		t.Fatalf("a pack that lists no key is unchanged: %+v", got)
 	}
 }
+
+func hostFact(key, value, purlStr string) snapshot.Fact {
+	return snapshot.Fact{Key: key, PURL: purlStr, Value: value, Basis: "observed", Confidence: "high", ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "e-v", Source: "t"}
+}
+
+// Run 4 H1/H2/M1: any spelling of a listed key, scoped or not, with any
+// value other than false contradicts absence.
+func TestAbsenceContradictedByAnyNonFalseValue(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	ch.AbsenceContradictedBy = []string{"process.listening.sshd"}
+	plain := func(f snapshot.Fact) snapshot.Asset {
+		a := freshInventory(snapshot.Package{PURL: "pkg:generic/zlib@1.3", Version: "1.3"})
+		a.Facts = []snapshot.Fact{f}
+		return a
+	}
+	k := "process.listening.sshd"
+	for _, f := range []snapshot.Fact{
+		hostFact(k, "True", ""), hostFact(k, "yes", ""), hostFact(k, "1", ""), hostFact(k, "on", ""),
+		hostFact(k, "running", ""), hostFact(k, " true", ""), hostFact(k, "true ", ""), hostFact(k, "TRUE", ""),
+		hostFact(k, "", ""), hostFact(k, "true", "pkg:generic/openssh@9.6p1"),
+		hostFact("Process.Listening.sshd", "true", ""), hostFact(" process.listening.sshd", "true", ""),
+	} {
+		if got := evalPackage("C1", ch, nil, plain(f), eval, mustAge()); got.Leaf.Value != logic.Unknown || got.Reason != "component_absent_but_in_use" {
+			t.Errorf("%+v must block absence: %+v", f, got)
+		}
+	}
+	for _, v := range []string{"false", " False ", "FALSE"} {
+		if got := evalPackage("C1", ch, nil, plain(hostFact(k, v, "")), eval, mustAge()); got.Leaf.Value != logic.False {
+			t.Errorf("%q must not block: %+v", v, got)
+		}
+	}
+	// Unrelated keys (residual M1: sshd2) are not matched.
+	if got := evalPackage("C1", ch, nil, plain(hostFact("process.listening.sshd2", "true", "")), eval, mustAge()); got.Leaf.Value != logic.False {
+		t.Errorf("sshd2 residual: %+v", got)
+	}
+}
+
+// Run 4 H3: a non-canonical or out-of-domain fact value never falsifies an
+// equals leaf, and a folded key never reads as missing or false.
+func TestEqualsLeafNormalisedValues(t *testing.T) {
+	eval := mustTime(t)
+	asset := func(f snapshot.Fact) snapshot.Asset {
+		a := freshInventory()
+		a.Facts = []snapshot.Fact{f}
+		return a
+	}
+	cases := []struct {
+		key, equals string
+		fact        snapshot.Fact
+		want        string
+	}{
+		{"service.socket_activation.sshd", "false", hostFact("service.socket_activation.sshd", "True", ""), "fact_value_not_boolean"},
+		{"service.socket_activation.sshd", "true", hostFact("service.socket_activation.sshd", "yes", ""), "fact_value_not_boolean"},
+		{"service.socket_activation.sshd", "false", hostFact("service.socket_activation.sshd", "1", ""), "fact_value_not_boolean"},
+		{"service.socket_activation.sshd", "false", hostFact("service.socket_activation.sshd", "on", ""), "fact_value_not_boolean"},
+		{"service.socket_activation.sshd", "false", hostFact("service.socket_activation.sshd", "running", ""), "fact_value_not_boolean"},
+		{"service.socket_activation.sshd", "true", hostFact("service.socket_activation.sshd", " true", ""), "fact_value_not_canonical"},
+		{"libc.family", "musl", hostFact("libc.family", "Musl", ""), "fact_value_not_canonical"},
+		{"libc.family", "musl", hostFact("libc.family", "Glibc", ""), "fact_value_out_of_domain"},
+		{"libc.family", "musl", hostFact("libc.family", "uclibc", ""), "fact_value_out_of_domain"},
+		{"service.socket_activation.sshd", "false", hostFact("Service.Socket_Activation.sshd", "true", ""), "fact_key_not_canonical"},
+		{"process.listening.sshd", "false", hostFact("Process.Listening.sshd", "true", ""), "fact_key_not_canonical"},
+	}
+	for _, c := range cases {
+		ch := pack.Check{Type: "host_fact", Key: c.key, Equals: c.equals}
+		got := evalCheck("C1", ch, nil, asset(c.fact), eval, mustAge())
+		if got.Leaf.Value != logic.Unknown || got.Reason != c.want {
+			t.Errorf("%s=%q vs %q: want unknown %s, got %+v", c.fact.Key, c.fact.Value, c.equals, c.want, got)
+		}
+	}
+	// Process leaves: a purl-scoped fact is not the process fact; a folded key is unknown.
+	for _, typ := range []string{"process_listening", "process_running"} {
+		ch := pack.Check{Type: typ, Process: "sshd"}
+		for _, f := range []snapshot.Fact{
+			hostFact("Process.Listening.sshd", "false", ""), hostFact("Process.Running.sshd", "false", ""),
+			hostFact("process.listening.sshd", "yes", ""), hostFact("process.running.sshd", "True", ""),
+		} {
+			if got := evalCheck("C1", ch, nil, asset(f), eval, mustAge()); got.Leaf.Value == logic.False {
+				t.Errorf("%s with %+v must not be false: %+v", typ, f, got)
+			}
+		}
+	}
+	// Controls: canonical values still evaluate.
+	ch := pack.Check{Type: "host_fact", Key: "libc.family", Equals: "musl"}
+	if got := evalCheck("C1", ch, nil, asset(hostFact("libc.family", "glibc", "")), eval, mustAge()); got.Leaf.Value != logic.False {
+		t.Errorf("glibc vs musl must stay false: %+v", got)
+	}
+	if got := evalCheck("C1", ch, nil, asset(hostFact("libc.family", "musl", "")), eval, mustAge()); got.Leaf.Value != logic.True {
+		t.Errorf("musl vs musl must stay true: %+v", got)
+	}
+}

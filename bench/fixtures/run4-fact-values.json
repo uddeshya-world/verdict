@@ -1,0 +1,226 @@
+{
+  "kb_version": "adv4",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "run4-sshd-running-yes",
+      "name": "run4-sshd-running-yes",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-run4-sshd-running-yes",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/curl@7.81.0-1?arch=amd64&distro=ubuntu-22.04",
+            "version": "7.81.0-1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-run4-sshd-running-yes",
+          "source": "gen4"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-run4-sshd-running-yes",
+          "source": "gen4"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "yes",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-l-run4-sshd-running-yes",
+          "source": "gen4"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-s-run4-sshd-running-yes",
+          "source": "gen4"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "gen4"
+        }
+      ]
+    },
+    {
+      "id": "run4-socket-True-listen-false",
+      "name": "run4-socket-True-listen-false",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-run4-socket-True-listen-false",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/curl@7.81.0-1?arch=amd64&distro=ubuntu-22.04",
+            "version": "7.81.0-1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-run4-socket-True-listen-false",
+          "source": "gen4"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-run4-socket-True-listen-false",
+          "source": "gen4"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-l-run4-socket-True-listen-false",
+          "source": "gen4"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "True",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-s-run4-socket-True-listen-false",
+          "source": "gen4"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "gen4"
+        }
+      ]
+    },
+    {
+      "id": "run4-libc-Glibc",
+      "name": "run4-libc-Glibc",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-run4-libc-Glibc",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "Glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-run4-libc-Glibc",
+          "source": "gen4"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-l-run4-libc-Glibc",
+          "source": "gen4"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-s-run4-libc-Glibc",
+          "source": "gen4"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-run4-libc-Glibc",
+          "source": "gen4"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "gen4"
+        }
+      ]
+    }
+  ]
+}

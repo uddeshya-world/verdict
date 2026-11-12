@@ -717,5 +717,35 @@
     "ground_truth": "affected",
     "expect_state": "import_rejected",
     "note": "fixed on the exact purl and affected on a case variant. --allow-unmatched must not drop the variant and let fixed clear the host (N3)."
+  },
+  {
+    "id": "regresshion/run4-sshd-running-yes",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/run4-fact-values.json",
+    "asset": "run4-sshd-running-yes",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "process.listening.sshd is \"yes\" with no openssh package: the value is not false, so absence must not clear."
+  },
+  {
+    "id": "regresshion/run4-socket-True-listen-false",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/run4-fact-values.json",
+    "asset": "run4-socket-True-listen-false",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Socket activation is \"True\" and listening is false: a non-canonical value must not falsify the socket check or clear absence."
+  },
+  {
+    "id": "regresshion/run4-libc-Glibc",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/run4-fact-values.json",
+    "asset": "run4-libc-Glibc",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "libc.family is \"Glibc\", which is not glibc or musl: out-of-domain, so the libc leaf is unknown, not false."
   }
 ]
