@@ -652,3 +652,25 @@ func TestEqualsLeafNormalisedValues(t *testing.T) {
 		t.Errorf("musl vs musl must stay true: %+v", got)
 	}
 }
+
+// A leaf resting on an operator-edited fact is marked; an unedited asset has
+// no marks and no count. A not_affected that relies on it says so.
+func TestOperatorEditedLeafMarked(t *testing.T) {
+	mk := func(edited bool) snapshot.Asset {
+		a := freshInventory()
+		a.Facts = []snapshot.Fact{{Key: "libc.family", Value: "musl", Basis: "observed", Confidence: "high",
+			ObservedAt: "2026-11-08T11:00:00Z", EvidenceID: "sha256:abc", Source: "s"}}
+		if edited {
+			a.Edits = []snapshot.EditRecord{{Op: snapshot.OpSetFact, Key: "libc.family", NewValue: "musl", NewBasis: "observed",
+				At: "2026-11-08T11:00:00Z", Source: "s", EvidenceID: "sha256:abc"}}
+		}
+		return a
+	}
+	if got := editedEvidence(mk(false)); len(got) != 0 {
+		t.Fatalf("unedited asset marked: %v", got)
+	}
+	got := editedEvidence(mk(true))
+	if !got["sha256:abc"] || len(got) != 1 {
+		t.Fatalf("%v", got)
+	}
+}
