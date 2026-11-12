@@ -1,0 +1,13 @@
+{
+  "SchemaVersion": 2,
+  "Results": [{
+    "Target": "rocky9 (rocky 9.3)",
+    "Class": "os-pkgs",
+    "Type": "rocky",
+    "Packages": [
+      {"Name": "openssh-server", "Version": "9.9p1", "Release": "13.el9_8.rocky.0.1", "Epoch": 1, "Arch": "aarch64", "Identifier": {"PURL": "pkg:rpm/rocky/openssh-server@9.9p1-13.el9_8.rocky.0.1?arch=aarch64&distro=rocky-9.3&epoch=1"}},
+      {"Name": "shadow-utils", "Version": "4.9", "Release": "8.el9", "Epoch": 2, "Arch": "aarch64", "Identifier": {"PURL": "pkg:rpm/rocky/shadow-utils@4.9-8.el9?arch=aarch64&distro=rocky-9.3&epoch=2"}},
+      {"Name": "acl", "Version": "2.4.0", "Release": "1.el9_8", "Arch": "aarch64", "Identifier": {"PURL": "pkg:rpm/rocky/acl@2.4.0-1.el9_8?arch=aarch64&distro=rocky-9.3"}}
+    ]
+  }]
+}
