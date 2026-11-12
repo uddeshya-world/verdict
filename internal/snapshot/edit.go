@@ -205,6 +205,8 @@ func setFact(s *Snapshot, e Edit, evalAt time.Time, check HostFactChecker) error
 	}
 	f := Fact{Key: e.Key, PURL: factPURL, Value: e.Value, Basis: basis, Confidence: conf,
 		ObservedAt: obs, ExpiresAt: exp, EvidenceID: ev, Source: src}
+	rec := EditRecord{Op: OpSetFact, Key: e.Key, PURL: factPURL, NewValue: e.Value, NewBasis: basis,
+		At: editAt(e, evalAt), Source: src, EvidenceID: e.EvidenceID}
 	for i := range a.Facts {
 		old := a.Facts[i]
 		if old.Key != e.Key || !samePURLOrBothEmpty(old.PURL, factPURL) {
@@ -213,10 +215,13 @@ func setFact(s *Snapshot, e Edit, evalAt time.Time, check HostFactChecker) error
 		if !e.Replace {
 			return fmt.Errorf("asset %s already has fact %q (value %q, %s/%s); pass replace to overwrite it", a.ID, e.Key, old.Value, old.Basis, old.Confidence)
 		}
+		rec.OldValue, rec.OldBasis, rec.Replaced = old.Value, old.Basis, true
 		a.Facts[i] = f
+		a.Edits = append(a.Edits, rec)
 		return nil
 	}
 	a.Facts = append(a.Facts, f)
+	a.Edits = append(a.Edits, rec)
 	return nil
 }
 
@@ -254,12 +259,16 @@ func setExposure(s *Snapshot, e Edit, evalAt time.Time) error {
 	}
 	x := Exposure{Port: e.Port, Proto: e.Proto, ReachableFrom: zones, Basis: basis, Confidence: conf,
 		ObservedAt: obs, ExpiresAt: exp, EvidenceID: ev, Source: src}
+	rec := EditRecord{Op: OpSetExposure, Port: e.Port, Proto: e.Proto, NewZones: zones, NewBasis: basis,
+		At: editAt(e, evalAt), Source: src, EvidenceID: e.EvidenceID}
 	var keep []Exposure
 	have := map[string]bool{}
 	found := false
 	for _, old := range a.Exposure {
 		if old.Port == e.Port && old.Proto == e.Proto {
 			found = true
+			rec.OldBasis = old.Basis
+			rec.OldZones = append(rec.OldZones, old.ReachableFrom...)
 			for _, z := range old.ReachableFrom {
 				have[z] = true
 			}
@@ -283,8 +292,22 @@ func setExposure(s *Snapshot, e Edit, evalAt time.Time) error {
 			return fmt.Errorf("asset %s %d/%s already lists zones %v that this edit would drop; list them too to widen, or pass replace to narrow", a.ID, e.Port, e.Proto, dropped)
 		}
 	}
+	rec.Replaced = found && e.Replace
+	if found && rec.OldBasis == "" {
+		rec.OldBasis = "attested"
+	}
 	a.Exposure = append(keep, x)
+	a.Edits = append(a.Edits, rec)
 	return nil
+}
+
+// editAt dates an edit record: the --observed-at the operator gave, else the
+// snapshot's evaluation time. The clock is never read.
+func editAt(e Edit, evalAt time.Time) string {
+	if e.ObservedAt != "" {
+		return e.ObservedAt
+	}
+	return evalAt.UTC().Format(time.RFC3339)
 }
 
 func dedupe(in []string) []string {

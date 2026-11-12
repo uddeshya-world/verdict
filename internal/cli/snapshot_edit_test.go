@@ -265,3 +265,66 @@ func TestSetFactReviewedBar(t *testing.T) {
 		t.Fatalf("observed+evidence+high+fresh musl did not reach not_affected (control): %+v", v)
 	}
 }
+
+// An observed, high musl fact entered by an operator reaches not_affected on
+// the reviewed bar; the report and OpenVEX must say it is operator-edited.
+func TestDrillMarksOperatorEdits(t *testing.T) {
+	dir := t.TempDir()
+	in, id := sshBase(t, dir)
+	ev := filepath.Join(dir, "ev.txt")
+	os.WriteFile(ev, []byte("ldd --version: musl libc\n"), 0o644)
+	edited := filepath.Join(dir, "edited.json")
+	if o, err := runCLI("snapshot", "set-fact", "--snapshot", in, "--out", edited, "--asset", id, "--key", "libc.family", "--value", "musl",
+		"--basis", "observed", "--confidence", "high", "--evidence", ev, "--observed-at", "2026-11-08T11:00:00Z", "--source", "ticket 42"); err != nil {
+		t.Fatalf("%v\n%s", err, o)
+	}
+	a := loadOut(t, edited).Assets[0]
+	if len(a.Edits) != 1 || a.Edits[0].Source != "ticket 42" || !strings.HasPrefix(a.Edits[0].EvidenceID, "sha256:") {
+		t.Fatalf("%+v", a.Edits)
+	}
+	v := reviewedOpenSSH(t, edited)
+	if v.State != "not_affected" || v.OperatorEdits != 1 {
+		t.Fatalf("state=%s edits=%d", v.State, v.OperatorEdits)
+	}
+	marked := 0
+	for _, l := range v.Leaves {
+		if l.OperatorEdited {
+			marked++
+		}
+	}
+	if marked == 0 || !strings.Contains(v.ImpactStatement, "relies on operator-edited evidence") {
+		t.Fatalf("marked=%d impact=%q", marked, v.ImpactStatement)
+	}
+	// The same drill on the unedited snapshot carries no marks.
+	plain := reviewedOpenSSH(t, in)
+	if plain.OperatorEdits != 0 || strings.Contains(plain.ImpactStatement, "operator-edited") {
+		t.Fatalf("unedited asset marked: %+v", plain)
+	}
+	for _, l := range plain.Leaves {
+		if l.OperatorEdited {
+			t.Fatal("unedited leaf marked")
+		}
+	}
+	// The CLI stderr line and the JSON field.
+	out := filepath.Join(dir, "rep.json")
+	root := moduleRoot(t)
+	o, err := runCLI("drill", "--pack", filepath.Join(root, "packs/draft/ecp-cve-2024-6387-openssh.yaml"), "--snapshot", edited, "--out", out)
+	if err != nil {
+		t.Fatalf("%v\n%s", err, o)
+	}
+	if !strings.Contains(o, "(operator-edited)") {
+		t.Fatalf("stderr line missing mark:\n%s", o)
+	}
+	raw, _ := os.ReadFile(out)
+	if !strings.Contains(string(raw), `"operator_edits": 1`) || !strings.Contains(string(raw), `"operator_edited": true`) {
+		t.Fatalf("report lacks marks: %s", raw)
+	}
+	o, err = runCLI("drill", "--pack", filepath.Join(root, "packs/draft/ecp-cve-2024-6387-openssh.yaml"), "--snapshot", in, "--out", out)
+	if err != nil || strings.Contains(o, "operator-edited") {
+		t.Fatalf("%v\n%s", err, o)
+	}
+	raw, _ = os.ReadFile(out)
+	if strings.Contains(string(raw), "operator_edit") {
+		t.Fatal("unedited report carries operator_edit fields")
+	}
+}

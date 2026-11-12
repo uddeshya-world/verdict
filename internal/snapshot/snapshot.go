@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/uddeshya-world/verdict/internal/purl"
@@ -50,6 +51,31 @@ type Asset struct {
 	Inventory   Inventory  `json:"inventory"`
 	Facts       []Fact     `json:"facts"`
 	Exposure    []Exposure `json:"exposure"`
+	// Edits is the audit trail of operator edits (snapshot set-fact,
+	// set-exposure, apply). Importers never write it.
+	Edits []EditRecord `json:"edits,omitempty"`
+}
+
+// EditRecord is one operator edit of an asset's facts or exposure. It records
+// what was there before and what the operator put there, so a report can say
+// which evidence is operator-entered. It is caller-asserted like the rest of
+// the snapshot.
+type EditRecord struct {
+	Op         string   `json:"op"`
+	Key        string   `json:"key,omitempty"`
+	PURL       string   `json:"purl,omitempty"`
+	Port       int      `json:"port,omitempty"`
+	Proto      string   `json:"proto,omitempty"`
+	OldValue   string   `json:"old_value,omitempty"`
+	NewValue   string   `json:"new_value,omitempty"`
+	OldZones   []string `json:"old_zones,omitempty"`
+	NewZones   []string `json:"new_zones,omitempty"`
+	OldBasis   string   `json:"old_basis,omitempty"`
+	NewBasis   string   `json:"new_basis"`
+	Replaced   bool     `json:"replaced"`
+	At         string   `json:"at"`
+	Source     string   `json:"source"`
+	EvidenceID string   `json:"evidence_id,omitempty"`
 }
 
 // Inventory is the package list and the quality of that observation.
@@ -197,6 +223,11 @@ func validate(s *Snapshot) error {
 				return err
 			}
 		}
+		for i, er := range a.Edits {
+			if err := validateEditRecord(a.ID, i, er); err != nil {
+				return err
+			}
+		}
 		for _, e := range a.Exposure {
 			if e.Port < 1 || e.Port > 65535 || (e.Proto != "tcp" && e.Proto != "udp") {
 				return fmt.Errorf("snapshot: asset %s exposure port/proto is invalid", a.ID)
@@ -233,6 +264,83 @@ func validateQuality(where, basis, confidence, observedAt, expiresAt, evidenceID
 	}
 	if !idRE.MatchString(evidenceID) {
 		return fmt.Errorf("snapshot: %s evidence_id %q is invalid", where, evidenceID)
+	}
+	return nil
+}
+
+func validateEditRecord(asset string, i int, e EditRecord) error {
+	bad := func(format string, args ...any) error {
+		return fmt.Errorf("snapshot: asset %s edits[%d]: %s", asset, i, fmt.Sprintf(format, args...))
+	}
+	line := func(name, v string, max int) error {
+		if len(v) > max || strings.ContainsAny(v, "\x00\r\n") {
+			return bad("%s must be one line of at most %d bytes", name, max)
+		}
+		return nil
+	}
+	for _, f := range []struct {
+		n, v string
+		max  int
+	}{{"old_value", e.OldValue, 1024}, {"new_value", e.NewValue, 1024}, {"source", e.Source, 512}} {
+		if err := line(f.n, f.v, f.max); err != nil {
+			return err
+		}
+	}
+	if e.Source == "" {
+		return bad("source is required")
+	}
+	if _, err := time.Parse(time.RFC3339, e.At); err != nil {
+		return bad("at: %v", err)
+	}
+	switch e.NewBasis {
+	case "observed", "attested":
+	default:
+		return bad("new_basis %q is invalid", e.NewBasis)
+	}
+	switch e.OldBasis {
+	case "", "observed", "attested", "inferred":
+	default:
+		return bad("old_basis %q is invalid", e.OldBasis)
+	}
+	if e.EvidenceID != "" && !idRE.MatchString(e.EvidenceID) {
+		return bad("evidence_id %q is invalid", e.EvidenceID)
+	}
+	if e.Replaced && e.OldBasis == "" {
+		return bad("a replaced edit needs old_basis")
+	}
+	switch e.Op {
+	case OpSetFact:
+		if !idRE.MatchString(e.Key) {
+			return bad("key %q is invalid", e.Key)
+		}
+		if e.NewValue == "" {
+			return bad("set_fact needs new_value")
+		}
+		if e.PURL != "" {
+			if _, err := purl.Parse(e.PURL); err != nil {
+				return bad("purl: %v", err)
+			}
+		}
+		if e.Port != 0 || e.Proto != "" || len(e.OldZones) > 0 || len(e.NewZones) > 0 {
+			return bad("set_fact carries exposure fields")
+		}
+	case OpSetExposure:
+		if e.Port < 1 || e.Port > 65535 || (e.Proto != "tcp" && e.Proto != "udp") {
+			return bad("port/proto is invalid")
+		}
+		if len(e.NewZones) == 0 {
+			return bad("set_exposure needs new_zones")
+		}
+		for _, z := range append(append([]string{}, e.OldZones...), e.NewZones...) {
+			if z == "" || len(z) > 128 || strings.ContainsAny(z, "\x00\r\n") {
+				return bad("zone %q is invalid", z)
+			}
+		}
+		if e.Key != "" || e.PURL != "" || e.OldValue != "" || e.NewValue != "" {
+			return bad("set_exposure carries fact fields")
+		}
+	default:
+		return bad("op %q is not %s or %s", e.Op, OpSetFact, OpSetExposure)
 	}
 	return nil
 }

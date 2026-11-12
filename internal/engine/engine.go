@@ -67,6 +67,9 @@ type Verdict struct {
 	ActionStatement     string     `json:"action_statement,omitempty"`
 	MitigationDependent bool       `json:"mitigation_dependent,omitempty"`
 	ImpactStatement     string     `json:"impact_statement,omitempty"`
+	// OperatorEdits counts the asset's operator edit records (snapshot
+	// set-fact, set-exposure, apply). Zero is omitted.
+	OperatorEdits int `json:"operator_edits,omitempty"`
 }
 
 // Hint tells an operator what is missing.
@@ -100,6 +103,9 @@ type LeafView struct {
 	Reason        string   `json:"reason,omitempty"`
 	EvidenceIDs   []string `json:"evidence_ids"`
 	Justification string   `json:"justification,omitempty"`
+	// OperatorEdited is true when the leaf rests on a fact an operator
+	// entered or replaced by hand.
+	OperatorEdited bool `json:"operator_edited,omitempty"`
 }
 
 // Input is the entire explicit evaluation request.
@@ -240,6 +246,9 @@ func evalAsset(p *pack.Pack, pol *policy.Policy, ac *assetCtx, node logic.Node, 
 			v.ImpactStatement = strings.Join(parts, " ")
 		}
 	}
+	edited := editedEvidence(asset)
+	v.OperatorEdits = len(asset.Edits)
+	editedLeaf := map[string]bool{}
 	for _, l := range leaves {
 		view := LeafView{
 			CheckID:       l.ID,
@@ -253,6 +262,12 @@ func evalAsset(p *pack.Pack, pol *policy.Policy, ac *assetCtx, node logic.Node, 
 		}
 		if l.Leaf.Value == logic.Unknown {
 			view.Justification = ""
+		}
+		for _, id := range view.EvidenceIDs {
+			if edited[id] {
+				view.OperatorEdited = true
+				editedLeaf[l.ID] = true
+			}
 		}
 		v.Leaves = append(v.Leaves, view)
 		if l.Reason != "" {
@@ -295,10 +310,39 @@ func evalAsset(p *pack.Pack, pol *policy.Policy, ac *assetCtx, node logic.Node, 
 			EvidenceIDs:          append([]string{}, res.StrictFalse.EvidenceIDs...),
 		}
 	}
+	if d.State == stateNotAffected && res.StrictFalse != nil {
+		for _, id := range res.StrictFalse.CheckIDs {
+			if editedLeaf[id] {
+				if v.ImpactStatement != "" {
+					v.ImpactStatement += " "
+				}
+				v.ImpactStatement += "relies on operator-edited evidence"
+				break
+			}
+		}
+	}
 	if d.VEX == vexAffected {
 		v.ActionStatement = actionStatement(p, d.State)
 	}
 	return v
+}
+
+// editedEvidence returns the evidence ids of the asset's current facts that an
+// operator entered or replaced. A shared id (the attested default) marks every
+// leaf that cites it, which errs toward flagging.
+func editedEvidence(asset snapshot.Asset) map[string]bool {
+	out := map[string]bool{}
+	for _, e := range asset.Edits {
+		if e.Op != snapshot.OpSetFact {
+			continue
+		}
+		for _, f := range asset.Facts {
+			if f.Key == e.Key && (f.PURL == e.PURL || (f.PURL != "" && e.PURL != "" && purl.Same(f.PURL, e.PURL))) {
+				out[f.EvidenceID] = true
+			}
+		}
+	}
+	return out
 }
 
 func errorVerdict(asset snapshot.Asset, err error) Verdict {
