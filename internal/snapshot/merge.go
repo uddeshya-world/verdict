@@ -44,5 +44,7 @@ func Merge(parts ...*Snapshot) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Load(raw)
+	// The parts were already loaded under the caller's cap, so the merged
+	// document is re-validated at its own size. The caller caps the output.
+	return LoadMax(raw, int64(len(raw)))
 }

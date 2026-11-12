@@ -146,7 +146,11 @@ connected build machine.`,
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
-			fmt.Fprintf(stdout, "installed kb_version=%s at %s\n", v.Manifest.KBVersion, target)
+			latest, err := bundle.UpdateLatest(installDir, v.Manifest)
+			if err != nil {
+				return &ExitError{Code: 2, Err: fmt.Errorf("installed at %s but %s not updated: %w", target, bundle.LatestName, err)}
+			}
+			fmt.Fprintf(stdout, "installed kb_version=%s at %s latest=%s\n", v.Manifest.KBVersion, target, latest.KBVersion)
 			return nil
 		},
 	}
@@ -219,12 +223,14 @@ func collect(dir string) (map[string][]byte, error) {
 type kbResolution struct {
 	Pack      *pack.Pack
 	KBVersion string
+	KeyID     string
+	CreatedAt string
 	Notes     []string
 }
 
 // resolveFromKB re-verifies an installed bundle and picks the pack for cve,
 // falling back to its OSV records when no pack names the CVE.
-func resolveFromKB(kbDir, pubPath, cve string, port int, proto string) (*kbResolution, error) {
+func resolveFromKB(kbDir, pubPath, cve string, port int, proto string, allowOlder bool) (*kbResolution, error) {
 	if cve == "" {
 		return nil, fmt.Errorf("--cve is required with --kb")
 	}
@@ -237,7 +243,27 @@ func resolveFromKB(kbDir, pubPath, cve string, port int, proto string) (*kbResol
 		// into that directory (for example an older one) is a rollback.
 		return nil, fmt.Errorf("--kb %s holds a bundle signed as kb_version %s; refusing a mismatched or rolled-back install", kbDir, v.Manifest.KBVersion)
 	}
-	res := &kbResolution{KBVersion: v.Manifest.KBVersion}
+	res := &kbResolution{KBVersion: v.Manifest.KBVersion, KeyID: v.Manifest.KeyID, CreatedAt: v.Manifest.CreatedAt}
+	// Monotonic floor: install records the newest version in <root>/LATEST.
+	root := filepath.Dir(filepath.Clean(kbDir))
+	latest, err := bundle.ReadLatest(root)
+	if err != nil {
+		return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
+	}
+	if latest == nil {
+		res.Notes = append(res.Notes, fmt.Sprintf("kb %s: no %s in %s; the rollback floor is not checked", res.KBVersion, bundle.LatestName, root))
+	} else {
+		older, err := latest.Older(res.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("--kb %s: %w", kbDir, err)
+		}
+		if older && !allowOlder {
+			return nil, fmt.Errorf("--kb %s is kb_version %s (created %s), older than %s %s (created %s); pass --allow-older-kb to use it anyway", kbDir, res.KBVersion, res.CreatedAt, bundle.LatestName, latest.KBVersion, latest.CreatedAt)
+		}
+		if older {
+			res.Notes = append(res.Notes, fmt.Sprintf("kb %s: older than %s %s; used because --allow-older-kb was given", res.KBVersion, bundle.LatestName, latest.KBVersion))
+		}
+	}
 	var matches []*pack.Pack
 	for _, p := range v.PackPaths() {
 		pk, err := pack.Load("kb:"+p, v.Files[p])
@@ -268,12 +294,17 @@ func resolveFromKB(kbDir, pubPath, cve string, port int, proto string) (*kbResol
 		if err != nil {
 			return nil, fmt.Errorf("kb osv %s: %w", p, err)
 		}
+		// Every record in a file counts, as with drill --osv: a narrow
+		// record listed first must not hide a wider one after it.
+		matched := false
 		for _, r := range rs {
 			if osv.Names(r, cve) {
 				recs = append(recs, r)
-				raws = append(raws, v.Files[p])
-				break
+				matched = true
 			}
+		}
+		if matched {
+			raws = append(raws, v.Files[p])
 		}
 	}
 	if len(recs) == 0 {

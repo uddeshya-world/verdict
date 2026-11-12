@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -100,14 +102,15 @@ func newPack(stdout, stderr io.Writer) *cobra.Command {
 			return nil
 		},
 	})
-	cmd.AddCommand(&cobra.Command{
+	var maxSnap int64
+	test := &cobra.Command{
 		Use:   "test FILE...",
 		Short: "Run a pack's declared snapshot fixtures in process",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			failed := false
 			for _, path := range args {
-				if err := testPack(path, stdout); err != nil {
+				if err := testPack(path, stdout, maxSnap); err != nil {
 					fmt.Fprintf(stderr, "%s: %v\n", path, err)
 					failed = true
 				}
@@ -117,11 +120,13 @@ func newPack(stdout, stderr io.Writer) *cobra.Command {
 			}
 			return nil
 		},
-	})
+	}
+	addMaxSnapshotBytes(test, &maxSnap)
+	cmd.AddCommand(test)
 	return cmd
 }
 
-func testPack(path string, stdout io.Writer) error {
+func testPack(path string, stdout io.Writer, maxSnap int64) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -139,11 +144,7 @@ func testPack(path string, stdout io.Writer) error {
 		if !filepath.IsAbs(snapPath) {
 			snapPath = filepath.Join(filepath.Dir(path), snapPath)
 		}
-		raw, err := os.ReadFile(snapPath)
-		if err != nil {
-			return err
-		}
-		snap, err := snapshot.Load(raw)
+		snap, err := loadSnapshotFile(snapPath, maxSnap)
 		if err != nil {
 			return fmt.Errorf("%s: %w", tc.Name, err)
 		}
@@ -210,6 +211,9 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 	var packPath, snapPath, policyPath, outPath, vexPath, author, evalFlag, kbFlag, asset, cveFlag, osvProto, kbDir, pubPath string
 	var osvPaths []string
 	var osvPort int
+	var maxSnap int64
+	var maxKBAge string
+	var allowOlderKB bool
 	cmd := &cobra.Command{
 		Use:   "drill",
 		Short: "Evaluate one pack, or a version-only OSV fallback, against a local snapshot",
@@ -230,15 +234,29 @@ are skipped and need an advisory fact.`,
 			if snapPath == "" || sources != 1 {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and exactly one of --pack, --osv, or --kb are required")}
 			}
+			if kbDir != "" && kbFlag != "" {
+				// The signed manifest names the version; an override would make the audit record false.
+				return &ExitError{Code: 2, Err: fmt.Errorf("--kb-version cannot be combined with --kb; the report takes kb_version from the signed bundle")}
+			}
+			if kbDir == "" && (maxKBAge != "" || allowOlderKB) {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--max-kb-age and --allow-older-kb need --kb")}
+			}
+			var maxAge time.Duration
+			if maxKBAge != "" {
+				var err error
+				if maxAge, err = parseAge(maxKBAge); err != nil {
+					return &ExitError{Code: 2, Err: fmt.Errorf("--max-kb-age: %w", err)}
+				}
+			}
 			var p *pack.Pack
-			kbFromBundle := ""
+			var kbRes *kbResolution
 			if kbDir != "" {
-				res, err := resolveFromKB(kbDir, pubPath, cveFlag, osvPort, osvProto)
+				res, err := resolveFromKB(kbDir, pubPath, cveFlag, osvPort, osvProto, allowOlderKB)
 				if err != nil {
 					return &ExitError{Code: 2, Err: err}
 				}
 				p = res.Pack
-				kbFromBundle = res.KBVersion
+				kbRes = res
 				for _, n := range res.Notes {
 					fmt.Fprintln(stderr, n)
 				}
@@ -262,11 +280,7 @@ are skipped and need an advisory fact.`,
 					fmt.Fprintf(stderr, "fallback skipped: %s\n", s)
 				}
 			}
-			sdata, err := os.ReadFile(snapPath)
-			if err != nil {
-				return &ExitError{Code: 2, Err: err}
-			}
-			snap, err := snapshot.Load(sdata)
+			snap, err := loadSnapshotFile(snapPath, maxSnap)
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
@@ -304,15 +318,16 @@ are skipped and need an advisory fact.`,
 					return &ExitError{Code: 2, Err: fmt.Errorf("--evaluation-time: %w", err)}
 				}
 			}
-			if kbFromBundle != "" {
-				kb = kbFromBundle
+			in := engine.Input{Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb}
+			if kbRes != nil {
+				if err := checkKBAge(kbRes.CreatedAt, evalAt, maxAge); err != nil {
+					return &ExitError{Code: 2, Err: fmt.Errorf("--kb %s: %w", kbDir, err)}
+				}
+				in.KBVersion, in.KBKeyID, in.KBCreatedAt = kbRes.KBVersion, kbRes.KeyID, kbRes.CreatedAt
+			} else if kbFlag != "" {
+				in.KBVersion = kbFlag
 			}
-			if kbFlag != "" {
-				kb = kbFlag
-			}
-			rep, err := engine.Evaluate(engine.Input{
-				Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb,
-			})
+			rep, err := engine.Evaluate(in)
 			if err != nil {
 				return &ExitError{Code: 1, Err: err}
 			}
@@ -366,7 +381,10 @@ are skipped and need an advisory fact.`,
 	cmd.Flags().StringVar(&vexPath, "openvex", "", "write an OpenVEX 0.2 document")
 	cmd.Flags().StringVar(&author, "author", "", "operator-supplied OpenVEX author label; not authenticated")
 	cmd.Flags().StringVar(&evalFlag, "evaluation-time", "", "override snapshot evaluation_time (RFC3339)")
-	cmd.Flags().StringVar(&kbFlag, "kb-version", "", "override snapshot kb_version")
+	cmd.Flags().StringVar(&kbFlag, "kb-version", "", "override snapshot kb_version; not allowed with --kb")
+	cmd.Flags().StringVar(&maxKBAge, "max-kb-age", "", "with --kb: refuse a bundle created more than this long before the evaluation time (Go duration, or Nd for days, e.g. 30d)")
+	cmd.Flags().BoolVar(&allowOlderKB, "allow-older-kb", false, "with --kb: accept a version older than the one named in the knowledge-base LATEST file")
+	addMaxSnapshotBytes(cmd, &maxSnap)
 	cmd.Flags().StringVar(&asset, "asset", "", "evaluate a single asset id")
 	return cmd
 }
@@ -437,4 +455,41 @@ func DecodeReport(data []byte) (*engine.Report, error) {
 		return nil, err
 	}
 	return &rep, nil
+}
+
+// parseAge reads a Go duration or a whole number of days ("30d").
+func parseAge(s string) (time.Duration, error) {
+	var d time.Duration
+	if n, ok := strings.CutSuffix(s, "d"); ok {
+		days, err := strconv.Atoi(n)
+		if err != nil || days < 1 || days > 36500 {
+			return 0, fmt.Errorf("%q is not a positive number of days", s)
+		}
+		d = time.Duration(days) * 24 * time.Hour
+	} else {
+		var err error
+		if d, err = time.ParseDuration(s); err != nil {
+			return 0, err
+		}
+	}
+	if d <= 0 {
+		return 0, fmt.Errorf("%q must be positive", s)
+	}
+	return d, nil
+}
+
+// checkKBAge refuses a bundle created after the evaluation time, and, when
+// maxAge is set, one created more than maxAge before it.
+func checkKBAge(createdAt string, evalAt time.Time, maxAge time.Duration) error {
+	at, err := time.Parse(time.RFC3339, createdAt)
+	if err != nil {
+		return fmt.Errorf("bundle created_at: %w", err)
+	}
+	if at.After(evalAt) {
+		return fmt.Errorf("bundle created_at %s is after evaluation_time %s; a verdict cannot use knowledge from its future", createdAt, evalAt.UTC().Format(time.RFC3339))
+	}
+	if maxAge > 0 && at.Before(evalAt.Add(-maxAge)) {
+		return fmt.Errorf("bundle created_at %s is older than --max-kb-age %s before evaluation_time %s; install a newer bundle", createdAt, maxAge, evalAt.UTC().Format(time.RFC3339))
+	}
+	return nil
 }
