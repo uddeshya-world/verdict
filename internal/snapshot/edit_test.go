@@ -243,3 +243,121 @@ func TestEditPURLScopedFactNeedsReplace(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestEditRecordsAppended(t *testing.T) {
+	// Non-replace add on a2, then a replace of a1's libc.family, then an
+	// exposure add and a narrowing replace.
+	edits := []Edit{
+		{Op: OpSetFact, Asset: "a2", Key: "k.x", Value: "v", Source: "ticket 1"},
+		{Op: OpSetFact, Asset: "a1", Key: "libc.family", Value: "musl", Replace: true, Basis: "observed",
+			Confidence: "high", EvidenceID: ev, HasEvidence: true, ObservedAt: "2026-11-08T11:00:00Z"},
+		{Op: OpSetExposure, Asset: "a2", Port: 22, Proto: "tcp", ReachableFrom: []string{"dmz"}},
+		{Op: OpSetExposure, Asset: "a1", Port: 22, Proto: "tcp", ReachableFrom: []string{"dmz"}, Replace: true},
+	}
+	got, err := Apply(base(t), edits, nil, DefaultMaxBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a1, a2 := got.Assets[0].Edits, got.Assets[1].Edits
+	if len(a1) != 2 || len(a2) != 2 {
+		t.Fatalf("a1=%+v a2=%+v", a1, a2)
+	}
+	if r := a2[0]; r.Op != OpSetFact || r.Replaced || r.NewValue != "v" || r.NewBasis != "attested" || r.At != "2026-11-08T12:00:00Z" || r.Source != "ticket 1" || r.OldValue != "" {
+		t.Fatalf("add record: %+v", r)
+	}
+	if r := a1[0]; !r.Replaced || r.OldValue != "glibc" || r.OldBasis != "attested" || r.NewValue != "musl" || r.NewBasis != "observed" ||
+		r.EvidenceID != ev || r.At != "2026-11-08T11:00:00Z" || r.Source == "" {
+		t.Fatalf("replace record: %+v", r)
+	}
+	if r := a2[1]; r.Op != OpSetExposure || r.Replaced || len(r.OldZones) != 0 || len(r.NewZones) != 1 {
+		t.Fatalf("exposure add record: %+v", r)
+	}
+	if r := a1[1]; !r.Replaced || len(r.OldZones) != 2 || len(r.NewZones) != 1 || r.NewZones[0] != "dmz" || r.OldBasis != "attested" {
+		t.Fatalf("exposure replace record: %+v", r)
+	}
+	// Widening an existing port with replace unset is an edit, not a replacement.
+	w, err := Apply(base(t), []Edit{{Op: OpSetExposure, Asset: "a1", Port: 22, Proto: "tcp", ReachableFrom: []string{"dmz", "internal", "vpn"}}}, nil, DefaultMaxBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := w.Assets[0].Edits[0]; r.Replaced || len(r.OldZones) != 2 {
+		t.Fatalf("widen record: %+v", r)
+	}
+	// replace flag with nothing to overwrite records replaced=false.
+	n, err := Apply(base(t), fact(func(e *Edit) { e.Replace = true }), nil, DefaultMaxBytes)
+	if err != nil || n.Assets[1].Edits[0].Replaced {
+		t.Fatalf("%v %+v", err, n.Assets[1].Edits)
+	}
+}
+
+func TestEditBatchAtomicIncludesEdits(t *testing.T) {
+	s := base(t)
+	edits := append(fact(nil), Edit{Op: OpSetFact, Asset: "a1", Key: "libc.family", Value: "musl"}) // second needs replace
+	if _, err := Apply(s, edits, nil, DefaultMaxBytes); err == nil {
+		t.Fatal("batch accepted")
+	}
+	for _, a := range s.Assets {
+		if len(a.Edits) != 0 || len(a.Facts) > 1 {
+			t.Fatalf("refused batch left state: %+v", a)
+		}
+	}
+	// A good batch of two edits on one asset records both in order.
+	got, err := Apply(s, []Edit{
+		{Op: OpSetFact, Asset: "a2", Key: "k.a", Value: "1"},
+		{Op: OpSetFact, Asset: "a2", Key: "k.b", Value: "2"},
+	}, nil, DefaultMaxBytes)
+	if err != nil || len(got.Assets[1].Edits) != 2 || got.Assets[1].Edits[1].Key != "k.b" {
+		t.Fatalf("%v %+v", err, got)
+	}
+	if len(s.Assets[1].Edits) != 0 {
+		t.Fatal("input modified")
+	}
+}
+
+func TestMergeKeepsEdits(t *testing.T) {
+	a, err := Apply(snap("a"), []Edit{{Op: OpSetFact, Asset: "a", Key: "k.x", Value: "v"}}, nil, DefaultMaxBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := Merge(a, snap("b"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Assets[0].Edits) != 1 || m.Assets[0].Edits[0].Key != "k.x" || len(m.Assets[1].Edits) != 0 {
+		t.Fatalf("%+v", m.Assets)
+	}
+}
+
+func TestLoadRejectsMalformedEdits(t *testing.T) {
+	good := `{"op":"set_fact","key":"k.x","new_value":"v","new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`
+	load := func(rec string) error {
+		doc := strings.Replace(editBase, `"exposure":[]}]}`, `"exposure":[],"edits":[`+rec+`]}]}`, 1)
+		_, err := Load([]byte(doc))
+		return err
+	}
+	if err := load(good); err != nil {
+		t.Fatalf("good record rejected: %v", err)
+	}
+	bad := map[string]string{
+		"unknown field":          strings.Replace(good, `"op"`, `"extra":1,"op"`, 1),
+		"bad op":                 strings.Replace(good, `"set_fact"`, `"drop"`, 1),
+		"no new_basis":           strings.Replace(good, `"new_basis":"attested",`, ``, 1),
+		"bad basis":              strings.Replace(good, `"attested"`, `"verified"`, 1),
+		"bad at":                 strings.Replace(good, `2026-11-08T12:00:00Z`, `yesterday`, 1),
+		"no source":              strings.Replace(good, `"source":"s"`, `"source":""`, 1),
+		"newline src":            strings.Replace(good, `"source":"s"`, `"source":"a\nb"`, 1),
+		"bad key":                strings.Replace(good, `"k.x"`, `"k x"`, 1),
+		"no value":               strings.Replace(good, `"new_value":"v",`, ``, 1),
+		"bad evidence":           strings.Replace(good, `"source"`, `"evidence_id":"a b","source"`, 1),
+		"replaced w/o old basis": strings.Replace(good, `"replaced":false`, `"replaced":true`, 1),
+		"fact with port":         strings.Replace(good, `"op"`, `"port":22,"op"`, 1),
+		"exposure no zones":      `{"op":"set_exposure","port":22,"proto":"tcp","new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`,
+		"exposure bad port":      `{"op":"set_exposure","port":0,"proto":"tcp","new_zones":["a"],"new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`,
+		"exposure with key":      `{"op":"set_exposure","key":"k","port":22,"proto":"tcp","new_zones":["a"],"new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`,
+	}
+	for name, rec := range bad {
+		if err := load(rec); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+}

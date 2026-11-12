@@ -347,8 +347,12 @@ are skipped and need an advisory fact.`,
 				return err
 			}
 			for _, v := range rep.Verdicts {
-				fmt.Fprintf(stderr, "asset=%s state=%s vex=%s confidence=%s exposure_uncertainty=%t\n",
-					v.AssetID, v.State, v.VEXStatus, v.Confidence, v.ExposureUncertainty)
+				mark := ""
+				if v.OperatorEdits > 0 {
+					mark = " (operator-edited)"
+				}
+				fmt.Fprintf(stderr, "asset=%s state=%s vex=%s confidence=%s exposure_uncertainty=%t%s\n",
+					v.AssetID, v.State, v.VEXStatus, v.Confidence, v.ExposureUncertainty, mark)
 			}
 			s := rep.Summary
 			fmt.Fprintf(stderr, "summary exploitable=%d vulnerable_not_exposed=%d not_affected=%d needs_review=%d assets=%d\n",
