@@ -38,7 +38,9 @@ func TestProductionSourcesStayOffline(t *testing.T) {
 			return err
 		}
 		text := string(body)
-		if strings.Contains(text, "time.Now") {
+		// internal/cli/clock.go is the one allowed wall-clock read: it only bounds a
+		// knowledge bundle's created_at, never an evaluation time.
+		if strings.Contains(text, "time.Now") && rel != "internal/cli/clock.go" {
 			t.Errorf("%s calls time.Now", rel)
 		}
 		for _, b := range bannedImport {

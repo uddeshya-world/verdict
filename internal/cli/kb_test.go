@@ -6,6 +6,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -174,6 +175,9 @@ func TestKBVersionOverrideRejectedAndBundleRecorded(t *testing.T) {
 // F10: created_at bounds and the LATEST monotonic floor.
 func TestKBFreshnessAndFloor(t *testing.T) {
 	l := newKBLab(t)
+	orig := nowFunc
+	t.Cleanup(func() { nowFunc = orig })
+	nowFunc = func() time.Time { return time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC) }
 	// Install newest first, then an older one: LATEST must stay on t1.
 	l.install("t1", "2026-11-08T06:00:00Z")
 	l.install("t0", "2026-11-01T06:00:00Z")
@@ -203,13 +207,29 @@ func TestKBFreshnessAndFloor(t *testing.T) {
 	if out, err := l.drillKB("t1", "--max-kb-age", "-1h"); err == nil {
 		t.Fatalf("negative age accepted: %s", out)
 	}
-	// A bundle created after the evaluation time is always refused.
+	// A bundle created after the evaluation time is allowed (older snapshot,
+	// newer KB) with a stderr note, and the report keeps both timestamps.
 	l.install("t2", "2026-11-09T06:00:00Z")
-	if out, err := l.drillKB("t2"); err == nil || !strings.Contains(err.Error(), "after evaluation_time") {
+	out, err := l.drillKB("t2")
+	if err != nil || !strings.Contains(out, "kb is newer than the snapshot") {
+		t.Fatalf("newer bundle: %v\n%s", err, out)
+	}
+	m := readReport(t, filepath.Join(l.dir, "r-t2.json"))
+	if m["kb_created_at"] != "2026-11-09T06:00:00Z" || !strings.HasPrefix(fmt.Sprint(m["evaluation_time"]), "2026-11-08T12:00:00") {
+		t.Fatalf("report times: kb_created_at=%v evaluation_time=%v", m["kb_created_at"], m["evaluation_time"])
+	}
+	// --max-kb-age still compares against evaluation_time: t2 is 18h after it.
+	if out, err := l.drillKB("t2", "--max-kb-age", "1h"); err != nil {
+		t.Fatalf("newer bundle failed max age: %v\n%s", err, out)
+	}
+	// A bundle created after the wall clock plus 5 minutes is refused.
+	nowFunc = func() time.Time { return time.Date(2026, 11, 9, 5, 54, 59, 0, time.UTC) }
+	if out, err := l.drillKB("t2"); err == nil || !strings.Contains(err.Error(), "in the future") {
 		t.Fatalf("future bundle accepted: %v\n%s", err, out)
 	}
-	if out, err := l.drillKB("t2", "--evaluation-time", "2026-11-10T00:00:00Z"); err != nil {
-		t.Fatalf("future bundle with later evaluation time: %v\n%s", err, out)
+	nowFunc = func() time.Time { return time.Date(2026, 11, 9, 5, 55, 0, 0, time.UTC) }
+	if out, err := l.drillKB("t2"); err != nil {
+		t.Fatalf("bundle within skew refused: %v\n%s", err, out)
 	}
 	// t2 is now the floor, so t1 needs the override too.
 	if out, err := l.drillKB("t1", "--evaluation-time", "2026-11-10T00:00:00Z"); err == nil {

@@ -339,6 +339,9 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) (*archiveScan, 
 			children = append(children, nested{f: f, name: name})
 		case isUnscannedArchive(name):
 			sc.skipped = append(sc.skipped, where+"!/"+name+": archive format is not scanned; its contents are unknown")
+		case !strings.HasSuffix(name, ".class") && hasZipMagic(f):
+			// A zip with an unlisted name (a library renamed .dat) is still a zip.
+			children = append(children, nested{f: f, name: name})
 		}
 	}
 	for _, c := range as.poms {
@@ -367,6 +370,27 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) (*archiveScan, 
 		as.children = append(as.children, child)
 	}
 	return as, nil
+}
+
+var zipMagic = []byte{'P', 'K', 3, 4}
+
+// hasZipMagic reports whether the entry's first four bytes are a zip local
+// file header. It reads at most four bytes; the entry is read in full, under
+// the caps, only if it is then scanned as an archive.
+func hasZipMagic(f *zip.File) bool {
+	if f.UncompressedSize64 < 22 { // smaller than any zip with a central directory end record
+		return false
+	}
+	rc, err := f.Open()
+	if err != nil {
+		return false
+	}
+	defer rc.Close()
+	var head [4]byte
+	if _, err := io.ReadFull(rc, head[:]); err != nil {
+		return false
+	}
+	return bytes.Equal(head[:], zipMagic)
 }
 
 // read returns one entry, bounded by the per-entry and total caps. The
