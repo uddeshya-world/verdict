@@ -1,0 +1,472 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "adv-conflict-fixed-first",
+      "name": "fixed (escaped) then affected",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-adv-conflict-fixed-first",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "fixed",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv1",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1%3A8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv2",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "adv-conflict-affected-first",
+      "name": "affected then fixed (escaped)",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-adv-conflict-affected-first",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv2",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "fixed",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv1",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1%3A8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "adv-conflict-qualorder-fixed-first",
+      "name": "fixed (qualifier order) then affected",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-adv-conflict-qualorder-fixed-first",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "fixed",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv1",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?distro=ubuntu-22.04&arch=amd64"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv2",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "adv-conflict-qualorder-affected-first",
+      "name": "affected then fixed (qualifier order)",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-adv-conflict-qualorder-affected-first",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv2",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "fixed",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv1",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?distro=ubuntu-22.04&arch=amd64"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    },
+    {
+      "id": "adv-conflict-namecase-fixed-first",
+      "name": "fixed (name case) then affected",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-adv-conflict-namecase-fixed-first",
+        "packages": [
+          {
+            "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+            "version": "1:8.9p1-3"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "bench"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "bench"
+        },
+        {
+          "key": "service.socket_activation.sshd",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sock",
+          "source": "bench"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "bench"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "fixed",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv1",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        },
+        {
+          "key": "advisory.cve_2024_6387.status",
+          "value": "affected",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-adv2",
+          "source": "bench",
+          "purl": "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp",
+          "source": "bench"
+        }
+      ]
+    }
+  ]
+}

@@ -149,7 +149,7 @@
         {
           "check_id": "C1_vulnerable_build",
           "reason": "distro_advisory_required",
-          "hint": "Check C1_vulnerable_build cannot treat pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13 as not-vulnerable by sorting versions. A deb, rpm, or apk build, or the same component name under a different package type, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
+          "hint": "Check C1_vulnerable_build cannot treat pkg:deb/ubuntu/openssh-server@1:9.8p1-3ubuntu13 as not-vulnerable by sorting versions. A deb, rpm, or apk build, the same component name under a different package type, a case, white-space, or separator variant of the name, or a free-form alias such as openssh-portable, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package. Pack hint: For a distro package, set advisory.cve_2024_6387.status to affected or fixed from the distro advisory. Do not convert an upstream version sort into that fact."
         },
         {
           "check_id": "C3_socket_activation",

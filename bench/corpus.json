@@ -151,6 +151,116 @@
     "note": "Observed process table and socket activation are both false."
   },
   {
+    "id": "regresshion/purl-name-upper",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/purl-variants.json",
+    "asset": "purl-name-upper",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "pkg:generic/OpenSSH is a case variant: unknown, not absent (F1)."
+  },
+  {
+    "id": "regresshion/purl-name-space",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/purl-variants.json",
+    "asset": "purl-name-space",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "openssh%20 trims to openssh: unknown, not absent (F1)."
+  },
+  {
+    "id": "regresshion/purl-alias-portable",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/purl-variants.json",
+    "asset": "purl-alias-portable",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "openssh-portable is a free-form alias: unknown, not absent (F1)."
+  },
+  {
+    "id": "regresshion/purl-type-upper",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/purl-variants.json",
+    "asset": "purl-type-upper",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Type is case-insensitive in the purl spec, so GENERIC is an exact match."
+  },
+  {
+    "id": "regresshion/purl-deb-upper-affected",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/purl-variants.json",
+    "asset": "purl-deb-upper-affected",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Observed affected advisory on the exact variant purl keeps it in scope (F1)."
+  },
+  {
+    "id": "regresshion/purl-deb-upper-bare",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/purl-variants.json",
+    "asset": "purl-deb-upper-bare",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "Deb name case variant without an advisory: unknown (F1)."
+  },
+  {
+    "id": "regresshion/adv-conflict-fixed-first",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/advisory-conflict.json",
+    "asset": "adv-conflict-fixed-first",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Escaped-epoch fixed before affected: conflict is unknown in either order (F2)."
+  },
+  {
+    "id": "regresshion/adv-conflict-affected-first",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/advisory-conflict.json",
+    "asset": "adv-conflict-affected-first",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Affected before escaped-epoch fixed (F2)."
+  },
+  {
+    "id": "regresshion/adv-conflict-qualorder-fixed-first",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/advisory-conflict.json",
+    "asset": "adv-conflict-qualorder-fixed-first",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Qualifier-order spelling, fixed first (F2)."
+  },
+  {
+    "id": "regresshion/adv-conflict-qualorder-affected-first",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/advisory-conflict.json",
+    "asset": "adv-conflict-qualorder-affected-first",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Qualifier-order spelling, affected first (F2)."
+  },
+  {
+    "id": "regresshion/adv-conflict-namecase-fixed-first",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/advisory-conflict.json",
+    "asset": "adv-conflict-namecase-fixed-first",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Name-case spelling of the advisory purl also counts as a conflict (F2)."
+  },
+  {
     "id": "regresshion/import-complete-skips-openssh",
     "kind": "import",
     "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",

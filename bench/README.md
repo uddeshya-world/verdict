@@ -21,6 +21,8 @@ Adversarial fixtures from review:
 - `regresshion/wrong-advisory-version` — `fixed` on a different package URL does not clear the installed build.
 - `xz/lab-xz-sshd-down` — xz 5.6.1 stays exploitable when sshd is down.
 - `log4shell/lab-log4j-property-set` — log4j-core 2.14.1 with JndiLookup present stays exploitable when `formatMsgNoLookups` is true. Removing the class is still a valid mitigation.
+- `regresshion/purl-*` — name case, trailing space, `openssh-portable`, and a deb name in another case stay in scope (needs_review, or exploitable with an `affected` advisory). `pkg:GENERIC` is an exact match.
+- `regresshion/adv-conflict-*` — `fixed` and `affected` on two spellings of one package URL are needs_review in either order.
 
 Every pack file under `packs/draft` and `packs/synthetic` must appear in the corpus. An import case must set `expect_state`.
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/uddeshya-world/verdict/internal/logic"
 	"github.com/uddeshya-world/verdict/internal/pack"
+	"github.com/uddeshya-world/verdict/internal/purl"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 	"github.com/uddeshya-world/verdict/internal/vercmp"
 )
@@ -357,5 +358,128 @@ func TestZoneCaseDoesNotDowngradeExploitable(t *testing.T) {
 	got = rep.Verdicts[0]
 	if got.State != stateExploitable || !got.ExposureUncertainty {
 		t.Fatalf("unlisted zone: %+v", got)
+	}
+}
+
+// F1: a name or type variant of the component, an alias, or a package an
+// advisory names is never proof of absence.
+func TestPackageVariantsAreNotAbsence(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	for _, raw := range []string{
+		"pkg:generic/OpenSSH@9.6p1",
+		"pkg:generic/openssh%20@9.6p1",
+		"pkg:generic/openssh-portable@9.6p1",
+		"pkg:generic/Open_SSH@9.6p1",
+		"pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3",
+		"pkg:apk/alpine/openssh-server-pam@9.6_p1-r0",
+	} {
+		p, err := purl.Parse(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := evalPackage("C1", ch, nil, freshInventory(snapshot.Package{PURL: raw, Version: p.Version}), eval, mustAge())
+		if got.Leaf.Value != logic.Unknown || got.Reason != "distro_advisory_required" {
+			t.Errorf("%s: variant must be unknown, got %+v", raw, got)
+		}
+	}
+}
+
+func TestVariantWithAdvisoryUsesThatAdvisory(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	raw := "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3"
+	a := freshInventory(snapshot.Package{PURL: raw, Version: "1:8.9p1-3"})
+	a.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z", raw)}
+	if got := evalPackage("C1", ch, nil, a, eval, mustAge()); got.Leaf.Value != logic.True {
+		t.Fatalf("affected advisory on the variant must hold: %+v", got)
+	}
+	// An advisory written on a spelling variant of the package is not applied.
+	a.Facts[0] = advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", "pkg:deb/ubuntu/openssh-server@1:8.9p1-3")
+	if got := evalPackage("C1", ch, nil, a, eval, mustAge()); got.Leaf.Value != logic.Unknown || got.Reason != "advisory_purl_variant" {
+		t.Fatalf("fixed on a different spelling must not clear: %+v", got)
+	}
+}
+
+func TestAdvisoryKeepsUnrelatedPackageInScope(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	raw := "pkg:generic/sshd-bundle@9.6p1"
+	a := freshInventory(snapshot.Package{PURL: raw, Version: "9.6p1"})
+	a.Facts = []snapshot.Fact{advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z", raw)}
+	if got := evalPackage("C1", ch, nil, a, eval, mustAge()); got.Leaf.Value != logic.True {
+		t.Fatalf("a package an advisory names stays in scope: %+v", got)
+	}
+	a.Facts[0].PURL = "pkg:generic/openssh@9.6p1"
+	if got := evalPackage("C1", ch, nil, a, eval, mustAge()); got.Leaf.Value != logic.Unknown || got.Reason != "advisory_without_package" {
+		t.Fatalf("an advisory for a package missing from a complete inventory blocks absence: %+v", got)
+	}
+}
+
+func TestUnrelatedPackageIsStillAbsence(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	a := freshInventory(snapshot.Package{PURL: "pkg:deb/ubuntu/openssh-client@1:8.9p1-3", Version: "1:8.9p1-3"})
+	got := evalPackage("C1", ch, nil, a, eval, mustAge())
+	if got.Leaf.Value != logic.False || got.Leaf.Justification != "component_not_present" {
+		t.Fatalf("openssh-client alone is not sshd: %+v", got)
+	}
+}
+
+// F2: every spelling of an advisory purl is considered; disagreement is
+// unknown in either order.
+func TestConflictingAdvisoriesAreOrderIndependent(t *testing.T) {
+	eval := mustTime(t)
+	ch := opensshCheck()
+	pkg := "pkg:deb/ubuntu/openssh-server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+	spellings := []string{
+		"pkg:deb/ubuntu/openssh-server@1%3A8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+		"pkg:deb/ubuntu/openssh-server@1:8.9p1-3?distro=ubuntu-22.04&arch=amd64",
+		"pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04",
+	}
+	for _, other := range spellings {
+		fixed := advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", other)
+		affected := advisoryFact("affected", "observed", "high", "2026-11-08T11:00:00Z", pkg)
+		for _, facts := range [][]snapshot.Fact{{fixed, affected}, {affected, fixed}} {
+			a := freshInventory(snapshot.Package{PURL: pkg, Version: "1:8.9p1-3"})
+			a.Facts = facts
+			got := evalPackage("C1", ch, nil, a, eval, mustAge())
+			if got.Leaf.Value != logic.Unknown || got.Reason != "conflicting_advisory" {
+				t.Fatalf("%s order %s first: %+v", other, facts[0].Value, got)
+			}
+		}
+	}
+	// Agreeing spellings use the weakest quality.
+	a := freshInventory(snapshot.Package{PURL: pkg, Version: "1:8.9p1-3"})
+	a.Facts = []snapshot.Fact{
+		advisoryFact("fixed", "observed", "high", "2026-11-08T11:00:00Z", spellings[0]),
+		advisoryFact("fixed", "observed", "medium", "2026-11-08T11:00:00Z", spellings[1]),
+	}
+	got := evalPackage("C1", ch, nil, a, eval, mustAge())
+	if got.Leaf.Value != logic.False || got.Leaf.Confidence != logic.ConfMedium {
+		t.Fatalf("agreeing advisories must take the weakest confidence: %+v", got)
+	}
+}
+
+// F6: the OpenVEX product is the matched component, never an unrelated package.
+func TestPrimaryPURLIsMatchedComponent(t *testing.T) {
+	p := &pack.Pack{Checks: map[string]pack.Check{"C1": opensshCheck()}}
+	p.Component.Purls = []string{"pkg:generic/openssh"}
+	base := snapshot.Package{PURL: "pkg:apk/alpine/alpine-baselayout-data@3.6.5-r0", Version: "3.6.5-r0"}
+	ssh := snapshot.Package{PURL: "pkg:apk/alpine/openssh-server@9.6_p1-r0", Version: "9.6_p1-r0"}
+	if got := primaryPURL(p, freshInventory(base)); got != "" {
+		t.Fatalf("no component: want empty, got %s", got)
+	}
+	if got := primaryPURL(p, freshInventory(base, ssh)); got != ssh.PURL {
+		t.Fatalf("want matched component, got %s", got)
+	}
+	two := freshInventory(base, ssh, snapshot.Package{PURL: "pkg:generic/openssh@9.6p1", Version: "9.6p1"})
+	if got := primaryPURL(p, two); got != "" {
+		t.Fatalf("ambiguous: want empty, got %s", got)
+	}
+	asset := freshInventory(base)
+	asset.PrimaryPURL = "pkg:oci/app@sha256%3Aabc"
+	if got := primaryPURL(p, asset); got != asset.PrimaryPURL {
+		t.Fatalf("caller primary_purl wins: %s", got)
 	}
 }

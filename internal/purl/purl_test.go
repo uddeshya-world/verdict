@@ -51,3 +51,59 @@ func TestCanonicalDoesNotPromoteEscapesIntoDelimiters(t *testing.T) {
 		t.Fatalf("name escape became a version marker: %s %v", name, err)
 	}
 }
+
+func TestCanonicalLowercasesTypeOnly(t *testing.T) {
+	got, err := Canonical("pkg:GENERIC/OpenSSH@9.6p1")
+	if err != nil || got != "pkg:generic/OpenSSH@9.6p1" {
+		t.Fatalf("canonical %s %v", got, err)
+	}
+	if !DistroType("DEB") {
+		t.Fatal("distro type must be case-insensitive")
+	}
+	p, _ := Parse("pkg:GENERIC/openssh@9.6p1")
+	if !Match("pkg:generic/openssh", p) {
+		t.Fatal("type match must be case-insensitive")
+	}
+}
+
+func TestSameFolded(t *testing.T) {
+	a := "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3?arch=amd64&distro=ubuntu-22.04"
+	b := "pkg:deb/ubuntu/openssh-server@1%3A8.9p1-3?distro=ubuntu-22.04&arch=amd64"
+	if Same(a, b) {
+		t.Fatal("case variants are not canonical-equal")
+	}
+	if !SameFolded(a, b) || !SameFolded("pkg:generic/openssh%20@9.6p1", "pkg:generic/openssh@9.6p1") {
+		t.Fatal("case and white-space variants must fold together")
+	}
+	if SameFolded(b, "pkg:deb/ubuntu/openssh-server@1:8.9p1-4?arch=amd64&distro=ubuntu-22.04") {
+		t.Fatal("a different version is a different package")
+	}
+}
+
+func TestRelated(t *testing.T) {
+	cases := []struct {
+		pattern, pkg string
+		want         bool
+	}{
+		{"pkg:generic/openssh", "pkg:generic/OpenSSH@9.6p1", true},
+		{"pkg:generic/openssh", "pkg:generic/openssh%20@9.6p1", true},
+		{"pkg:generic/openssh", "pkg:generic/open-ssh@9.6p1", true},
+		{"pkg:generic/openssh", "pkg:generic/openssh-portable@9.6p1", true},
+		{"pkg:deb/openssh-server", "pkg:deb/ubuntu/OpenSSH-Server@1:8.9p1-3", true},
+		{"pkg:apk/openssh-server", "pkg:apk/alpine/openssh-server-pam@9.6_p1-r0", true},
+		{"pkg:generic/openssh", "pkg:pypi/openssh@1.0", true},
+		{"pkg:generic/openssh", "pkg:deb/ubuntu/openssh-client@1:8.9p1-3", false},
+		{"pkg:generic/xz", "pkg:npm/xz-decompress@1.0.0", false},
+		{"pkg:maven/org.apache.logging.log4j/log4j-core", "pkg:maven/org.apache.logging.log4j/log4j-api@2.17.1", false},
+		{"pkg:generic/openssh", "pkg:generic/libssh@0.10.6", false},
+	}
+	for _, c := range cases {
+		p, err := Parse(c.pkg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := Related(c.pattern, p); got != c.want {
+			t.Errorf("Related(%s, %s) = %v, want %v", c.pattern, c.pkg, got, c.want)
+		}
+	}
+}

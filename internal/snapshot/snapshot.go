@@ -150,6 +150,13 @@ func validate(s *Snapshot) error {
 			}
 			purls[pkg.PURL] = struct{}{}
 		}
+		// A byte-identical key and purl twice is a malformed document and is
+		// rejected. Different spellings of one package URL (escapes, qualifier
+		// order, name case) are accepted: merged advisory sources produce them.
+		// The engine reads every spelling of a package's advisory together and
+		// any disagreement is unknown, so neither order nor spelling can pick
+		// the value. Rejecting here instead would fail a whole fleet's drill
+		// over one asset's conflict and hide which sources disagree.
 		keys := map[string]struct{}{}
 		for _, f := range a.Facts {
 			id := f.Key + "\x00" + f.PURL
