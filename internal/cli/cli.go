@@ -213,7 +213,7 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 	var osvPort int
 	var maxSnap int64
 	var maxKBAge string
-	var allowOlderKB bool
+	var allowOlderKB, requireFloor bool
 	cmd := &cobra.Command{
 		Use:   "drill",
 		Short: "Evaluate one pack, or a version-only OSV fallback, against a local snapshot",
@@ -238,8 +238,8 @@ are skipped and need an advisory fact.`,
 				// The signed manifest names the version; an override would make the audit record false.
 				return &ExitError{Code: 2, Err: fmt.Errorf("--kb-version cannot be combined with --kb; the report takes kb_version from the signed bundle")}
 			}
-			if kbDir == "" && (maxKBAge != "" || allowOlderKB) {
-				return &ExitError{Code: 2, Err: fmt.Errorf("--max-kb-age and --allow-older-kb need --kb")}
+			if kbDir == "" && (maxKBAge != "" || allowOlderKB || requireFloor) {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--max-kb-age, --allow-older-kb, and --require-floor need --kb")}
 			}
 			var maxAge time.Duration
 			if maxKBAge != "" {
@@ -251,7 +251,7 @@ are skipped and need an advisory fact.`,
 			var p *pack.Pack
 			var kbRes *kbResolution
 			if kbDir != "" {
-				res, err := resolveFromKB(kbDir, pubPath, cveFlag, osvPort, osvProto, allowOlderKB)
+				res, err := resolveFromKB(kbDir, pubPath, cveFlag, osvPort, osvProto, allowOlderKB, requireFloor)
 				if err != nil {
 					return &ExitError{Code: 2, Err: err}
 				}
@@ -387,7 +387,8 @@ are skipped and need an advisory fact.`,
 	cmd.Flags().StringVar(&evalFlag, "evaluation-time", "", "override snapshot evaluation_time (RFC3339)")
 	cmd.Flags().StringVar(&kbFlag, "kb-version", "", "override snapshot kb_version; not allowed with --kb")
 	cmd.Flags().StringVar(&maxKBAge, "max-kb-age", "", "with --kb: refuse a bundle created more than this long before the evaluation time (a bundle newer than the snapshot is allowed unless it is in the future) (Go duration, or Nd for days, e.g. 30d)")
-	cmd.Flags().BoolVar(&allowOlderKB, "allow-older-kb", false, "with --kb: accept a version older than the one named in the knowledge-base LATEST file")
+	cmd.Flags().BoolVar(&allowOlderKB, "allow-older-kb", false, "with --kb: accept a version older than the newest signed bundle installed under the knowledge-base root (or named in LATEST)")
+	cmd.Flags().BoolVar(&requireFloor, "require-floor", false, "with --kb: refuse unless at least one other verified bundle is installed under the root, so the rollback floor is never self-referential")
 	addMaxSnapshotBytes(cmd, &maxSnap)
 	cmd.Flags().StringVar(&asset, "asset", "", "evaluate a single asset id")
 	return cmd
