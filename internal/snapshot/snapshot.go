@@ -14,8 +14,9 @@ import (
 	"github.com/uddeshya-world/verdict/internal/purl"
 )
 
-// MaxBytes is the largest snapshot accepted.
-const MaxBytes = 2 * 1024 * 1024
+// DefaultMaxBytes is the largest snapshot Load accepts. Commands that read
+// snapshot files take --max-snapshot-bytes and call LoadMax instead.
+const DefaultMaxBytes int64 = 256 * 1024 * 1024
 
 var idRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
 
@@ -83,13 +84,21 @@ type Exposure struct {
 	Source        string   `json:"source"`
 }
 
-// Load decodes a snapshot and rejects unknown fields.
+// Load decodes a snapshot of at most DefaultMaxBytes and rejects unknown fields.
 func Load(data []byte) (*Snapshot, error) {
+	return LoadMax(data, DefaultMaxBytes)
+}
+
+// LoadMax is Load with a caller-chosen size cap in bytes.
+func LoadMax(data []byte, maxBytes int64) (*Snapshot, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("snapshot: empty document")
 	}
-	if len(data) > MaxBytes {
-		return nil, fmt.Errorf("snapshot: document exceeds %d bytes", MaxBytes)
+	if maxBytes < 1 {
+		return nil, fmt.Errorf("snapshot: size cap must be positive")
+	}
+	if int64(len(data)) > maxBytes {
+		return nil, fmt.Errorf("snapshot: document is %d bytes, over the %d-byte cap; raise it with --max-snapshot-bytes", len(data), maxBytes)
 	}
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
