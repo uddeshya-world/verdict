@@ -23,8 +23,13 @@ CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build \
   -ldflags "-s -w -buildid=" \
   -o "$stage/$name/$exe" ./cmd/verdict
 
-# SBOM from the binary's embedded module list (host-run tool, stdlib only).
-go run ./tools/sbom -bin "$stage/$name/$exe" -version "$ver" > "$out/$name.cdx.json"
+# SBOM from the binary's embedded module list (stdlib-only tool).
+# SBOM_BIN lets CI use a tool built from a newer commit than the tag.
+if [ -n "${SBOM_BIN:-}" ]; then
+  "$SBOM_BIN" -bin "$stage/$name/$exe" -version "$ver" > "$out/$name.cdx.json"
+else
+  go run ./tools/sbom -bin "$stage/$name/$exe" -version "$ver" > "$out/$name.cdx.json"
+fi
 
 cp LICENSE NOTICE README.md "$stage/$name/"
 # Fixed mtime, owner, order and no gzip timestamp: same input, same bytes.

@@ -79,19 +79,37 @@ jobs:
           - { goos: darwin, goarch: arm64 }
           - { goos: windows, goarch: amd64 }
     steps:
+      # The tag's source is what ships. The build script and SBOM tool come
+      # from the commit the workflow runs at, so an older tag such as v0.1.0
+      # can be backfilled even though it predates them.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: refs/tags/${{ env.TAG }}
+          path: src
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: wf
+          sparse-checkout: |
+            scripts/release-build.sh
+            tools/sbom
+            go.mod
+          sparse-checkout-cone-mode: false
           persist-credentials: false
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache: false
+      - name: build SBOM tool
+        run: cd wf && CGO_ENABLED=0 go build -trimpath -o "$RUNNER_TEMP/sbom" ./tools/sbom
       - name: build, archive, SBOM
+        working-directory: src
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
-        run: ./scripts/release-build.sh "$TAG" "$GOOS" "$GOARCH" dist
+          SBOM_BIN: ${{ runner.temp }}/sbom
+        run: sh "$GITHUB_WORKSPACE/wf/scripts/release-build.sh" "$TAG" "$GOOS" "$GOARCH" "$GITHUB_WORKSPACE/dist"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ matrix.goos }}-${{ matrix.goarch }}
