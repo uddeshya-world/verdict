@@ -20,9 +20,11 @@ func newImportJar(stdout, stderr io.Writer) *cobra.Command {
 	var complete bool
 	cmd := &cobra.Command{
 		Use:   "jar",
-		Short: "Inspect local JAR, WAR, or EAR files in memory and write one snapshot asset",
+		Short: "Inspect local JAR, WAR, EAR, or ZIP files in memory and write one snapshot asset",
 		Long: `jar opens each archive with Go's zip reader, recurses into nested archives
-(WEB-INF/lib, BOOT-INF/lib, EAR modules), and never extracts to disk.
+(WEB-INF/lib, BOOT-INF/lib, EAR modules, nested .zip), and never extracts to
+disk. Other archive formats inside (.tar, .tar.gz, .7z, .jmod, ...) are not
+read and are listed as skipped, which refuses --complete.
 
 Components come from META-INF/maven/<group>/<artifact>/pom.properties. A
 manifest is used only when its Implementation-Title is in a fixed table.
@@ -30,7 +32,8 @@ Anything else is listed as skipped and no version is invented.
 
 jar.class.org.apache.logging.log4j.core.lookup.JndiLookup is present when the
 class is in any scanned archive, absent only when every identified log4j-core
-copy lacks it, and omitted otherwise. absent is high confidence only with
+copy lacks it, and omitted otherwise. A JndiLookup.class in another package,
+or a Log4j2Plugins.dat jndi entry naming another class, rules out absent. absent is high confidence only with
 --complete (every classpath archive passed); otherwise it is medium, below the
 not_affected bar. runtime.jdk9_or_newer is written only
 from --java-version, as an attested operator statement. Class file versions

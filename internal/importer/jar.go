@@ -30,6 +30,9 @@ const JDK9FactKey = "runtime.jdk9_or_newer"
 
 const (
 	jndiLookupClass = "org/apache/logging/log4j/core/lookup/JndiLookup.class"
+	jndiLookupBase  = "JndiLookup.class"
+	jndiLookupFQCN  = "org.apache.logging.log4j.core.lookup.JndiLookup"
+	pluginCacheBase = "Log4j2Plugins.dat"
 	log4jCorePkg    = "org/apache/logging/log4j/core/"
 	log4jGroup      = "org.apache.logging.log4j"
 	log4jArtifact   = "log4j-core"
@@ -103,13 +106,20 @@ type coord struct {
 
 // archiveScan is what one archive (not its children) contained.
 type archiveScan struct {
-	where      string
-	sum        string
-	poms       []coord
-	pomErrs    []string
-	manifest   *coord
-	jndiPath   string
+	where    string
+	sum      string
+	poms     []coord
+	pomErrs  []string
+	manifest *coord
+	jndiPath string
+	// relocated names a JndiLookup.class outside the canonical package, or
+	// a Log4j2Plugins.dat jndi entry that points at another class. Either
+	// rules out absent; the fact is then omitted unless the canonical class
+	// is present somewhere.
+	relocated  string
 	coreClass  bool
+	classes    bool // holds any .class entry
+	plainZip   bool // a .zip, which is not itself a component
 	identified bool // carries log4j-core coordinates
 	children   []*archiveScan
 	childErr   bool // a nested archive could not be read
@@ -269,7 +279,7 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) (*archiveScan, 
 		}
 	}
 	sum := sha256.Sum256(data)
-	as := &archiveScan{where: where, sum: hex.EncodeToString(sum[:])}
+	as := &archiveScan{where: where, sum: hex.EncodeToString(sum[:]), plainZip: strings.HasSuffix(strings.ToLower(where), ".zip")}
 	sc.scans = append(sc.scans, as)
 
 	type nested struct {
@@ -282,14 +292,31 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) (*archiveScan, 
 		if strings.HasSuffix(name, "/") {
 			continue
 		}
+		if strings.HasSuffix(name, ".class") {
+			as.classes = true
+		}
 		switch {
 		case name == jndiLookupClass || strings.HasSuffix(name, "/"+jndiLookupClass):
 			if as.jndiPath == "" {
 				as.jndiPath = name
 			}
 			as.coreClass = true
+		case strings.EqualFold(path.Base(name), jndiLookupBase):
+			// Relocated by a shading plugin (com/acme/shade/lookup/JndiLookup.class).
+			// It may or may not be Log4j's, so it never supports absent.
+			if as.relocated == "" {
+				as.relocated = name
+			}
 		case strings.HasSuffix(name, ".class") && (strings.HasPrefix(name, log4jCorePkg) || strings.Contains(name, "/"+log4jCorePkg)):
 			as.coreClass = true
+		case path.Base(name) == pluginCacheBase:
+			body, err := sc.read(f, where)
+			if err != nil {
+				return nil, err
+			}
+			if ref := relocatedJndiPlugin(body); ref != "" && as.relocated == "" {
+				as.relocated = name + " (" + ref + ")"
+			}
 		case name == "META-INF/MANIFEST.MF":
 			body, err := sc.read(f, where)
 			if err != nil {
@@ -310,6 +337,8 @@ func (sc *jarScanner) scan(data []byte, where string, depth int) (*archiveScan, 
 			as.poms = append(as.poms, c)
 		case isNestedArchive(name):
 			children = append(children, nested{f: f, name: name})
+		case isUnscannedArchive(name):
+			sc.skipped = append(sc.skipped, where+"!/"+name+": archive format is not scanned; its contents are unknown")
 		}
 	}
 	for _, c := range as.poms {
@@ -382,9 +411,103 @@ func checkEntryName(name string) error {
 	return nil
 }
 
+// zipSuffixes are zip-format archives scanned like a jar. A plain classpath
+// can load classes from a .zip, and .rar (JCA), .sar, .har, .aar, .jpi, and
+// .hpi are zip-based too. A file with one of these names that is not a
+// readable zip is listed as skipped.
+var zipSuffixes = []string{".jar", ".war", ".ear", ".zip", ".rar", ".sar", ".har", ".aar", ".jpi", ".hpi"}
+
+// otherArchiveSuffixes are archive or compressed formats that are not read.
+// Each one found is listed as skipped, which refuses --complete.
+var otherArchiveSuffixes = []string{
+	".tar", ".tgz", ".gz", ".tbz", ".tbz2", ".bz2", ".txz", ".xz", ".tzst", ".zst",
+	".lz", ".lzma", ".lz4", ".z", ".7z", ".cpio", ".jmod", ".pack", ".zipx",
+}
+
 func isNestedArchive(name string) bool {
-	lower := strings.ToLower(name)
-	return strings.HasSuffix(lower, ".jar") || strings.HasSuffix(lower, ".war") || strings.HasSuffix(lower, ".ear")
+	return hasAnySuffix(strings.ToLower(name), zipSuffixes)
+}
+
+func isUnscannedArchive(name string) bool {
+	return hasAnySuffix(strings.ToLower(name), otherArchiveSuffixes)
+}
+
+func hasAnySuffix(s string, suffixes []string) bool {
+	for _, x := range suffixes {
+		if strings.HasSuffix(s, x) {
+			return true
+		}
+	}
+	return false
+}
+
+// relocatedJndiPlugin reads a Log4j2Plugins.dat plugin cache and returns a
+// description of any plugin whose key or class name mentions jndi and whose
+// class is not the canonical JndiLookup. The canonical class is judged by its
+// own .class entry: removing it with zip -d leaves the cache entry behind,
+// and Log4j then fails to load the lookup. A cache that cannot be parsed but
+// mentions jndi is treated as a relocation too.
+//
+// Format (PluginCache.writeCache, DataOutputStream): int32 category count;
+// per category a UTF name and int32 entry count; per entry UTF key, UTF
+// class name, UTF name, and two booleans.
+func relocatedJndiPlugin(body []byte) string {
+	mentions := func(s string) bool { return strings.Contains(strings.ToLower(s), "jndi") }
+	unparsed := func() string {
+		if mentions(string(body)) {
+			return "unparsed plugin cache mentions jndi"
+		}
+		return ""
+	}
+	r := bytes.NewReader(body)
+	readInt := func() (int, bool) {
+		var b [4]byte
+		if _, err := io.ReadFull(r, b[:]); err != nil {
+			return 0, false
+		}
+		n := int32(uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3]))
+		return int(n), n >= 0
+	}
+	readUTF := func() (string, bool) {
+		var b [2]byte
+		if _, err := io.ReadFull(r, b[:]); err != nil {
+			return "", false
+		}
+		buf := make([]byte, int(b[0])<<8|int(b[1]))
+		if _, err := io.ReadFull(r, buf); err != nil {
+			return "", false
+		}
+		return string(buf), true
+	}
+	cats, ok := readInt()
+	if !ok || cats > len(body) {
+		return unparsed()
+	}
+	for i := 0; i < cats; i++ {
+		if _, ok := readUTF(); !ok {
+			return unparsed()
+		}
+		n, ok := readInt()
+		if !ok || n > len(body) {
+			return unparsed()
+		}
+		for j := 0; j < n; j++ {
+			key, ok1 := readUTF()
+			cls, ok2 := readUTF()
+			_, ok3 := readUTF()
+			var flags [2]byte
+			if _, err := io.ReadFull(r, flags[:]); err != nil || !ok1 || !ok2 || !ok3 {
+				return unparsed()
+			}
+			if (mentions(key) || mentions(cls)) && cls != jndiLookupFQCN {
+				return "plugin " + key + " -> " + cls
+			}
+		}
+	}
+	if r.Len() != 0 {
+		return unparsed()
+	}
+	return ""
 }
 
 func isPomProperties(name string) bool {
@@ -510,9 +633,13 @@ func (as *archiveScan) coords() []coord {
 // fat jar) that is accepted as scanned rather than skipped. Every nested
 // archive must have been read and be identified or itself such a container,
 // and it must not hold log4j-core classes of its own. An archive with no
-// nested archives is never a container.
+// nested archives is never a container, except a .zip that holds no classes
+// (a bundle of files, not a component).
 func (as *archiveScan) container() bool {
-	if len(as.children) == 0 || as.childErr || as.coreClass {
+	if as.childErr || as.coreClass {
+		return false
+	}
+	if len(as.children) == 0 && !(as.plainZip && !as.classes) {
 		return false
 	}
 	for _, ch := range as.children {
@@ -526,7 +653,9 @@ func (as *archiveScan) container() bool {
 // jndiFact applies the Log4Shell class rule:
 // present if the class is in any scanned archive; absent only if every
 // identified log4j-core copy holds other log4j-core classes but not this
-// one and no unidentified log4j-core classes were seen; otherwise omitted.
+// one, no unidentified log4j-core classes were seen, and no archive holds a
+// JndiLookup.class in another package or a Log4j2Plugins.dat jndi entry
+// naming another class; otherwise omitted.
 //
 // absent only describes the archives that were passed in. Another archive
 // on the same classpath (an application server lib directory, for example)
@@ -544,6 +673,11 @@ func (sc *jarScanner) jndiFact(observedAt string, complete bool) (*snapshot.Fact
 	for _, as := range sc.scans {
 		if as.jndiPath != "" {
 			return mk("present", as, as.jndiPath, "high"), nil
+		}
+	}
+	for _, as := range sc.scans {
+		if as.relocated != "" {
+			return nil, []string{JndiLookupFactKey + " omitted: " + as.where + "!/" + as.relocated + " is a relocated JndiLookup, so absent cannot be claimed"}
 		}
 	}
 	var copies []*archiveScan
