@@ -4,6 +4,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -66,33 +67,53 @@ func addMaxSnapshotBytes(cmd *cobra.Command, v *int64) {
 	cmd.Flags().Int64Var(v, "max-snapshot-bytes", snapshot.DefaultMaxBytes, "largest snapshot document accepted, in bytes")
 }
 
-// loadSnapshotFile reads at most maxBytes+1 bytes so an oversized file is
-// rejected without reading all of it.
+// loadSnapshotFile refuses an oversized file before reading it when its size
+// is known, and otherwise reads at most maxBytes+1 bytes.
 func loadSnapshotFile(path string, maxBytes int64) (*snapshot.Snapshot, error) {
-	if maxBytes < 1 {
-		return nil, fmt.Errorf("--max-snapshot-bytes must be positive")
+	if err := snapshot.ValidateCap(maxBytes); err != nil {
+		return nil, err
 	}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	raw, err := io.ReadAll(io.LimitReader(f, maxBytes+1))
-	if err != nil {
+	var buf bytes.Buffer
+	if fi, err := f.Stat(); err == nil && fi.Mode().IsRegular() {
+		if fi.Size() > maxBytes {
+			return nil, fmt.Errorf("%s: snapshot is %d bytes, over the %d-byte cap; raise it with --max-snapshot-bytes", path, fi.Size(), maxBytes)
+		}
+		buf.Grow(int(fi.Size()) + 1)
+	}
+	if _, err := buf.ReadFrom(io.LimitReader(f, maxBytes+1)); err != nil {
 		return nil, err
 	}
-	s, err := snapshot.LoadMax(raw, maxBytes)
+	if int64(buf.Len()) > maxBytes {
+		return nil, fmt.Errorf("%s: snapshot is over the %d-byte cap; raise it with --max-snapshot-bytes", path, maxBytes)
+	}
+	s, err := snapshot.LoadMax(buf.Bytes(), maxBytes)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 	return s, nil
 }
 
-// checkSnapshotSize refuses to write a snapshot that the same cap would
-// refuse to read back.
+// checkSnapshotSize validates the cap and refuses to write a snapshot that
+// the same cap would refuse to read back.
 func checkSnapshotSize(body []byte, maxBytes int64) error {
+	if err := snapshot.ValidateCap(maxBytes); err != nil {
+		return err
+	}
 	if int64(len(body)) > maxBytes {
 		return fmt.Errorf("snapshot: output is %d bytes, over the %d-byte cap; raise it with --max-snapshot-bytes", len(body), maxBytes)
 	}
 	return nil
+}
+
+// writeSnapshot checks the cap and writes body to out.
+func writeSnapshot(out string, body []byte, maxBytes int64) error {
+	if err := checkSnapshotSize(body, maxBytes); err != nil {
+		return &ExitError{Code: 2, Err: err}
+	}
+	return os.WriteFile(out, body, 0o644)
 }

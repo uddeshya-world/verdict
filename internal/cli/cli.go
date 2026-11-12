@@ -320,8 +320,12 @@ are skipped and need an advisory fact.`,
 			}
 			in := engine.Input{Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb}
 			if kbRes != nil {
-				if err := checkKBAge(kbRes.CreatedAt, evalAt, maxAge); err != nil {
+				newer, err := checkKBAge(kbRes.CreatedAt, evalAt, nowFunc(), maxAge)
+				if err != nil {
 					return &ExitError{Code: 2, Err: fmt.Errorf("--kb %s: %w", kbDir, err)}
+				}
+				if newer {
+					fmt.Fprintf(stderr, "note: kb is newer than the snapshot (kb created_at %s, evaluation_time %s)\n", kbRes.CreatedAt, evalAt.UTC().Format(time.RFC3339))
 				}
 				in.KBVersion, in.KBKeyID, in.KBCreatedAt = kbRes.KBVersion, kbRes.KeyID, kbRes.CreatedAt
 			} else if kbFlag != "" {
@@ -382,7 +386,7 @@ are skipped and need an advisory fact.`,
 	cmd.Flags().StringVar(&author, "author", "", "operator-supplied OpenVEX author label; not authenticated")
 	cmd.Flags().StringVar(&evalFlag, "evaluation-time", "", "override snapshot evaluation_time (RFC3339)")
 	cmd.Flags().StringVar(&kbFlag, "kb-version", "", "override snapshot kb_version; not allowed with --kb")
-	cmd.Flags().StringVar(&maxKBAge, "max-kb-age", "", "with --kb: refuse a bundle created more than this long before the evaluation time (Go duration, or Nd for days, e.g. 30d)")
+	cmd.Flags().StringVar(&maxKBAge, "max-kb-age", "", "with --kb: refuse a bundle created more than this long before the evaluation time (a bundle newer than the snapshot is allowed unless it is in the future) (Go duration, or Nd for days, e.g. 30d)")
 	cmd.Flags().BoolVar(&allowOlderKB, "allow-older-kb", false, "with --kb: accept a version older than the one named in the knowledge-base LATEST file")
 	addMaxSnapshotBytes(cmd, &maxSnap)
 	cmd.Flags().StringVar(&asset, "asset", "", "evaluate a single asset id")
@@ -478,18 +482,24 @@ func parseAge(s string) (time.Duration, error) {
 	return d, nil
 }
 
-// checkKBAge refuses a bundle created after the evaluation time, and, when
-// maxAge is set, one created more than maxAge before it.
-func checkKBAge(createdAt string, evalAt time.Time, maxAge time.Duration) error {
+// kbClockSkew is how far past the wall clock a bundle's created_at may be.
+const kbClockSkew = 5 * time.Minute
+
+// checkKBAge refuses a bundle created after now+kbClockSkew (a forged or
+// mis-set clock) and, when maxAge is set, one created more than maxAge before
+// the evaluation time. A bundle created after the evaluation time but not in
+// the future is allowed (re-checking an older snapshot with newer knowledge);
+// newer reports that case.
+func checkKBAge(createdAt string, evalAt, now time.Time, maxAge time.Duration) (newer bool, err error) {
 	at, err := time.Parse(time.RFC3339, createdAt)
 	if err != nil {
-		return fmt.Errorf("bundle created_at: %w", err)
+		return false, fmt.Errorf("bundle created_at: %w", err)
 	}
-	if at.After(evalAt) {
-		return fmt.Errorf("bundle created_at %s is after evaluation_time %s; a verdict cannot use knowledge from its future", createdAt, evalAt.UTC().Format(time.RFC3339))
+	if at.After(now.Add(kbClockSkew)) {
+		return false, fmt.Errorf("bundle created_at %s is in the future (now %s, allowed skew %s); the bundle or this machine's clock is wrong", createdAt, now.UTC().Format(time.RFC3339), kbClockSkew)
 	}
 	if maxAge > 0 && at.Before(evalAt.Add(-maxAge)) {
-		return fmt.Errorf("bundle created_at %s is older than --max-kb-age %s before evaluation_time %s; install a newer bundle", createdAt, maxAge, evalAt.UTC().Format(time.RFC3339))
+		return false, fmt.Errorf("bundle created_at %s is older than --max-kb-age %s before evaluation_time %s; install a newer bundle", createdAt, maxAge, evalAt.UTC().Format(time.RFC3339))
 	}
-	return nil
+	return at.After(evalAt), nil
 }

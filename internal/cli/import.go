@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uddeshya-world/verdict/internal/canonjson"
 	"github.com/uddeshya-world/verdict/internal/importer"
+	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
 func newImport(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
@@ -37,6 +38,7 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 	var input, out, assetID, assetName, kind, basis, confidence, evidenceID, kb, evalAt, observedAt string
 	var zones []string
 	var complete bool
+	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   name,
 		Short: "Import one " + name + " JSON document as one snapshot asset",
@@ -55,6 +57,9 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 			}
 			if evidenceID == "" {
 				evidenceID = "e-import-" + assetID
+			}
+			if err := snapshot.ValidateCap(maxBytes); err != nil {
+				return &ExitError{Code: 2, Err: err}
 			}
 			data, err := os.ReadFile(input)
 			if err != nil {
@@ -78,7 +83,7 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 			if err != nil {
 				return err
 			}
-			if err := os.WriteFile(out, body, 0o644); err != nil {
+			if err := writeSnapshot(out, body, maxBytes); err != nil {
 				return err
 			}
 			summary := fmt.Sprintf("import %s: asset=%s packages=%d skipped=%d",
@@ -103,6 +108,7 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 	cmd.Flags().StringVar(&kb, "kb-version", "", "knowledge-bundle version string")
 	cmd.Flags().StringVar(&evalAt, "evaluation-time", "", "RFC3339 evaluation time; the clock is not read")
 	cmd.Flags().StringVar(&observedAt, "observed-at", "", "RFC3339 time the SBOM was observed; defaults to --evaluation-time")
+	addMaxSnapshotBytes(cmd, &maxBytes)
 	return cmd
 }
 
