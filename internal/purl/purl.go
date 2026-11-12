@@ -55,17 +55,8 @@ func Parse(raw string) (PURL, error) {
 // Match reports whether p matches a versionless pattern.
 // An empty pattern namespace matches any namespace.
 func Match(pattern string, p PURL) bool {
-	pat, err := Parse(pattern)
-	if err != nil {
-		return false
-	}
-	if !strings.EqualFold(pat.Type, p.Type) || pat.Name != p.Name {
-		return false
-	}
-	if pat.Namespace == "" {
-		return true
-	}
-	return pat.Namespace == p.Namespace
+	pt := NewPattern(pattern)
+	return pt.Match(p)
 }
 
 // Canonical decodes percent-escapes, re-encodes reserved characters, lowercases the type, and sorts qualifiers.
@@ -366,31 +357,9 @@ func SameFolded(a, b string) bool {
 // Names are compared as Skeleton forms, so Cyrillic, Greek, and fullwidth
 // lookalikes equal their Latin spelling.
 func Related(pattern string, p PURL) bool {
-	pat, err := Parse(pattern)
-	if err != nil {
-		return false
-	}
-	pn, qn := FoldName(p.Name), FoldName(pat.Name)
-	if pn == "" || qn == "" {
-		return false
-	}
-	if pn == qn || squash(pn) == squash(qn) {
-		return true
-	}
-	pt, qt := strings.ToLower(p.Type), strings.ToLower(pat.Type)
-	if pt != "generic" && !(DistroType(pt) && DistroType(qt)) {
-		return false
-	}
-	if containsRun(tokens(pn), tokens(qn)) {
-		return true
-	}
-	// Aliases that share no token run: opensshd, openssh9. A pattern name of
-	// four or more characters also matches a package name inside it.
-	ps, qs := squash(pn), squash(qn)
-	if strings.Contains(ps, qs) {
-		return true
-	}
-	return len(qs) >= 4 && strings.Contains(qs, ps)
+	pt := NewPattern(pattern)
+	sj := NewSubject(p)
+	return pt.Related(&sj)
 }
 
 func containsRun(hay, needle []string) bool {
@@ -410,4 +379,102 @@ func containsRun(hay, needle []string) bool {
 		}
 	}
 	return false
+}
+
+// Pattern is a parsed versionless pattern with the folded forms Related
+// needs, computed once. The zero value is a pattern that does not parse and
+// matches nothing.
+type Pattern struct {
+	ok       bool
+	pat      PURL
+	typeLow  string
+	fold     string
+	squashed string
+	toks     []string
+}
+
+// NewPattern parses a pattern once. It is equivalent to the per-call parse
+// that Match and Related do.
+func NewPattern(pattern string) Pattern {
+	pat, err := Parse(pattern)
+	if err != nil {
+		return Pattern{}
+	}
+	qn := FoldName(pat.Name)
+	return Pattern{
+		ok: true, pat: pat, typeLow: strings.ToLower(pat.Type),
+		fold: qn, squashed: squash(qn), toks: tokens(qn),
+	}
+}
+
+// Match is Match(pattern, p) for a prepared pattern.
+func (pt *Pattern) Match(p PURL) bool {
+	if !pt.ok {
+		return false
+	}
+	if !strings.EqualFold(pt.pat.Type, p.Type) || pt.pat.Name != p.Name {
+		return false
+	}
+	if pt.pat.Namespace == "" {
+		return true
+	}
+	return pt.pat.Namespace == p.Namespace
+}
+
+// Subject is a parsed package with the folded forms of its name, computed
+// once and reusable across patterns.
+type Subject struct {
+	P        PURL
+	nonASCII bool
+	fold     string
+	squashed string
+	typeLow  string
+	toks     []string
+	toksDone bool
+}
+
+// NewSubject computes the Skeleton-derived forms of p.Name once.
+func NewSubject(p PURL) Subject {
+	sk := Skeleton(p.Name)
+	na := false
+	for _, r := range sk {
+		if r > unicode.MaxASCII {
+			na = true
+			break
+		}
+	}
+	pn := strings.Trim(sk, "-_.+ \t")
+	return Subject{P: p, nonASCII: na, fold: pn, squashed: squash(pn), typeLow: strings.ToLower(p.Type)}
+}
+
+// NonASCII is NonASCII(p.Name).
+func (s *Subject) NonASCII() bool { return s.nonASCII }
+
+// Related is Related(pattern, p) for a prepared pattern and subject.
+func (pt *Pattern) Related(s *Subject) bool {
+	if !pt.ok {
+		return false
+	}
+	pn, qn := s.fold, pt.fold
+	if pn == "" || qn == "" {
+		return false
+	}
+	if pn == qn || s.squashed == pt.squashed {
+		return true
+	}
+	if s.typeLow != "generic" && !(DistroType(s.typeLow) && DistroType(pt.typeLow)) {
+		return false
+	}
+	if !s.toksDone {
+		s.toks = tokens(pn)
+		s.toksDone = true
+	}
+	if containsRun(s.toks, pt.toks) {
+		return true
+	}
+	ps, qs := s.squashed, pt.squashed
+	if strings.Contains(ps, qs) {
+		return true
+	}
+	return len(qs) >= 4 && strings.Contains(qs, ps)
 }
