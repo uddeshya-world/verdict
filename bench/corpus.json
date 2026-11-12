@@ -493,5 +493,66 @@
     "ground_truth": "unknown",
     "expect_state": "needs_review",
     "note": "Two different justifications cannot become not_affected."
+  },
+  {
+    "id": "regresshion/import-syft-rocky-epoch-complete",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "cyclonedx",
+    "import_input": "bench/fixtures/rocky9-syft-epoch.cdx.json",
+    "import_complete": true,
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "syft shape: an operating-system component without a purl and rpm packages whose epoch is in the epoch= qualifier. --complete is accepted and openssh-server (epoch added here to exercise the path) is still evaluated: a distro build with no advisory stays needs_review."
+  },
+  {
+    "id": "regresshion/import-trivy-rocky-epoch-complete",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "trivy",
+    "import_input": "bench/fixtures/rocky9-trivy-epoch.json",
+    "import_complete": true,
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Trivy splits Epoch/Version/Release; recomposed it equals the purl. openssh-server is imported and evaluated, not skipped."
+  },
+  {
+    "id": "regresshion/import-advisory-no-qualifiers-fixed",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "cyclonedx",
+    "import_input": "bench/fixtures/u22-syft-openssh.cdx.json",
+    "import_advisories": "bench/fixtures/adv-u22-fixed-no-qualifiers.json",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "note": "USN-6859-1 lists 1:8.9p1-3ubuntu0.10 as fixed for 22.04. A row without qualifiers lands on syft's arch/distro/upstream purl."
+  },
+  {
+    "id": "regresshion/import-advisory-distro-mismatch-dropped",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "cyclonedx",
+    "import_input": "bench/fixtures/u24-syft-openssh.cdx.json",
+    "import_advisories": "bench/fixtures/adv-u22-fixed-distro.json",
+    "import_allow_unmatched": true,
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Same version string on a 24.04 package. A 22.04 fixed row must not clear it, even with --allow-unmatched."
+  },
+  {
+    "id": "regresshion/import-advisory-distro-mismatch-rejected",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "cyclonedx",
+    "import_input": "bench/fixtures/u24-syft-openssh.cdx.json",
+    "import_advisories": "bench/fixtures/adv-u22-fixed-distro.json",
+    "ground_truth": "unknown",
+    "expect_state": "import_rejected",
+    "note": "Without --allow-unmatched, a row that lands on no package fails the import."
   }
 ]

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/uddeshya-world/verdict/internal/purl"
@@ -44,12 +45,16 @@ type Result struct {
 }
 
 // CycloneDX reads one CycloneDX JSON BOM into one asset.
-// Components without a purl are skipped. Fields this parser does not
-// understand, including any vulnerability list, are ignored.
+// Components without a purl are skipped, except an operating-system
+// component without a purl: syft always emits one for the distro release and
+// it is not an installed package, so it becomes a note and does not block
+// --complete. Fields this parser does not understand, including any
+// vulnerability list, are ignored.
 func CycloneDX(data []byte, opt InventoryOptions) (*Result, error) {
 	var doc struct {
 		BOMFormat  string `json:"bomFormat"`
 		Components []struct {
+			Type    string `json:"type"`
 			Name    string `json:"name"`
 			Version string `json:"version"`
 			PURL    string `json:"purl"`
@@ -62,30 +67,44 @@ func CycloneDX(data []byte, opt InventoryOptions) (*Result, error) {
 		return nil, fmt.Errorf("import cyclonedx: bomFormat must be CycloneDX")
 	}
 	var rows []row
-	var skipped []string
+	var skipped, notes []string
 	for _, c := range doc.Components {
+		name := c.Name
+		if name == "" {
+			name = "(unnamed)"
+		}
 		if c.PURL == "" {
-			name := c.Name
-			if name == "" {
-				name = "(unnamed)"
+			if c.Type == "operating-system" {
+				notes = append(notes, fmt.Sprintf("ignored operating-system component %s %s: it is the distro release, not a package", name, c.Version))
+				continue
 			}
 			skipped = append(skipped, name+": no purl")
 			continue
 		}
 		rows = append(rows, row{raw: c.PURL, version: c.Version, name: c.Name})
 	}
-	return finish(rows, skipped, opt, "cyclonedx")
+	res, err := finish(rows, skipped, opt, "cyclonedx")
+	if err != nil {
+		return nil, err
+	}
+	res.Notes = notes
+	return res, nil
 }
 
 // Trivy reads one Trivy JSON report into one asset.
 // Only Results[].Packages[].Identifier.PURL is imported.
 // Vulnerabilities are not copied. Trivy's affected/fixed decision is not an advisory fact.
+// Trivy splits a distro version into Epoch, Version, and Release, while its
+// package URL carries version-release and an epoch qualifier. The fields are
+// recomposed as epoch:version-release before they are compared.
 func Trivy(data []byte, opt InventoryOptions) (*Result, error) {
 	var doc struct {
 		Results []struct {
 			Packages []struct {
 				Name       string `json:"Name"`
 				Version    string `json:"Version"`
+				Release    string `json:"Release"`
+				Epoch      int    `json:"Epoch"`
 				Identifier struct {
 					PURL string `json:"PURL"`
 				} `json:"Identifier"`
@@ -110,10 +129,30 @@ func Trivy(data []byte, opt InventoryOptions) (*Result, error) {
 				skipped = append(skipped, name+": no purl")
 				continue
 			}
-			rows = append(rows, row{raw: p.Identifier.PURL, version: p.Version, name: p.Name})
+			if p.Epoch < 0 {
+				skipped = append(skipped, p.Name+": negative epoch")
+				continue
+			}
+			rows = append(rows, row{raw: p.Identifier.PURL, version: trivyVersion(p.Epoch, p.Version, p.Release), name: p.Name})
 		}
 	}
 	return finish(rows, skipped, opt, "trivy")
+}
+
+// trivyVersion composes epoch:version-release from Trivy's split fields.
+// An empty Version stays empty so the package URL version is used alone.
+func trivyVersion(epoch int, version, release string) string {
+	if version == "" {
+		return ""
+	}
+	v := version
+	if release != "" {
+		v += "-" + release
+	}
+	if epoch > 0 {
+		v = strconv.Itoa(epoch) + ":" + v
+	}
+	return v
 }
 
 type row struct {
@@ -150,6 +189,9 @@ func finish(rows []row, skipped []string, opt InventoryOptions, kind string) (*R
 		return nil, fmt.Errorf("import %s: inventory cannot be complete: %d components skipped (%s)", kind, len(skipped), strings.Join(skipped, "; "))
 	}
 	if len(pkgs) == 0 {
+		if len(skipped) > 0 {
+			return nil, fmt.Errorf("import %s: no packages with a usable purl: %d skipped (%s)", kind, len(skipped), strings.Join(SkippedNames(skipped), ", "))
+		}
 		return nil, fmt.Errorf("import %s: no packages with a usable purl", kind)
 	}
 	if opt.Zones == nil {
@@ -209,12 +251,28 @@ func packageFromPURL(raw, versionField string) (snapshot.Package, error) {
 	if ver == "" {
 		ver = field
 	} else if field != "" && field != ver {
-		return snapshot.Package{}, fmt.Errorf("purl version %q disagrees with version %q", ver, versionField)
+		k, kerr := parseKey(canon)
+		if kerr != nil || !epochAware(k.typ) || foldEpoch(field) != k.evr {
+			return snapshot.Package{}, fmt.Errorf("purl version %q disagrees with version %q", ver, versionField)
+		}
+		// rpm and deb: the epoch sits in the epoch= qualifier and the
+		// version field spells it out (2:4.9-8.el9). The package keeps the
+		// purl's version so the engine's purl/version check still holds.
 	}
 	if ver == "" {
 		return snapshot.Package{}, fmt.Errorf("purl %q has no version", raw)
 	}
 	return snapshot.Package{PURL: canon, Version: ver}, nil
+}
+
+// SkippedNames returns the package label of each Skipped entry, in order.
+func SkippedNames(skipped []string) []string {
+	out := make([]string, 0, len(skipped))
+	for _, s := range skipped {
+		name, _, _ := strings.Cut(s, ": ")
+		out = append(out, name)
+	}
+	return out
 }
 
 func normalize(opt *InventoryOptions) error {
@@ -283,56 +341,4 @@ func ParseAdvisories(data []byte) (*AdvisoryDocument, error) {
 		}
 	}
 	return &doc, nil
-}
-
-// ApplyAdvisories adds advisory facts onto a snapshot.
-// It does not invent a status for a package that is not listed.
-func ApplyAdvisories(s *snapshot.Snapshot, doc *AdvisoryDocument) (*snapshot.Snapshot, []string, error) {
-	if s == nil || doc == nil {
-		return nil, nil, fmt.Errorf("import advisories: snapshot and document are required")
-	}
-	next := *s
-	next.Assets = append([]snapshot.Asset{}, s.Assets...)
-	index := map[string]int{}
-	for i := range next.Assets {
-		index[next.Assets[i].ID] = i
-	}
-	var warnings []string
-	for _, f := range doc.Facts {
-		i, ok := index[f.AssetID]
-		if !ok {
-			return nil, nil, fmt.Errorf("import advisories: asset %q is not in the snapshot", f.AssetID)
-		}
-		asset := next.Assets[i]
-		canon, err := purl.Canonical(f.PURL)
-		if err != nil {
-			return nil, nil, fmt.Errorf("import advisories: %s: %w", f.Key, err)
-		}
-		if !inventoryHasPURL(asset, canon) {
-			warnings = append(warnings, fmt.Sprintf("advisory purl not in asset inventory: asset %s purl %s", f.AssetID, canon))
-		}
-		asset.Facts = append(append([]snapshot.Fact{}, asset.Facts...), snapshot.Fact{
-			Key: f.Key, PURL: canon, Value: f.Value, Basis: f.Basis, Confidence: f.Confidence,
-			ObservedAt: f.ObservedAt, ExpiresAt: f.ExpiresAt, EvidenceID: f.EvidenceID, Source: f.Source,
-		})
-		next.Assets[i] = asset
-	}
-	raw, err := json.Marshal(&next)
-	if err != nil {
-		return nil, nil, err
-	}
-	checked, err := snapshot.Load(raw)
-	if err != nil {
-		return nil, nil, fmt.Errorf("import advisories: %w", err)
-	}
-	return checked, warnings, nil
-}
-
-func inventoryHasPURL(asset snapshot.Asset, raw string) bool {
-	for _, pkg := range asset.Inventory.Packages {
-		if purl.Same(pkg.PURL, raw) {
-			return true
-		}
-	}
-	return false
 }
