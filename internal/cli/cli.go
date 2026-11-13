@@ -106,6 +106,8 @@ func newPack(stdout, stderr io.Writer) *cobra.Command {
 	}
 	cmd.AddCommand(newPackReview(stdout, stderr))
 	cmd.AddCommand(newPackHash(stdout, stderr))
+	cmd.AddCommand(newPackSignReview(stdout))
+	cmd.AddCommand(newPackCheckReviews(stdout, stderr))
 	var lintJSON bool
 	lint := &cobra.Command{
 		Use:   "lint FILE...",
