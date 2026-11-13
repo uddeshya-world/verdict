@@ -17,8 +17,9 @@
     "process.sshd.links_liblzma": "true",
     "process.listening.sshd": "true",
     "service.socket_activation.sshd": "false",
-    "config.sshd.LoginGraceTime": "120"
+    "config.sshd.LoginGraceTime": "120",
+    "config.sshd.Port": "22"
   },
   "listening": [{"port": 22, "proto": "tcp", "process": "sshd"}],
-  "notes": ["listening sockets from ss -ltnp", "LoginGraceTime from sshd -T"]
+  "notes": ["listening sockets from ss -ltnp", "LoginGraceTime from sshd -T", "config.sshd.Port from sshd -T, listening sshd sockets, and sshd socket units"]
 }

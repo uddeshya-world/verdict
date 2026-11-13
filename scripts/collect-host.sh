@@ -340,6 +340,7 @@ fi
 # held by anything but sshd.
 SA_POS=0
 SA_UNK=0
+SA_UNITS=""
 SYSTEMD_UP=0
 if [ -d /run/systemd/system ]; then SYSTEMD_UP=1; fi
 if [ -r /proc/1/comm ] && [ "$(cat /proc/1/comm 2>/dev/null)" = systemd ]; then SYSTEMD_UP=1; fi
@@ -361,7 +362,7 @@ if [ "$SYSTEMD_UP" = 1 ]; then
           if (f == "disabled" && (a == "inactive" || a == "failed")) { print "neg"; exit }
           print "unk"
         }')
-      case $cls in pos) SA_POS=1 ;; neg) ;; *) SA_UNK=1 ;; esac
+      case $cls in pos) SA_POS=1; SA_UNITS="$SA_UNITS $u" ;; neg) ;; *) SA_UNK=1 ;; esac
     done
   else
     SA_UNK=1
@@ -437,9 +438,15 @@ cfg_file() {
   echo N
 }
 
+SSHD_T=""
+SSHD_T_OK=0
+if [ -n "$SSHD" ] && SSHD_T=$("$SSHD" -T 2>/dev/null) && [ -n "$SSHD_T" ]; then
+  SSHD_T_OK=1
+fi
+
 LGT=""
-if [ -n "$SSHD" ] && t=$("$SSHD" -T 2>/dev/null); then
-  LGT=$(printf '%s\n' "$t" | awk '$1 == "logingracetime" { print $2; exit }')
+if [ "$SSHD_T_OK" = 1 ]; then
+  LGT=$(printf '%s\n' "$SSHD_T" | awk '$1 == "logingracetime" { print $2; exit }')
   [ -n "$LGT" ] && note "LoginGraceTime from sshd -T"
 fi
 if [ -z "$LGT" ] && [ -e /etc/ssh/sshd_config ]; then
@@ -456,6 +463,152 @@ case $LGT in
   *[!0-9smhdwSMHDW]*) note "LoginGraceTime value not recognized; omitted" ;;
   *) fact config.sshd.LoginGraceTime "$LGT" ;;
 esac
+
+# config.sshd.Port: every TCP port sshd accepts connections on, written as
+# decimal ports in strictly ascending order joined by commas with no spaces
+# (22, or 22,2222). The base set is sshd -T (every "port" line and the port
+# of every "listenaddress" line), else sshd_config and its Include files up to
+# the first Match: Port lines, plus the port of a ListenAddress that names
+# one. Ports sshd is seen listening on and the ports of an active or enabled
+# ssh.socket/sshd.socket are added. With no base set, a ListenAddress without
+# a port and no Port line (the default would apply), or any value that does
+# not parse, the fact is omitted. 22 is never assumed.
+
+# lport prints the port of a ListenAddress value, "" when it has none, or
+# BAD. Forms: host, host:port, a.b.c.d:port, [v6], [v6]:port, bare v6.
+LADDR_AWK='
+function lport(v,   p, n, t) {
+  sub(/^[ \t]+/, "", v); sub(/[ \t].*$/, "", v); gsub(/"/, "", v)
+  if (v ~ /^\[[^]]*\]:[0-9]+$/) { p = v; sub(/^.*\]:/, "", p); return p }
+  if (v ~ /^\[[^]]*\]$/) return ""
+  t = v; n = gsub(/:/, ":", t)
+  if (n == 1 && v ~ /^[^:[]+:[0-9]+$/) { p = v; sub(/^.*:/, "", p); return p }
+  if (n == 0 && v != "" && v !~ /[][]/) return ""
+  if (n >= 2 && v !~ /[][]/) return ""
+  return "BAD"
+}'
+
+PCFG_AWK="$LADDR_AWK"'
+{
+  sub(/^[ \t]+/, "")
+  if ($0 == "" || substr($0, 1, 1) == "#") next
+  kw = $0; sub(/[ \t=].*$/, "", kw)
+  rest = substr($0, length(kw) + 1); sub(/^[ \t]*=?[ \t]*/, "", rest)
+  k = tolower(kw)
+  if (k == "match") { print "M"; exit }
+  if (k == "include") {
+    n = split(rest, a, /[ \t]+/)
+    for (i = 1; i <= n; i++) { gsub(/"/, "", a[i]); if (a[i] != "" && substr(a[i], 1, 1) != "#") print "I " a[i] }
+    next
+  }
+  if (k == "port") { v = rest; sub(/[ \t].*$/, "", v); gsub(/"/, "", v); print "Q " v; next }
+  if (k == "listenaddress") {
+    p = lport(rest)
+    if (p == "") print "A"; else if (p == "BAD") print "X"; else print "L " p
+  }
+}'
+
+# cfg_ports prints one token per line: "Q port" (Port line), "L port"
+# (ListenAddress with a port), "A" (ListenAddress without one), "X"
+# (unparsed ListenAddress), then "B" (unreadable or too deep) or "E" (done;
+# a Match block ends the global section). It runs in a command
+# substitution, so its variables do not leak.
+cfg_ports() {
+  if [ "$2" -gt 16 ]; then echo B; return; fi
+  if [ ! -r "$1" ]; then echo B; return; fi
+  toks=$(awk "$PCFG_AWK" "$1" 2>/dev/null) || { echo B; return; }
+  IFS='
+'
+  set -f
+  for t in $toks; do
+    case $t in
+      "Q "*|"L "*|A|X) echo "$t" ;;
+      M) echo M; return ;;
+      "I "*)
+        pat=${t#I }
+        case $pat in /*) ;; *) pat=/etc/ssh/$pat ;; esac
+        set +f
+        for f in $pat; do
+          [ -e "$f" ] || continue
+          r=$(cfg_ports "$f" $(($2 + 1)))
+          printf '%s\n' "$r" | grep -v '^E$'
+          case $r in *B*|*M*) return ;; esac
+        done
+        set -f
+        ;;
+    esac
+  done
+  echo E
+}
+
+PORT_LIST=""
+PORT_BAD=0
+PORT_SRC=""
+if [ "$SSHD_T_OK" = 1 ] && printf '%s\n' "$SSHD_T" | grep -q '^port '; then
+  PORT_LIST=$(printf '%s\n' "$SSHD_T" | awk "$LADDR_AWK"'
+    $1 == "port" { print $2; next }
+    $1 == "listenaddress" { p = lport($2); print (p == "" ? "BAD" : p) }')
+  PORT_SRC="sshd -T"
+elif [ -e /etc/ssh/sshd_config ]; then
+  r=$(cfg_ports /etc/ssh/sshd_config 0)
+  if printf '%s\n' "$r" | grep -q '^B$'; then
+    note "config.sshd.Port omitted: an sshd config file was unreadable"
+    PORT_BAD=1
+  elif printf '%s\n' "$r" | grep -q '^X$'; then
+    note "config.sshd.Port omitted: a ListenAddress value was not parsed"
+    PORT_BAD=1
+  elif printf '%s\n' "$r" | grep -q '^A$' && ! printf '%s\n' "$r" | grep -q '^Q '; then
+    note "config.sshd.Port omitted: a ListenAddress has no port and no Port line is written; the default is not assumed"
+    PORT_BAD=1
+  else
+    PORT_LIST=$(printf '%s\n' "$r" | sed -n 's/^[QL] //p')
+    PORT_SRC="/etc/ssh/sshd_config and its Include files"
+  fi
+fi
+if [ -n "$PORT_LIST" ] && [ "$PORT_BAD" = 0 ]; then
+  # Ports a running sshd holds (command-line -p, or a config sshd -T did not
+  # read) and ports a systemd socket unit holds for sshd.
+  if [ "$LISTEN_OK" = 1 ] && [ -n "$LISTEN" ]; then
+    PORT_LIST="$PORT_LIST
+$(printf '%s\n' "$LISTEN" | awk -F '\t' '$2 ~ /^sshd/ { print $1 }')"
+  fi
+  for u in $SA_UNITS; do
+    if ! lst=$(systemctl show -p Listen "$u" 2>/dev/null); then
+      PORT_BAD=1
+      note "config.sshd.Port omitted: could not read Listen of $u"
+      continue
+    fi
+    PORT_LIST="$PORT_LIST
+$(printf '%s\n' "$lst" | awk "$LADDR_AWK"'
+      {
+        sub(/^Listen=/, "")
+        n = split($0, w, /[ \t]+/)
+        for (i = 1; i <= n; i++) {
+          if (w[i] == "" || w[i] ~ /^\(.*\)$/) continue
+          if (w[i] ~ /^\//) continue
+          if (w[i] ~ /^[0-9]+$/) { print w[i]; continue }
+          p = lport(w[i]); print (p == "" ? "BAD" : p)
+        }
+      }')"
+  done
+fi
+if [ -n "$PORT_LIST" ] && [ "$PORT_BAD" = 0 ]; then
+  PORTS=$(printf '%s\n' "$PORT_LIST" | awk '
+    NF == 0 { next }
+    $0 !~ /^[0-9]+$/ || length($0) > 5 || $0 + 0 < 1 || $0 + 0 > 65535 { bad = 1; next }
+    { print $0 + 0 }
+    END { if (bad) print "BAD" }' | sort -un)
+  case $PORTS in
+    *BAD*|"") note "config.sshd.Port omitted: a port value was not a number in 1-65535" ;;
+    *)
+      PORTS=$(printf '%s\n' "$PORTS" | awk 'NF > 0 { if (n++) printf ","; printf "%s", $0 }')
+      fact config.sshd.Port "$PORTS"
+      note "config.sshd.Port from $PORT_SRC, listening sshd sockets, and sshd socket units"
+      ;;
+  esac
+elif [ "$PORT_BAD" = 0 ]; then
+  note "config.sshd.Port omitted: no sshd -T port lines and no Port or ListenAddress port in sshd_config"
+fi
 
 # ---------------------------------------------------------------- output
 

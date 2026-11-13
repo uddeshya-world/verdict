@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/uddeshya-world/verdict/internal/engine"
 	"github.com/uddeshya-world/verdict/internal/rootpath"
 )
 
@@ -84,5 +85,23 @@ func TestFalseNotAffectedPredicate(t *testing.T) {
 	}
 	if FalseNotAffected("needs_review", "under_investigation", "affected") {
 		t.Fatal("withholding not_affected is not a false clear")
+	}
+}
+
+func TestExpectJustification(t *testing.T) {
+	bad := `[{"id":"x","pack":"p","policy":"q","snapshot":"s","asset":"a","ground_truth":"not_affected","expect_state":"needs_review","expect_justification":"component_not_present"}]`
+	if _, err := LoadCorpus([]byte(bad)); err == nil {
+		t.Fatal("expect_justification without expect_state not_affected must be refused")
+	}
+	c := Case{ID: "x", GroundTruth: "not_affected", ExpectState: "not_affected", ExpectJustification: "vulnerable_code_cannot_be_controlled_by_adversary"}
+	var row Row
+	fill(&row, c, &engine.Verdict{State: "not_affected", VEXStatus: "not_affected", Justification: "vulnerable_code_not_present"})
+	if !row.StateMismatch {
+		t.Fatal("a different justification must be a mismatch")
+	}
+	row = Row{}
+	fill(&row, c, &engine.Verdict{State: "not_affected", VEXStatus: "not_affected", Justification: c.ExpectJustification})
+	if row.StateMismatch {
+		t.Fatalf("%+v", row)
 	}
 }

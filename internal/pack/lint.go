@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/uddeshya-world/verdict/internal/factkeys"
 	"github.com/uddeshya-world/verdict/internal/vercmp"
 )
 
@@ -70,7 +71,15 @@ func Lint(p *Pack) error {
 	if err := lintNegation(p.Conditions, 0, p.Checks); err != nil {
 		add("%v", err)
 	}
-	if p.Exposure.Port < 1 || p.Exposure.Port > 65535 {
+	switch {
+	case p.Exposure.PortFact != "":
+		if p.Exposure.Port != 0 {
+			add("exposure: set port or port_fact, not both; a fixed port is never a fallback for port_fact")
+		}
+		if !factkeys.IsPortList(p.Exposure.PortFact) {
+			add("exposure.port_fact %q is not a known port-list fact key", p.Exposure.PortFact)
+		}
+	case p.Exposure.Port < 1 || p.Exposure.Port > 65535:
 		add("exposure.port must be 1-65535")
 	}
 	if p.Exposure.Proto != "tcp" && p.Exposure.Proto != "udp" {

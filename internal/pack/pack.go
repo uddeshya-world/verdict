@@ -108,9 +108,15 @@ type Condition struct {
 
 // ExposureSpec names the port and protocol a true tree is about.
 // It never selects not_affected. Zone names live in the site policy.
+// Exactly one of Port and PortFact is set. PortFact names a host fact
+// (factkeys.PortLists) whose canonical value is the port list the service
+// listens on; there is no fallback to a fixed port when that fact is
+// missing or malformed, exposure is unknown. omitempty keeps the content
+// hash of packs without port_fact unchanged.
 type ExposureSpec struct {
-	Port  int    `yaml:"port"`
-	Proto string `yaml:"proto"`
+	Port     int    `yaml:"port"`
+	Proto    string `yaml:"proto"`
+	PortFact string `yaml:"port_fact" json:"PortFact,omitempty"`
 }
 
 // Remediation text is copied into OpenVEX action statements.
