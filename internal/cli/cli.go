@@ -65,6 +65,7 @@ bundle version are explicit inputs.`,
 	root.AddCommand(newBundle(stdout, stderr))
 	root.AddCommand(newExplain(stdout))
 	root.AddCommand(newReport(stdout, stderr))
+	root.AddCommand(newDiff(stdout))
 	return root
 }
 

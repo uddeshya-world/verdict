@@ -1,0 +1,172 @@
+name: Verdict diff
+description: >-
+  Download a checksum-verified Verdict release, drill one pack against a
+  before and an after snapshot (or take two reports), diff them, and fail
+  the job when the --fail-on policy matches. Offline after the download.
+inputs:
+  version:
+    description: Verdict release tag to download (e.g. v0.2.0).
+    required: true
+  sha256:
+    description: >-
+      Optional expected SHA-256 of verdict_<ver>_linux_amd64.tar.gz. When set it
+      must match too, so a release asset replaced together with its SHA256SUMS
+      is still caught. Recommended.
+    required: false
+    default: ""
+  repository:
+    description: GitHub repository that publishes the release.
+    required: false
+    default: uddeshya-world/verdict
+  pack:
+    description: Condition pack YAML. Required unless before-report and after-report are given.
+    required: false
+    default: ""
+  policy:
+    description: Site zone policy JSON. Without it exposure stays unknown.
+    required: false
+    default: ""
+  before-snapshot:
+    description: Snapshot JSON for the base (before) side.
+    required: false
+    default: ""
+  after-snapshot:
+    description: Snapshot JSON for the head (after) side.
+    required: false
+    default: ""
+  before-report:
+    description: Existing drill report for the base side, instead of pack + before-snapshot.
+    required: false
+    default: ""
+  after-report:
+    description: Existing drill report for the head side, instead of pack + after-snapshot.
+    required: false
+    default: ""
+  fail-on:
+    description: "verdict diff --fail-on: regression (default), any-affected-change, or any."
+    required: false
+    default: regression
+outputs:
+  exit-code:
+    description: Exit code of verdict diff (0 pass, 3 fail-on matched, 2 invalid input).
+    value: ${{ steps.diff.outputs.exit-code }}
+  diff-json:
+    description: Path of the diff --json result.
+    value: ${{ steps.diff.outputs.diff-json }}
+  verdict-path:
+    description: Path of the verified verdict binary, for later steps in the same job.
+    value: ${{ steps.install.outputs.bin }}
+runs:
+  using: composite
+  steps:
+    - name: Download and verify Verdict
+      id: install
+      shell: bash
+      env:
+        VERDICT_TAG: ${{ inputs.version }}
+        VERDICT_SHA256: ${{ inputs.sha256 }}
+        VERDICT_REPO: ${{ inputs.repository }}
+      run: |
+        set -euo pipefail
+        if [ "$RUNNER_OS" != Linux ] || [ "$RUNNER_ARCH" != X64 ]; then
+          echo "this action downloads the linux/amd64 build; runner is $RUNNER_OS/$RUNNER_ARCH" >&2; exit 2
+        fi
+        if ! printf '%s' "$VERDICT_TAG" | grep -Eq '^v[0-9][0-9A-Za-z.+_-]*$'; then
+          echo "version must be a release tag like v0.2.0, got: $VERDICT_TAG" >&2; exit 2
+        fi
+        if ! printf '%s' "$VERDICT_REPO" | grep -Eq '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
+          echo "repository must be owner/name" >&2; exit 2
+        fi
+        ver=${VERDICT_TAG#v}
+        name="verdict_${ver}_linux_amd64"
+        dir="$RUNNER_TEMP/verdict-action"
+        rm -rf "$dir" && mkdir -p "$dir/bin"
+        cd "$dir"
+        base="https://github.com/$VERDICT_REPO/releases/download/$VERDICT_TAG"
+        curl -fsSL --proto '=https' --tlsv1.2 --retry 3 -o "$name.tar.gz" "$base/$name.tar.gz"
+        curl -fsSL --proto '=https' --tlsv1.2 --retry 3 -o SHA256SUMS "$base/SHA256SUMS"
+        # Exactly one line for this archive, then check it.
+        awk -v f="$name.tar.gz" '$2 == f' SHA256SUMS > one.sum
+        if [ "$(wc -l < one.sum)" -ne 1 ]; then
+          echo "SHA256SUMS has no single line for $name.tar.gz" >&2; exit 2
+        fi
+        sha256sum -c one.sum
+        if [ -n "$VERDICT_SHA256" ]; then
+          got=$(sha256sum "$name.tar.gz" | awk '{print $1}')
+          if [ "$got" != "$VERDICT_SHA256" ]; then
+            echo "archive sha256 $got does not match the pinned sha256 input" >&2; exit 2
+          fi
+        fi
+        tar -xzf "$name.tar.gz" "$name/verdict"
+        install -m 0755 "$name/verdict" bin/verdict
+        bin/verdict version
+        echo "bin=$dir/bin/verdict" >> "$GITHUB_OUTPUT"
+        echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+    - name: Drill before and after
+      id: drill
+      shell: bash
+      env:
+        VERDICT: ${{ steps.install.outputs.bin }}
+        WORK: ${{ steps.install.outputs.dir }}
+        IN_PACK: ${{ inputs.pack }}
+        IN_POLICY: ${{ inputs.policy }}
+        IN_BEFORE_SNAP: ${{ inputs.before-snapshot }}
+        IN_AFTER_SNAP: ${{ inputs.after-snapshot }}
+        IN_BEFORE_REPORT: ${{ inputs.before-report }}
+        IN_AFTER_REPORT: ${{ inputs.after-report }}
+      run: |
+        set -euo pipefail
+        if [ -n "$IN_BEFORE_REPORT" ] || [ -n "$IN_AFTER_REPORT" ]; then
+          if [ -z "$IN_BEFORE_REPORT" ] || [ -z "$IN_AFTER_REPORT" ] || [ -n "$IN_PACK$IN_BEFORE_SNAP$IN_AFTER_SNAP" ]; then
+            echo "give before-report and after-report together, without pack or snapshots" >&2; exit 2
+          fi
+          echo "before=$IN_BEFORE_REPORT" >> "$GITHUB_OUTPUT"
+          echo "after=$IN_AFTER_REPORT" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        if [ -z "$IN_PACK" ] || [ -z "$IN_BEFORE_SNAP" ] || [ -z "$IN_AFTER_SNAP" ]; then
+          echo "pack, before-snapshot, and after-snapshot are required (or before-report and after-report)" >&2; exit 2
+        fi
+        policy=()
+        if [ -n "$IN_POLICY" ]; then policy=(--policy "$IN_POLICY"); fi
+        "$VERDICT" drill --pack "$IN_PACK" --snapshot "$IN_BEFORE_SNAP" ${policy[@]+"${policy[@]}"} --out "$WORK/before-report.json"
+        "$VERDICT" drill --pack "$IN_PACK" --snapshot "$IN_AFTER_SNAP" ${policy[@]+"${policy[@]}"} --out "$WORK/after-report.json"
+        echo "before=$WORK/before-report.json" >> "$GITHUB_OUTPUT"
+        echo "after=$WORK/after-report.json" >> "$GITHUB_OUTPUT"
+
+    - name: Diff and summarise
+      id: diff
+      shell: bash
+      env:
+        VERDICT: ${{ steps.install.outputs.bin }}
+        WORK: ${{ steps.install.outputs.dir }}
+        BEFORE: ${{ steps.drill.outputs.before }}
+        AFTER: ${{ steps.drill.outputs.after }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set -uo pipefail
+        "$VERDICT" diff --fail-on "$FAIL_ON" --json "$BEFORE" "$AFTER" > "$WORK/diff.json" 2> "$WORK/diff.err"
+        code=$?
+        "$VERDICT" diff --fail-on "$FAIL_ON" "$BEFORE" "$AFTER" > "$WORK/diff.txt" 2> /dev/null
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        echo "diff-json=$WORK/diff.json" >> "$GITHUB_OUTPUT"
+        case $code in
+          0) result="pass" ;;
+          3) result="fail: --fail-on $FAIL_ON matched" ;;
+          *) result="error (exit $code)" ;;
+        esac
+        {
+          echo "## Verdict diff: $result"
+          echo
+          echo "Reports are caller-asserted: they are as good as the snapshots. Removed assets are listed but only \`--fail-on any\` fails on them."
+          echo
+          echo '```text'
+          # Backticks would close the fence; diff quotes asset ids, but error
+          # text can echo a pack id, so strip them here too.
+          cat "$WORK/diff.txt" "$WORK/diff.err" | tr '`' "'"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        cat "$WORK/diff.txt"
+        cat "$WORK/diff.err" >&2
+        exit "$code"
