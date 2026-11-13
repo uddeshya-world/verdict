@@ -66,6 +66,7 @@ bundle version are explicit inputs.`,
 	root.AddCommand(newExplain(stdout))
 	root.AddCommand(newReport(stdout, stderr))
 	root.AddCommand(newDiff(stdout))
+	root.AddCommand(newMCP())
 	return root
 }
 
