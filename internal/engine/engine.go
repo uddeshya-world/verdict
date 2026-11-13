@@ -166,7 +166,10 @@ func Evaluate(in Input) (*Report, error) {
 	node := toNode(in.Pack.Conditions)
 	ec := newEvalCtx()
 	for _, asset := range in.Snapshot.Assets {
-		report.Verdicts = append(report.Verdicts, evalAsset(in.Pack, in.Policy, newAssetCtx(ec, asset), node, meta, in.EvaluationTime))
+		asset, agentEv := agentDowngrade(asset)
+		v := evalAsset(in.Pack, in.Policy, newAssetCtx(ec, asset), node, meta, in.EvaluationTime)
+		markAgentLeaves(&v, in.Pack, agentEv)
+		report.Verdicts = append(report.Verdicts, v)
 	}
 	sort.Slice(report.Verdicts, func(i, j int) bool {
 		return report.Verdicts[i].AssetID < report.Verdicts[j].AssetID
@@ -330,6 +333,43 @@ func evalAsset(p *pack.Pack, pol *policy.Policy, ac *assetCtx, node logic.Node, 
 		v.ActionStatement = actionStatement(p, d.State)
 	}
 	return v
+}
+
+// markAgentLeaves relabels the evidence_not_observed reason of a leaf that
+// cites a fact agentDowngrade took the observation from, so the report says
+// why. The decision was already made on the downgraded fact; this only
+// changes the reason code and hint text.
+func markAgentLeaves(v *Verdict, p *pack.Pack, agentEv map[string]bool) {
+	if len(agentEv) == 0 {
+		return
+	}
+	relabel := map[string]bool{}
+	for i := range v.Leaves {
+		l := &v.Leaves[i]
+		if l.Reason != ReasonEvidenceNotObserved && l.Reason != ReasonAdvisoryNotObserved {
+			continue
+		}
+		for _, id := range l.EvidenceIDs {
+			if agentEv[id] {
+				l.Reason = ReasonAgentEditNotObserved
+				relabel[l.CheckID] = true
+				break
+			}
+		}
+	}
+	for i := range v.Hints {
+		h := &v.Hints[i]
+		if h.CheckID != "" && relabel[h.CheckID] && (h.Reason == ReasonEvidenceNotObserved || h.Reason == ReasonAdvisoryNotObserved) {
+			h.Reason = ReasonAgentEditNotObserved
+			h.Hint = leafHint(ReasonAgentEditNotObserved, h.CheckID, "", p.Checks[h.CheckID].ResolutionHint)
+		}
+	}
+	sort.Slice(v.Hints, func(i, j int) bool {
+		if v.Hints[i].CheckID == v.Hints[j].CheckID {
+			return v.Hints[i].Reason < v.Hints[j].Reason
+		}
+		return v.Hints[i].CheckID < v.Hints[j].CheckID
+	})
 }
 
 // editedEvidence returns the evidence ids of the asset's current facts that an

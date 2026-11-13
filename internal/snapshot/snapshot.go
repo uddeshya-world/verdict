@@ -76,7 +76,14 @@ type EditRecord struct {
 	At         string   `json:"at"`
 	Source     string   `json:"source"`
 	EvidenceID string   `json:"evidence_id,omitempty"`
+	// ActorKind is human or agent. Records written before actor kinds
+	// existed omit it and are read as human. The engine never treats a
+	// fact or exposure entry whose latest edit is an agent's as observed.
+	ActorKind string `json:"actor_kind,omitempty"`
 }
+
+// IsAgent reports whether the record names an agent as the actor.
+func (e EditRecord) IsAgent() bool { return e.ActorKind == ActorAgent }
 
 // Inventory is the package list and the quality of that observation.
 type Inventory struct {
@@ -304,6 +311,11 @@ func validateEditRecord(asset string, i int, e EditRecord) error {
 	}
 	if e.EvidenceID != "" && !idRE.MatchString(e.EvidenceID) {
 		return bad("evidence_id %q is invalid", e.EvidenceID)
+	}
+	switch e.ActorKind {
+	case "", ActorHuman, ActorAgent:
+	default:
+		return bad("actor_kind %q is invalid", e.ActorKind)
 	}
 	if e.Replaced && e.OldBasis == "" {
 		return bad("a replaced edit needs old_basis")

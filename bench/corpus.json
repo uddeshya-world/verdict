@@ -988,5 +988,25 @@
     "ground_truth": "unknown",
     "expect_state": "needs_review",
     "note": "Collector omitted libc.family (no glibc or musl seen). Unknown, not false."
+  },
+  {
+    "id": "regresshion/agent-edit-observed-musl",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/agent-edits.json",
+    "asset": "agent-musl",
+    "ground_truth": "affected",
+    "expect_state": "needs_review",
+    "note": "A hand-written snapshot claims observed, high musl, but the latest edit record is an agent's. The engine reads it as attested (agent_edit_not_observed), so it cannot clear the glibc precondition (A44)."
+  },
+  {
+    "id": "regresshion/agent-edit-narrowed-exposure",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/agent-edits.json",
+    "asset": "agent-narrowed-exposure",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "An agent narrowed tcp/22 from internet to internal and marked it observed. Agent exposure is not observed, so exposure is unknown and the asset stays exploitable, not vulnerable_not_exposed (A44)."
   }
 ]
