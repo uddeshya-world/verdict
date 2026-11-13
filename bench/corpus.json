@@ -777,5 +777,216 @@
     "ground_truth": "affected",
     "expect_state": "needs_review",
     "note": "Declared alias (A35): a package named only by a pack alias, with a complete inventory and no contradicting runtime fact, blocks the absence proof. Never version-sorted, never not_affected."
+  },
+  {
+    "id": "regresshion/port-2222-internal22",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-2222-internal22",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "sshd listens on 2222; the only exposure record is 22 from internal. A fixed port 22 said vulnerable_not_exposed; 2222 is unobserved, so exposure is unknown."
+  },
+  {
+    "id": "regresshion/port-2222-internal",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-2222-internal",
+    "ground_truth": "affected",
+    "expect_state": "vulnerable_not_exposed",
+    "note": "sshd on 2222, observed reachable only from internal."
+  },
+  {
+    "id": "regresshion/port-multi-one-internet",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-multi-one-internet",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Two sshd ports; 2222 reachable from internet."
+  },
+  {
+    "id": "regresshion/port-multi-one-unobserved",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-multi-one-unobserved",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Two sshd ports; only 22 has an exposure record, so the asset is exposed-unknown."
+  },
+  {
+    "id": "regresshion/port-multi-all-internal",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-multi-all-internal",
+    "ground_truth": "affected",
+    "expect_state": "vulnerable_not_exposed",
+    "note": "Two sshd ports, both observed internal-only."
+  },
+  {
+    "id": "regresshion/port-absent-internal22",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-absent-internal22",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "No config.sshd.Port fact. 22 is not assumed; exposure_port_unobserved."
+  },
+  {
+    "id": "regresshion/port-noncanonical-space",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-noncanonical-space",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "config.sshd.Port '22 ' is not canonical; exposure_port_not_canonical, never read as 22."
+  },
+  {
+    "id": "regresshion/port-noncanonical-leading-zero",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-noncanonical-leading-zero",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "config.sshd.Port '022' is not canonical; exposure_port_not_canonical, never read as 22."
+  },
+  {
+    "id": "regresshion/port-noncanonical-unsorted",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-noncanonical-unsorted",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "config.sshd.Port '2222,22' is not canonical; exposure_port_not_canonical, never read as 22."
+  },
+  {
+    "id": "regresshion/port-noncanonical-zero",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-noncanonical-zero",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "config.sshd.Port '0' is not canonical; exposure_port_not_canonical, never read as 22."
+  },
+  {
+    "id": "regresshion/port-noncanonical-comma-space",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-noncanonical-comma-space",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "config.sshd.Port '22, 2222' is not canonical; exposure_port_not_canonical, never read as 22."
+  },
+  {
+    "id": "regresshion/port-noncanonical-word",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-noncanonical-word",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "config.sshd.Port 'ssh' is not canonical; exposure_port_not_canonical, never read as 22."
+  },
+  {
+    "id": "regresshion/port-attested-medium",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "port-attested-medium",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "An attested medium-confidence port fact is below the exposure evidence bar."
+  },
+  {
+    "id": "regresshion/libc-musl-observed",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-musl-observed",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "expect_justification": "vulnerable_code_cannot_be_controlled_by_adversary",
+    "note": "Observed musl under the reviewed-bar simulation. The code is present; musl limits it to a deadlock (oss-security 2024-07-01), so the label is vulnerable_code_cannot_be_controlled_by_adversary, not vulnerable_code_not_present. Draft packs never emit this."
+  },
+  {
+    "id": "regresshion/libc-musl-attested",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-musl-attested",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Attested musl cannot clear."
+  },
+  {
+    "id": "regresshion/libc-out-of-domain-uclibc",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-out-of-domain-uclibc",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "libc.family 'uclibc' is outside glibc|musl (or not canonical), so C2 is unknown, not false."
+  },
+  {
+    "id": "regresshion/libc-out-of-domain-uclibc-case",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-out-of-domain-uclibc-case",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "libc.family 'uClibc' is outside glibc|musl (or not canonical), so C2 is unknown, not false."
+  },
+  {
+    "id": "regresshion/libc-out-of-domain-bionic",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-out-of-domain-bionic",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "libc.family 'bionic' is outside glibc|musl (or not canonical), so C2 is unknown, not false."
+  },
+  {
+    "id": "regresshion/libc-out-of-domain-freebsd",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-out-of-domain-freebsd",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "libc.family 'freebsd' is outside glibc|musl (or not canonical), so C2 is unknown, not false."
+  },
+  {
+    "id": "regresshion/libc-noncanonical-musl",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-noncanonical-musl",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "libc.family 'Musl' is outside glibc|musl (or not canonical), so C2 is unknown, not false."
+  },
+  {
+    "id": "regresshion/libc-absent",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "bench/fixtures/regresshion-port-libc.json",
+    "asset": "libc-absent",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Collector omitted libc.family (no glibc or musl seen). Unknown, not false."
   }
 ]

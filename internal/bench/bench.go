@@ -36,9 +36,12 @@ type Case struct {
 	GroundTruth     string `json:"ground_truth"`
 	ExpectState     string `json:"expect_state,omitempty"`
 	RequireTradeoff bool   `json:"require_mitigation_dependent,omitempty"`
-	ImportFormat    string `json:"import_format,omitempty"`
-	ImportInput     string `json:"import_input,omitempty"`
-	ImportComplete  bool   `json:"import_complete,omitempty"`
+	// ExpectJustification locks the OpenVEX justification of a not_affected
+	// verdict. A different label is a state mismatch.
+	ExpectJustification string `json:"expect_justification,omitempty"`
+	ImportFormat        string `json:"import_format,omitempty"`
+	ImportInput         string `json:"import_input,omitempty"`
+	ImportComplete      bool   `json:"import_complete,omitempty"`
 	// ImportAdvisories is an advisory overlay applied to the imported
 	// snapshot. Its rows use asset_id "imported".
 	ImportAdvisories     string `json:"import_advisories,omitempty"`
@@ -100,6 +103,9 @@ func LoadCorpus(data []byte) ([]Case, error) {
 		case "affected", "not_affected", "unknown":
 		default:
 			return nil, fmt.Errorf("bench: %s ground_truth %q", c.ID, c.GroundTruth)
+		}
+		if c.ExpectJustification != "" && c.ExpectState != "not_affected" {
+			return nil, fmt.Errorf("bench: %s expect_justification needs expect_state not_affected", c.ID)
 		}
 		if _, ok := seen[c.ID]; ok {
 			return nil, fmt.Errorf("bench: duplicate case %s", c.ID)
@@ -285,6 +291,10 @@ func fill(row *Row, c Case, v *engine.Verdict) {
 	row.FalseNotAffected = FalseNotAffected(v.State, v.VEXStatus, c.GroundTruth)
 	if c.ExpectState != "" && v.State != c.ExpectState {
 		row.StateMismatch = true
+	}
+	if c.ExpectJustification != "" && v.Justification != c.ExpectJustification {
+		row.StateMismatch = true
+		row.Detail = fmt.Sprintf("justification %q, expected %q", v.Justification, c.ExpectJustification)
 	}
 	if c.RequireTradeoff && v.State == "not_affected" && !v.MitigationDependent {
 		row.TradeoffMissing = true

@@ -80,6 +80,19 @@ func init() {
 	for k, allowed := range factkeys.Closed {
 		hostFacts[k] = oneOf(allowed...)
 	}
+	for k := range factkeys.PortLists {
+		hostFacts[k] = canonicalPorts
+	}
+}
+
+// canonicalPorts accepts only the canonical port-list encoding
+// (factkeys.ParsePortList). The collector writes it that way; anything else
+// is refused rather than repaired, so a malformed list never becomes 22.
+func canonicalPorts(v string) (string, error) {
+	if _, err := factkeys.ParsePortList(v); err != nil {
+		return "", err
+	}
+	return v, nil
 }
 
 // Host reads one collect-host.sh JSON document into one asset.

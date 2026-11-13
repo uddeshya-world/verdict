@@ -1,0 +1,1567 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "port-2222-internal22",
+      "name": "port-2222-internal22",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-2222-internal22",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-2222-internal22",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-2222-internal22",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-2222-internal22",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "2222",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-2222-internal22",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-2222-internal22",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-2222-internal",
+      "name": "port-2222-internal",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-2222-internal",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-2222-internal",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-2222-internal",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-2222-internal",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "2222",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-2222-internal",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 2222,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp2222-port-2222-internal",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-multi-one-internet",
+      "name": "port-multi-one-internet",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-multi-one-internet",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-multi-one-internet",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-multi-one-internet",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-multi-one-internet",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22,2222",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-multi-one-internet",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "port": 2222,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-multi-one-unobserved",
+      "name": "port-multi-one-unobserved",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-multi-one-unobserved",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-multi-one-unobserved",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-multi-one-unobserved",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-multi-one-unobserved",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22,2222",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-multi-one-unobserved",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-multi-one-unobserved",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-multi-all-internal",
+      "name": "port-multi-all-internal",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-multi-all-internal",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-multi-all-internal",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-multi-all-internal",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-multi-all-internal",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22,2222",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-multi-all-internal",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-a",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "port": 2222,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-b",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-absent-internal22",
+      "name": "port-absent-internal22",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-absent-internal22",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-absent-internal22",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-absent-internal22",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-absent-internal22",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-absent-internal22",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-noncanonical-space",
+      "name": "port-noncanonical-space",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-noncanonical-space",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-noncanonical-space",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-noncanonical-space",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-noncanonical-space",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22 ",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-noncanonical-space",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-noncanonical-space",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-noncanonical-leading-zero",
+      "name": "port-noncanonical-leading-zero",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-noncanonical-leading-zero",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-noncanonical-leading-zero",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-noncanonical-leading-zero",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-noncanonical-leading-zero",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "022",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-noncanonical-leading-zero",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-noncanonical-leading-zero",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-noncanonical-unsorted",
+      "name": "port-noncanonical-unsorted",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-noncanonical-unsorted",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-noncanonical-unsorted",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-noncanonical-unsorted",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-noncanonical-unsorted",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "2222,22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-noncanonical-unsorted",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-noncanonical-unsorted",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-noncanonical-zero",
+      "name": "port-noncanonical-zero",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-noncanonical-zero",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-noncanonical-zero",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-noncanonical-zero",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-noncanonical-zero",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "0",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-noncanonical-zero",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-noncanonical-zero",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-noncanonical-comma-space",
+      "name": "port-noncanonical-comma-space",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-noncanonical-comma-space",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-noncanonical-comma-space",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-noncanonical-comma-space",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-noncanonical-comma-space",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22, 2222",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-noncanonical-comma-space",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-noncanonical-comma-space",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-noncanonical-word",
+      "name": "port-noncanonical-word",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-noncanonical-word",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-noncanonical-word",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-noncanonical-word",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-noncanonical-word",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "ssh",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-noncanonical-word",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-noncanonical-word",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "port-attested-medium",
+      "name": "port-attested-medium",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-port-attested-medium",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-port-attested-medium",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-port-attested-medium",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-port-attested-medium",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "attested",
+          "confidence": "medium",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-port-attested-medium",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-port-attested-medium",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-musl-observed",
+      "name": "libc-musl-observed",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-musl-observed",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "musl",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-musl-observed",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-musl-observed",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-musl-observed",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-musl-observed",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-musl-observed",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-musl-attested",
+      "name": "libc-musl-attested",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-musl-attested",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "musl",
+          "basis": "attested",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-musl-attested",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-musl-attested",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-musl-attested",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-musl-attested",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-musl-attested",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-out-of-domain-uclibc",
+      "name": "libc-out-of-domain-uclibc",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-out-of-domain-uclibc",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "uclibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-out-of-domain-uclibc",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-out-of-domain-uclibc",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-out-of-domain-uclibc",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-out-of-domain-uclibc",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-out-of-domain-uclibc",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-out-of-domain-uclibc-case",
+      "name": "libc-out-of-domain-uclibc-case",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-out-of-domain-uclibc-case",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "uClibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-out-of-domain-uclibc-case",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-out-of-domain-uclibc-case",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-out-of-domain-uclibc-case",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-out-of-domain-uclibc-case",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-out-of-domain-uclibc-case",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-out-of-domain-bionic",
+      "name": "libc-out-of-domain-bionic",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-out-of-domain-bionic",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "bionic",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-out-of-domain-bionic",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-out-of-domain-bionic",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-out-of-domain-bionic",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-out-of-domain-bionic",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-out-of-domain-bionic",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-out-of-domain-freebsd",
+      "name": "libc-out-of-domain-freebsd",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-out-of-domain-freebsd",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "freebsd",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-out-of-domain-freebsd",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-out-of-domain-freebsd",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-out-of-domain-freebsd",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-out-of-domain-freebsd",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-out-of-domain-freebsd",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-noncanonical-musl",
+      "name": "libc-noncanonical-musl",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-noncanonical-musl",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "Musl",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc-libc-noncanonical-musl",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-noncanonical-musl",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-noncanonical-musl",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-noncanonical-musl",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-noncanonical-musl",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    },
+    {
+      "id": "libc-absent",
+      "name": "libc-absent",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-libc-absent",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd-libc-absent",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt-libc-absent",
+          "source": "bench-pack-fixes"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port-libc-absent",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp22-libc-absent",
+          "source": "bench-pack-fixes"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1"
+    }
+  ]
+}

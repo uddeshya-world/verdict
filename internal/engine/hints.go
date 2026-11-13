@@ -87,6 +87,12 @@ func decisionHint(reason string) string {
 		return "The condition tree is false, but the falsifying evidence is not a complete observed high-confidence proof."
 	case "exposure_unknown_treated_as_exposed":
 		return "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
+	case "exposure_port_unobserved":
+		return "The pack takes the service port from a host fact (exposure.port_fact, for example config.sshd.Port) and the asset has none. A fixed default such as 22 is not assumed, so exposure is unknown and the affected asset is exploitable with exposure_uncertainty. Record every port the service listens on, from sshd -T port lines and ListenAddress ports, as an observed high-confidence fact."
+	case "exposure_port_not_canonical":
+		return "The exposure port fact is not one canonical value: it must be decimal ports 1-65535 without leading zeros or white space, joined by single commas in strictly ascending order (22 or 22,2222), on the exact key with no purl and no second spelling of the key. It was not repaired or read as 22, so exposure is unknown and the asset is exploitable with exposure_uncertainty."
+	case "exposure_port_evidence_insufficient":
+		return "The exposure port fact does not meet the bar for exposure evidence: basis observed, confidence high or better, observed within evidence_max_age, and not expired at evaluation time. Exposure is unknown and the asset is exploitable with exposure_uncertainty. Re-collect the listening ports."
 	default:
 		return reason
 	}

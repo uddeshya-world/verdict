@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/uddeshya-world/verdict/internal/factkeys"
 	"github.com/uddeshya-world/verdict/internal/rootpath"
 )
 
@@ -184,5 +185,76 @@ func TestAliasesLintAndHash(t *testing.T) {
 	raw, _ := json.Marshal(&p3)
 	if strings.Contains(string(raw), "Aliases") && strings.Count(string(raw), "Aliases") != 0 {
 		t.Fatalf("empty aliases must be omitted from the hashed JSON")
+	}
+}
+
+func TestExposurePortFactLint(t *testing.T) {
+	base, err := os.ReadFile(mustRoot(t) + "/packs/draft/ecp-cve-2024-6387-openssh.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(base)
+	anchor := "  port_fact: config.sshd.Port\n"
+	if !strings.Contains(src, anchor) {
+		t.Fatal("openssh pack must take its exposure port from config.sshd.Port")
+	}
+	p, err := Load("ok.yaml", base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Exposure.Port != 0 {
+		t.Fatal("openssh pack must not carry a fixed port beside port_fact")
+	}
+	for name, body := range map[string]string{
+		"unknown key":    strings.Replace(src, anchor, "  port_fact: config.sshd.LoginGraceTime\n", 1),
+		"folded key":     strings.Replace(src, anchor, "  port_fact: config.sshd.port\n", 1),
+		"free key":       strings.Replace(src, anchor, "  port_fact: anything.at.all\n", 1),
+		"with fallback":  strings.Replace(src, anchor, anchor+"  port: 22\n", 1),
+		"neither":        strings.Replace(src, anchor, "", 1),
+		"port only zero": strings.Replace(src, anchor, "  port: 0\n", 1),
+	} {
+		if _, err := Load("bad.yaml", []byte(body)); err == nil {
+			t.Errorf("%s: expected lint error", name)
+		}
+	}
+	// A fixed port still lints, and packs without port_fact keep their hash.
+	fixed, err := Load("fixed.yaml", []byte(strings.Replace(src, anchor, "  port: 22\n", 1)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := json.Marshal(fixed)
+	if strings.Contains(string(raw), "PortFact") {
+		t.Fatal("empty port_fact must be omitted from the hashed JSON")
+	}
+	h1, _ := ContentSHA256(p)
+	h2, _ := ContentSHA256(fixed)
+	if h1 == h2 {
+		t.Fatal("content hash must cover port_fact")
+	}
+}
+
+// C2 is false only for an observed musl because libc.family is the closed
+// set glibc|musl and every other value is unknown (fact_value_out_of_domain).
+// Widening that set would let C2 go false for the new value, so the
+// regreSSHion pack's C2 must be re-reviewed first; this test makes that a
+// deliberate edit.
+func TestRegresshionC2OnlyMuslIsFalse(t *testing.T) {
+	if got := factkeys.Closed["libc.family"]; len(got) != 2 || got[0] != "glibc" || got[1] != "musl" {
+		t.Fatalf("libc.family closed set changed to %v; re-review C2 in the regreSSHion pack", got)
+	}
+	base, err := os.ReadFile(mustRoot(t) + "/packs/draft/ecp-cve-2024-6387-openssh.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := Load("ok.yaml", base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c2 := p.Checks["C2_platform_glibc"]
+	if c2.Type != "host_fact" || c2.Key != "libc.family" || c2.Equals != "glibc" {
+		t.Fatalf("C2 changed shape: %+v", c2)
+	}
+	if c2.NegationJustification != "vulnerable_code_cannot_be_controlled_by_adversary" {
+		t.Fatalf("C2 justification %q: the code is present on musl", c2.NegationJustification)
 	}
 }

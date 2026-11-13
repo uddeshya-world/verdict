@@ -155,6 +155,12 @@ func TestHostMalformedInput(t *testing.T) {
 		"bad bool":        hostDocJSON(debSSH, "", `"process.listening.sshd":"yes"`, ""),
 		"bad libc":        hostDocJSON(debSSH, "", `"libc.family":"bionic"`, ""),
 		"bad lgt":         hostDocJSON(debSSH, "", `"config.sshd.LoginGraceTime":"2x"`, ""),
+		"port spaced":     hostDocJSON(debSSH, "", `"config.sshd.Port":"22, 2222"`, ""),
+		"port unsorted":   hostDocJSON(debSSH, "", `"config.sshd.Port":"2222,22"`, ""),
+		"port zero":       hostDocJSON(debSSH, "", `"config.sshd.Port":"0"`, ""),
+		"port too big":    hostDocJSON(debSSH, "", `"config.sshd.Port":"65536"`, ""),
+		"port lead zero":  hostDocJSON(debSSH, "", `"config.sshd.Port":"022"`, ""),
+		"port empty":      hostDocJSON(debSSH, "", `"config.sshd.Port":""`, ""),
 		"bad port":        hostDocJSON(debSSH, "", "", `{"port":0,"proto":"tcp"}`),
 		"no packages":     hostDocJSON("", "", "", ""),
 		"bad purl":        hostDocJSON(`{"manager":"dpkg","name":"x","version":"1","purl":"deb/x@1"}`, "", "", ""),
@@ -178,5 +184,18 @@ func TestHostEvidenceIDTracksInput(t *testing.T) {
 	}
 	if a.Snapshot.Assets[0].Inventory.EvidenceID == b.Snapshot.Assets[0].Inventory.EvidenceID {
 		t.Fatal("different inputs must not share an evidence id")
+	}
+}
+
+func TestHostSSHDPortCanonical(t *testing.T) {
+	for _, v := range []string{"22", "2222", "22,2222"} {
+		got, err := Host(hostDocJSON(debSSH, "", `"config.sshd.Port":"`+v+`"`, ""), hostOpt())
+		if err != nil {
+			t.Fatalf("%s: %v", v, err)
+		}
+		f, ok := factByKey(got.Snapshot.Assets[0], "config.sshd.Port")
+		if !ok || f.Value != v || f.Basis != "observed" || f.Confidence != "high" {
+			t.Fatalf("%s: %+v", v, f)
+		}
 	}
 }
