@@ -168,6 +168,10 @@ Expected regreSSHion demo outcomes (draft pack, so none of them are `not_affecte
 
 The synthetic reviewed pack is the one that is allowed to emit `not_affected`, and only in the fixture cases where the proof is sufficient. See [docs/reproducible-run.md](docs/reproducible-run.md).
 
+## Use with coding agents
+
+Verdict has a machine contract for Claude Code, Codex, Cursor, and CI: a JSON Schema for the report (`verdict report validate`), a reason catalog with a next action per code (`verdict explain --all`), `--json` on every summary command, and `drill --fail-on` with exit code 3. Agents read the report; they do not decide exploitability or write evidence. See [docs/agents.md](docs/agents.md) for exit codes, JSON shapes, and the stability policy, and [AGENTS.md](AGENTS.md) for the rules agents follow. Ready-made instructions: [Claude Code skill](integrations/claude-code/skills/verdict/SKILL.md), [Cursor rule](integrations/cursor/rules/verdict.mdc).
+
 ## How a verdict is decided
 
 Each check is `true`, `false`, or `unknown`, with a caller-asserted confidence and evidence ids.

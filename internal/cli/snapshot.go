@@ -21,6 +21,7 @@ func newSnapshot(stdout io.Writer) *cobra.Command {
 	}
 	var out string
 	var maxBytes int64
+	var asJSON bool
 	merge := &cobra.Command{
 		Use:   "merge FILE...",
 		Short: "Concatenate assets that share evaluation time and kb version",
@@ -51,12 +52,16 @@ func newSnapshot(stdout io.Writer) *cobra.Command {
 			if err := os.WriteFile(out, body, 0o644); err != nil {
 				return err
 			}
+			if asJSON {
+				return writeJSON(stdout, snapshotResult{Command: "snapshot merge", OK: true, Out: out, Edits: 0, Assets: len(got.Assets)})
+			}
 			fmt.Fprintf(stdout, "snapshot merge: assets=%d\n", len(got.Assets))
 			return nil
 		},
 	}
 	merge.Flags().StringVar(&out, "out", "", "snapshot JSON to write")
 	addMaxSnapshotBytes(merge, &maxBytes)
+	addJSONFlag(merge, &asJSON)
 	cmd.AddCommand(merge, newSnapshotSetFact(stdout), newSnapshotSetExposure(stdout), newSnapshotApply(stdout))
 	return cmd
 }

@@ -16,7 +16,7 @@ import (
 
 func classifyExposure(pol *policy.Policy, spec pack.ExposureSpec, asset snapshot.Asset, eval time.Time, maxAge time.Duration) ExposureClass {
 	if pol == nil {
-		return ExposureClass{Kind: "unknown", Uncertain: true, Reason: "zone_policy_missing"}
+		return ExposureClass{Kind: "unknown", Uncertain: true, Reason: ReasonZonePolicyMissing}
 	}
 	if spec.PortFact == "" {
 		return classifyPort(pol, spec.Port, spec.Proto, asset, eval, maxAge)
@@ -67,23 +67,23 @@ func exposurePorts(key string, asset snapshot.Asset, eval time.Time, maxAge time
 		ev = append(ev, f.EvidenceID)
 	}
 	if len(found) == 0 {
-		return nil, nil, "exposure_port_unobserved"
+		return nil, nil, ReasonExposurePortUnobserved
 	}
 	// A case variant of the key, a purl-scoped copy, or two facts are not one
 	// observation of the listening ports.
 	if len(found) != 1 || found[0].Key != key || found[0].PURL != "" {
-		return nil, ev, "exposure_port_not_canonical"
+		return nil, ev, ReasonExposurePortNotCanonical
 	}
 	f := found[0]
 	ok, observed, conf, _ := assess(observation{
 		Basis: f.Basis, Confidence: f.Confidence, ObservedAt: f.ObservedAt, ExpiresAt: f.ExpiresAt,
 	}, eval, maxAge)
 	if !ok || !observed || conf < logic.ConfHigh {
-		return nil, ev, "exposure_port_evidence_insufficient"
+		return nil, ev, ReasonExposurePortEvidenceInsufficient
 	}
 	ports, err := factkeys.ParsePortList(f.Value)
 	if err != nil {
-		return nil, ev, "exposure_port_not_canonical"
+		return nil, ev, ReasonExposurePortNotCanonical
 	}
 	return ports, ev, ""
 }

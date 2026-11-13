@@ -63,20 +63,41 @@ bundle version are explicit inputs.`,
 	root.AddCommand(newSnapshot(stdout))
 	root.AddCommand(newBench(stdout, stderr))
 	root.AddCommand(newBundle(stdout, stderr))
+	root.AddCommand(newExplain(stdout))
+	root.AddCommand(newReport(stdout, stderr))
+	root.AddCommand(newDiff(stdout))
 	return root
 }
 
+type versionResult struct {
+	Command       string `json:"command"`
+	OK            bool   `json:"ok"`
+	Module        string `json:"module"`
+	Version       string `json:"version"`
+	ReportVersion string `json:"report_version"`
+}
+
 func newVersion() *cobra.Command {
-	return &cobra.Command{
+	var asJSON bool
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the module path and release version",
 		Long: `version prints "<module path> <version>". Release binaries carry the tag
-without its leading v, set at link time. Other builds print "dev".`,
+without its leading v, set at link time. Other builds print "dev".
+With --json it also prints the report_version this binary writes.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if asJSON {
+				return writeJSON(cmd.OutOrStdout(), versionResult{
+					Command: "version", OK: true, Module: buildinfo.ModulePath,
+					Version: buildinfo.Version, ReportVersion: engine.ReportVersion,
+				})
+			}
 			fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", buildinfo.ModulePath, buildinfo.Version)
 			return nil
 		},
 	}
+	addJSONFlag(cmd, &asJSON)
+	return cmd
 }
 
 func newPack(stdout, stderr io.Writer) *cobra.Command {
@@ -86,36 +107,80 @@ func newPack(stdout, stderr io.Writer) *cobra.Command {
 	}
 	cmd.AddCommand(newPackReview(stdout, stderr))
 	cmd.AddCommand(newPackHash(stdout, stderr))
-	cmd.AddCommand(&cobra.Command{
+	var lintJSON bool
+	lint := &cobra.Command{
 		Use:   "lint FILE...",
 		Short: "Reject unknown fields, unknown check kinds, and malformed trees",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
+			res := filesResult{Command: "pack lint", OK: true, Files: []fileResult{}}
 			for _, path := range args {
 				data, err := os.ReadFile(path)
 				if err != nil {
-					return &ExitError{Code: 2, Err: err}
+					if !lintJSON {
+						return &ExitError{Code: 2, Err: err}
+					}
+					res.OK = false
+					res.Files = append(res.Files, fileResult{File: path, Error: err.Error()})
+					break
 				}
-				if _, err := pack.Load(path, data); err != nil {
-					fmt.Fprintf(stderr, "%s: %v\n", path, err)
+				p, err := pack.Load(path, data)
+				if err != nil {
+					if !lintJSON {
+						fmt.Fprintf(stderr, "%s: %v\n", path, err)
+						return &ExitError{Code: 2, Err: fmt.Errorf("lint failed")}
+					}
+					res.OK = false
+					res.Files = append(res.Files, fileResult{File: path, Error: err.Error()})
+					break
+				}
+				if !lintJSON {
+					fmt.Fprintf(stdout, "%s: ok\n", path)
+				}
+				res.Files = append(res.Files, fileResult{File: path, OK: true, PackID: p.Metadata.ID})
+			}
+			if lintJSON {
+				if err := writeJSON(stdout, res); err != nil {
+					return err
+				}
+				if !res.OK {
 					return &ExitError{Code: 2, Err: fmt.Errorf("lint failed")}
 				}
-				fmt.Fprintf(stdout, "%s: ok\n", path)
 			}
 			return nil
 		},
-	})
+	}
+	addJSONFlag(lint, &lintJSON)
+	cmd.AddCommand(lint)
 	var maxSnap int64
+	var testJSON bool
 	test := &cobra.Command{
 		Use:   "test FILE...",
 		Short: "Run a pack's declared snapshot fixtures in process",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			failed := false
+			res := packTestResult{Command: "pack test", OK: true, Files: []packTestFile{}}
 			for _, path := range args {
-				if err := testPack(path, stdout, maxSnap); err != nil {
-					fmt.Fprintf(stderr, "%s: %v\n", path, err)
+				out := stdout
+				if testJSON {
+					out = io.Discard
+				}
+				f, err := testPack(path, out, maxSnap)
+				if err != nil {
+					if !testJSON {
+						fmt.Fprintf(stderr, "%s: %v\n", path, err)
+					}
+					f.Error = err.Error()
 					failed = true
+				}
+				f.OK = err == nil
+				res.Files = append(res.Files, f)
+			}
+			if testJSON {
+				res.OK = !failed
+				if err := writeJSON(stdout, res); err != nil {
+					return err
 				}
 			}
 			if failed {
@@ -125,11 +190,41 @@ func newPack(stdout, stderr io.Writer) *cobra.Command {
 		},
 	}
 	addMaxSnapshotBytes(test, &maxSnap)
+	addJSONFlag(test, &testJSON)
 	cmd.AddCommand(test)
 	return cmd
 }
 
-func testPack(path string, stdout io.Writer, maxSnap int64) error {
+// packTestResult is the pack test --json shape.
+type packTestResult struct {
+	Command string         `json:"command"`
+	OK      bool           `json:"ok"`
+	Files   []packTestFile `json:"files"`
+}
+
+type packTestFile struct {
+	File    string         `json:"file"`
+	OK      bool           `json:"ok"`
+	NoTests bool           `json:"no_tests"`
+	Tests   []packTestCase `json:"tests"`
+	Error   string         `json:"error,omitempty"`
+}
+
+// packTestCase is one passing fixture. A failing fixture stops the file and
+// its message is the file's error.
+type packTestCase struct {
+	Name    string `json:"name"`
+	AssetID string `json:"asset_id"`
+	State   string `json:"state"`
+}
+
+func testPack(path string, stdout io.Writer, maxSnap int64) (packTestFile, error) {
+	res := packTestFile{File: path, Tests: []packTestCase{}}
+	err := runPackTests(path, stdout, maxSnap, &res)
+	return res, err
+}
+
+func runPackTests(path string, stdout io.Writer, maxSnap int64, res *packTestFile) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -140,6 +235,7 @@ func testPack(path string, stdout io.Writer, maxSnap int64) error {
 	}
 	if len(p.Tests) == 0 {
 		fmt.Fprintf(stdout, "%s: no tests declared\n", path)
+		res.NoTests = true
 		return nil
 	}
 	for _, tc := range p.Tests {
@@ -191,6 +287,7 @@ func testPack(path string, stdout io.Writer, maxSnap int64) error {
 			return fmt.Errorf("%s: not_affected from non-reviewed pack", tc.Name)
 		}
 		fmt.Fprintf(stdout, "%s: %s %s %s\n", path, tc.Name, got.AssetID, got.State)
+		res.Tests = append(res.Tests, packTestCase{Name: tc.Name, AssetID: got.AssetID, State: got.State})
 	}
 	return nil
 }
@@ -217,6 +314,7 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 	var maxSnap int64
 	var maxKBAge string
 	var allowOlderKB, requireFloor bool
+	var failOn string
 	cmd := &cobra.Command{
 		Use:   "drill",
 		Short: "Evaluate one pack, or a version-only OSV fallback, against a local snapshot",
@@ -233,6 +331,9 @@ are skipped and need an advisory fact.`,
 				if set {
 					sources++
 				}
+			}
+			if failOn != "" && failOnValues[failOn] == nil {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--fail-on must be exploitable, affected, needs_review, or not_cleared")}
 			}
 			if snapPath == "" || sources != 1 {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and exactly one of --pack, --osv, or --kb are required")}
@@ -376,6 +477,11 @@ are skipped and need an advisory fact.`,
 					return err
 				}
 			}
+			if failOn != "" {
+				if n := failOnMatches(failOn, rep); n > 0 {
+					return &ExitError{Code: exitPolicy, Err: fmt.Errorf("--fail-on %s: %d of %d verdicts match", failOn, n, len(rep.Verdicts))}
+				}
+			}
 			return nil
 		},
 	}
@@ -398,6 +504,7 @@ are skipped and need an advisory fact.`,
 	cmd.Flags().BoolVar(&requireFloor, "require-floor", false, "with --kb: refuse unless at least one other verified bundle is installed under the root, so the rollback floor is never self-referential")
 	addMaxSnapshotBytes(cmd, &maxSnap)
 	cmd.Flags().StringVar(&asset, "asset", "", "evaluate a single asset id")
+	cmd.Flags().StringVar(&failOn, "fail-on", "", "exit 3 after writing all outputs when any verdict matches: exploitable, affected (exploitable or vulnerable_not_exposed), needs_review, or not_cleared (anything but not_affected)")
 	return cmd
 }
 
@@ -428,6 +535,7 @@ func loadFallback(paths []string, cve string, port int, proto string) (*osv.Buil
 
 func newOpenVEX() *cobra.Command {
 	var schema string
+	var asJSON bool
 	cmd := &cobra.Command{
 		Use:   "openvex",
 		Short: "Check OpenVEX documents",
@@ -442,13 +550,22 @@ func newOpenVEX() *cobra.Command {
 				return &ExitError{Code: 2, Err: err}
 			}
 			if err := openvex.Validate(schema, data); err != nil {
+				if asJSON {
+					if werr := writeJSON(cmd.OutOrStdout(), filesResult{Command: "openvex validate", Files: []fileResult{{File: args[0], Error: err.Error()}}}); werr != nil {
+						return werr
+					}
+				}
 				return &ExitError{Code: 2, Err: err}
+			}
+			if asJSON {
+				return writeJSON(cmd.OutOrStdout(), filesResult{Command: "openvex validate", OK: true, Files: []fileResult{{File: args[0], OK: true}}})
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), "openvex: valid")
 			return nil
 		},
 	}
 	val.Flags().StringVar(&schema, "schema", "", "OpenVEX JSON Schema path; empty uses the schema embedded in the binary")
+	addJSONFlag(val, &asJSON)
 	cmd.AddCommand(val)
 	return cmd
 }

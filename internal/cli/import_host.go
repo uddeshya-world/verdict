@@ -17,7 +17,7 @@ import (
 func newImportHost(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
 	var input, out, assetID, assetName, kind, kb, evalAt string
 	var zones, reachable []string
-	var complete bool
+	var complete, asJSON bool
 	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   "host",
@@ -61,6 +61,12 @@ with --reachable-from, which is your statement of which zones reach the host.`,
 				return err
 			}
 			a := got.Snapshot.Assets[0]
+			if asJSON {
+				return writeJSON(stdout, importAssetResult{
+					Command: "import host", OK: true, Out: out, AssetID: assetID,
+					Packages: len(a.Inventory.Packages), Facts: len(a.Facts), Exposure: len(a.Exposure), Skipped: len(got.Skipped),
+				})
+			}
 			fmt.Fprintf(stdout, "import host: asset=%s packages=%d facts=%d exposure=%d skipped=%d\n",
 				assetID, len(a.Inventory.Packages), len(a.Facts), len(a.Exposure), len(got.Skipped))
 			return nil
@@ -77,5 +83,6 @@ with --reachable-from, which is your statement of which zones reach the host.`,
 	cmd.Flags().StringVar(&kb, "kb-version", "", "knowledge-bundle version string")
 	cmd.Flags().StringVar(&evalAt, "evaluation-time", "", "RFC3339 evaluation time; the clock is not read")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }

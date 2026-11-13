@@ -18,7 +18,7 @@ import (
 func newImportJar(stdout, stderr io.Writer) *cobra.Command {
 	var inputs, zones []string
 	var out, assetID, assetName, kind, kb, evalAt, observedAt, javaVersion string
-	var complete bool
+	var complete, asJSON bool
 	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   "jar",
@@ -90,6 +90,12 @@ that exceeds a cap or holds an unsafe entry name is refused.`,
 				return err
 			}
 			a := got.Snapshot.Assets[0]
+			if asJSON {
+				return writeJSON(stdout, importAssetResult{
+					Command: "import jar", OK: true, Out: out, AssetID: assetID,
+					Packages: len(a.Inventory.Packages), Facts: len(a.Facts), Exposure: len(a.Exposure), Skipped: len(got.Skipped),
+				})
+			}
 			fmt.Fprintf(stdout, "import jar: asset=%s packages=%d facts=%d skipped=%d\n",
 				assetID, len(a.Inventory.Packages), len(a.Facts), len(got.Skipped))
 			return nil
@@ -107,6 +113,7 @@ that exceeds a cap or holds an unsafe entry name is refused.`,
 	cmd.Flags().StringVar(&observedAt, "observed-at", "", "RFC3339 time the archives were read; defaults to --evaluation-time")
 	cmd.Flags().StringVar(&javaVersion, "java-version", "", "runtime java.version you state, such as 17.0.2 or 1.8.0_292; omitted means runtime.jdk9_or_newer is not written")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }
 

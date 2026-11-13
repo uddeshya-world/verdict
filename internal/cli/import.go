@@ -25,7 +25,7 @@ are not copied. Advisory status is a separate local file you write.`,
 	}
 	cmd.AddCommand(newImportSBOM("cyclonedx", stdout, stderr, importer.CycloneDX))
 	cmd.AddCommand(newImportSBOM("trivy", stdout, stderr, importer.Trivy))
-	cmd.AddCommand(newImportAdvisories(stderr))
+	cmd.AddCommand(newImportAdvisories(stdout, stderr))
 	cmd.AddCommand(newImportJar(stdout, stderr))
 	cmd.AddCommand(newImportK8s(stdout, stderr))
 	cmd.AddCommand(newImportHost(stdout, stderr))
@@ -37,7 +37,7 @@ type sbomFunc func([]byte, importer.InventoryOptions) (*importer.Result, error)
 func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, error) }, parse sbomFunc) *cobra.Command {
 	var input, out, assetID, assetName, kind, basis, confidence, evidenceID, kb, evalAt, observedAt string
 	var zones []string
-	var complete bool
+	var complete, asJSON bool
 	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   name,
@@ -86,6 +86,13 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 			if err := writeSnapshot(out, body, maxBytes); err != nil {
 				return err
 			}
+			if asJSON {
+				return writeJSON(stdout, importSBOMResult{
+					Command: "import " + name, OK: true, Out: out, AssetID: assetID,
+					Packages: len(got.Snapshot.Assets[0].Inventory.Packages), Skipped: len(got.Skipped),
+					SkippedNames: append([]string{}, importer.SkippedNames(got.Skipped)...),
+				})
+			}
 			summary := fmt.Sprintf("import %s: asset=%s packages=%d skipped=%d",
 				name, assetID, len(got.Snapshot.Assets[0].Inventory.Packages), len(got.Skipped))
 			if len(got.Skipped) > 0 {
@@ -109,12 +116,13 @@ func newImportSBOM(name string, stdout, stderr interface{ Write([]byte) (int, er
 	cmd.Flags().StringVar(&evalAt, "evaluation-time", "", "RFC3339 evaluation time; the clock is not read")
 	cmd.Flags().StringVar(&observedAt, "observed-at", "", "RFC3339 time the SBOM was observed; defaults to --evaluation-time")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }
 
-func newImportAdvisories(stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
+func newImportAdvisories(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
 	var snapPath, advPath, out string
-	var allowUnmatched bool
+	var allowUnmatched, asJSON bool
 	var maxBytes int64
 	cmd := &cobra.Command{
 		Use:   "advisories",
@@ -164,6 +172,12 @@ fails the import unless --allow-unmatched, which drops it.`,
 			if err := os.WriteFile(out, body, 0o644); err != nil {
 				return err
 			}
+			if asJSON {
+				return writeJSON(stdout, importAdvisoriesResult{
+					Command: "import advisories", OK: true, Out: out, Rows: len(doc.Facts),
+					Matched: len(rep.Matched), Unmatched: len(rep.Unmatched), Facts: rep.Facts,
+				})
+			}
 			fmt.Fprintf(stderr, "import advisories: rows=%d matched=%d unmatched=%d facts=%d\n",
 				len(doc.Facts), len(rep.Matched), len(rep.Unmatched), rep.Facts)
 			return nil
@@ -174,5 +188,6 @@ fails the import unless --allow-unmatched, which drops it.`,
 	cmd.Flags().StringVar(&out, "out", "", "snapshot JSON to write")
 	cmd.Flags().BoolVar(&allowUnmatched, "allow-unmatched", false, "drop rows that match no inventory package instead of failing")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }

@@ -83,7 +83,7 @@ func attachEvidence(e *snapshot.Edit, path string) error {
 }
 
 // runEdits loads in, applies edits atomically, and writes out.
-func runEdits(stdout io.Writer, in, out string, maxBytes int64, edits []snapshot.Edit, label string) error {
+func runEdits(stdout io.Writer, in, out string, maxBytes int64, edits []snapshot.Edit, label string, asJSON bool) error {
 	if in == "" || out == "" {
 		return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and --out are required")}
 	}
@@ -102,6 +102,9 @@ func runEdits(stdout io.Writer, in, out string, maxBytes int64, edits []snapshot
 	if err := writeSnapshot(out, body, maxBytes); err != nil {
 		return err
 	}
+	if asJSON {
+		return writeJSON(stdout, snapshotResult{Command: "snapshot " + label, OK: true, Out: out, Edits: len(edits), Assets: len(got.Assets)})
+	}
 	fmt.Fprintf(stdout, "snapshot %s: edits=%d assets=%d\n", label, len(edits), len(got.Assets))
 	return nil
 }
@@ -117,6 +120,7 @@ evaluation_time for attested entries (the clock is not read).`
 func newSnapshotSetFact(stdout io.Writer) *cobra.Command {
 	var in, out, evidence string
 	var maxBytes int64
+	var asJSON bool
 	e := snapshot.Edit{Op: snapshot.OpSetFact}
 	cmd := &cobra.Command{
 		Use:   "set-fact",
@@ -127,7 +131,7 @@ func newSnapshotSetFact(stdout io.Writer) *cobra.Command {
 			if err := attachEvidence(&e, evidence); err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
-			return runEdits(stdout, in, out, maxBytes, []snapshot.Edit{e}, "set-fact")
+			return runEdits(stdout, in, out, maxBytes, []snapshot.Edit{e}, "set-fact", asJSON)
 		},
 	}
 	f := cmd.Flags()
@@ -145,12 +149,14 @@ func newSnapshotSetFact(stdout io.Writer) *cobra.Command {
 	f.StringVar(&e.Source, "source", "", "free-text origin of the fact")
 	f.BoolVar(&e.Replace, "replace", false, "overwrite an existing fact with the same key and package")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }
 
 func newSnapshotSetExposure(stdout io.Writer) *cobra.Command {
 	var in, out, evidence string
 	var maxBytes int64
+	var asJSON bool
 	e := snapshot.Edit{Op: snapshot.OpSetExposure}
 	cmd := &cobra.Command{
 		Use:   "set-exposure",
@@ -163,7 +169,7 @@ func newSnapshotSetExposure(stdout io.Writer) *cobra.Command {
 			if err := attachEvidence(&e, evidence); err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
-			return runEdits(stdout, in, out, maxBytes, []snapshot.Edit{e}, "set-exposure")
+			return runEdits(stdout, in, out, maxBytes, []snapshot.Edit{e}, "set-exposure", asJSON)
 		},
 	}
 	f := cmd.Flags()
@@ -181,12 +187,14 @@ func newSnapshotSetExposure(stdout io.Writer) *cobra.Command {
 	f.StringVar(&e.Source, "source", "", "free-text origin of the entry")
 	f.BoolVar(&e.Replace, "replace", false, "allow narrowing or removing zones for this port")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }
 
 func newSnapshotApply(stdout io.Writer) *cobra.Command {
 	var in, out, file string
 	var maxBytes int64
+	var asJSON bool
 	cmd := &cobra.Command{
 		Use:   "apply",
 		Short: "Apply a file of set-fact / set-exposure edits atomically",
@@ -202,13 +210,14 @@ func newSnapshotApply(stdout io.Writer) *cobra.Command {
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
-			return runEdits(stdout, in, out, maxBytes, edits, "apply")
+			return runEdits(stdout, in, out, maxBytes, edits, "apply", asJSON)
 		},
 	}
 	cmd.Flags().StringVar(&in, "snapshot", "", "snapshot JSON to read")
 	cmd.Flags().StringVar(&out, "out", "", "snapshot JSON to write")
 	cmd.Flags().StringVar(&file, "file", "", "edits JSON: {\"edits\":[{\"op\":\"set_fact\",...}]}")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }
 

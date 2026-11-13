@@ -16,6 +16,7 @@ import (
 	"github.com/uddeshya-world/verdict/internal/export/openvex"
 	"github.com/uddeshya-world/verdict/internal/pack"
 	"github.com/uddeshya-world/verdict/internal/policy"
+	"github.com/uddeshya-world/verdict/internal/reportschema"
 	"github.com/uddeshya-world/verdict/internal/rootpath"
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
@@ -66,6 +67,9 @@ func TestGoldenDrills(t *testing.T) {
 			}
 			if !bytes.Equal(body, again) {
 				t.Fatal("report marshal not stable")
+			}
+			if err := reportschema.Validate(body); err != nil {
+				t.Fatalf("report schema: %v", err)
 			}
 			raw, err := openvex.Marshal(vex)
 			if err != nil {

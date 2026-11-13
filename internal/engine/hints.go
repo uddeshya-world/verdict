@@ -5,58 +5,14 @@ package engine
 
 import "fmt"
 
+// leafHint renders the catalog hint for a leaf reason. A code with no catalog
+// entry (none should exist; reasons_test.go checks) falls back to a generic
+// line that still names the code.
 func leafHint(reason, checkID, detail, packHint string) string {
 	var base string
-	switch reason {
-	case "missing_fact":
-		base = fmt.Sprintf("Check %s needs fact %q in the snapshot with basis observed or attested, a confidence, and observed_at within the pack evidence_max_age of evaluation_time. v0.1 does not collect this fact and does not fill in a vendor default when the key is absent.", checkID, detail)
-	case "stale_evidence":
-		base = fmt.Sprintf("Evidence for check %s is older than evidence_max_age at the explicit evaluation time. Re-collect it. Stale evidence is unknown, not a proof of not_affected.", checkID)
-	case "expired_evidence":
-		base = fmt.Sprintf("Evidence for check %s expires at or before the evaluation time. Replace it. Expired evidence is unknown.", checkID)
-	case "evidence_time_after_evaluation":
-		base = fmt.Sprintf("Evidence for check %s is timestamped after the evaluation time, so this run cannot use it.", checkID)
-	case "inferred_evidence_discarded":
-		base = fmt.Sprintf("Check %s has basis inferred. Inferred values are discarded and cannot falsify a precondition.", checkID)
-	case "evidence_not_observed":
-		base = fmt.Sprintf("Check %s is not basis observed. Attestations can support an affected result and cannot support not_affected.", checkID)
-	case "confidence_below_not_affected_bar":
-		base = fmt.Sprintf("Check %s is below high confidence. Raising the number in JSON does not authenticate it, and a low value cannot support not_affected.", checkID)
-	case "inventory_incomplete":
-		base = fmt.Sprintf("Inventory for check %s is not marked complete, so a missing package is not component_not_present.", checkID)
-	case "inventory_not_observed":
-		base = fmt.Sprintf("Inventory for check %s is not a fresh observed list, so package absence or version order cannot be used.", checkID)
-	case "distro_advisory_required":
-		base = fmt.Sprintf("Check %s cannot treat %s as not-vulnerable by sorting versions. A deb, rpm, or apk build, the same component name under a different package type, a case, white-space, or separator variant of the name, or a free-form alias such as openssh-portable, needs a fresh observed advisory fact for that exact package URL. The value is affected, fixed, or not_affected. not_affected means the package was never vulnerable. fixed means a vendor fix was applied. An advisory without a purl does not cover every package.", checkID, detail)
-	case "advisory_purl_required":
-		base = fmt.Sprintf("Advisory fact %q has no purl, so it was not applied. Set purl to the inventory package URL the advisory covers. One fact does not clear every package on the asset.", detail)
-	case "unsupported_version":
-		base = fmt.Sprintf("Check %s could not parse a version with the pack scheme. Unparsed versions are unknown, not outside the vulnerable range.", checkID)
-	case "unexpected_advisory_value":
-		base = fmt.Sprintf("Advisory fact %q must be exactly affected, fixed, or not_affected. not_affected means never vulnerable, which is not the same claim as fixed.", detail)
-	case "zone_policy_missing":
-		base = "No site zone policy was supplied. Packs do not name trusted or untrusted zones. Without a policy, exposure is unknown and an affected asset is exploitable with exposure_uncertainty. Pass the site policy file that lists your zone names."
-	case "advisory_without_package":
-		base = fmt.Sprintf("Advisory fact %q is present but no matching package is in the inventory, so the advisory was not applied. An advisory for this CVE that names a package missing from a complete inventory also blocks component_not_present.", detail)
-	case "conflicting_advisory":
-		base = fmt.Sprintf("Check %s found advisory facts for %s, spelled the same or differently, that disagree. The engine does not pick one by order. Reconcile the sources and keep one value.", checkID, detail)
-	case "advisory_purl_variant":
-		base = fmt.Sprintf("Check %s found an advisory whose package URL differs from %s only by case, white space, or separators. It was not applied. Write the advisory on the exact inventory package URL.", checkID, detail)
-	case "advisory_not_observed":
-		base = fmt.Sprintf("Advisory fact %q is not fresh observed evidence, and the engine did not fall through to version sorting.", detail)
-	case "attestation_missing_expiry":
-		base = fmt.Sprintf("Check %s is a manual attestation and needs expires_at. An attestation without an expiry is unknown.", checkID)
-	case "malformed_purl":
-		base = fmt.Sprintf("Check %s found a package URL it could not parse. That coordinate is unknown.", checkID)
-	case "version_purl_mismatch":
-		base = fmt.Sprintf("Check %s found a package whose version field disagrees with the version in the package URL.", checkID)
-	case "unexpected_fact_value":
-		base = fmt.Sprintf("Check %s expected fact %q to be true or false.", checkID, detail)
-	case "when_package_unresolved":
-		base = fmt.Sprintf("Check %s is gated on a package version and that version could not be resolved. The mitigation was not treated as present or as proof of not_affected.", checkID)
-	case "when_package_not_applicable":
-		base = fmt.Sprintf("Check %s does not apply at the observed package version, so the predicate is false. When this check sits under not, the mitigation is not in effect. That is not proof of not_affected.", checkID)
-	default:
+	if info, ok := Reasons[reason]; ok {
+		base = renderHint(info.Hint, checkID, detail)
+	} else {
 		base = fmt.Sprintf("Check %s is unresolved (%s).", checkID, reason)
 	}
 	if packHint != "" {
@@ -65,35 +21,15 @@ func leafHint(reason, checkID, detail, packHint string) string {
 	return base
 }
 
+// decisionHint returns the catalog text for a decision or exposure reason.
+// A code with no catalog entry is returned bare.
 func decisionHint(reason string) string {
-	switch reason {
-	case "pack_not_reviewed":
-		return "Pack status is not reviewed. Draft packs cannot produce not_affected, even when a sufficient proof of a falsified precondition exists. Reviewers are not invented to clear this."
-	case "reviewer_quorum_not_met":
-		return "not_affected requires two distinct reviewer names on a reviewed pack. This pack does not meet that bar."
-	case "pack_deprecated":
-		return "The pack is deprecated. not_affected was withheld."
-	case "confidence_ceiling_blocks_not_affected":
-		return "The pack confidence ceiling is below high, so not_affected is impossible."
-	case "confidence_below_not_affected_bar":
-		return "After the pack ceiling, the falsifying proof is below high confidence. not_affected was withheld."
-	case "mixed_justification":
-		return "The sufficient proof uses more than one OpenVEX justification. not_affected was withheld instead of publishing a single label the proof does not uniformly support."
-	case "insufficient_proof":
-		return "There is no sufficient observed high-confidence proof that a required precondition is false."
-	case "tree_unknown":
-		return "The condition tree is unknown. Unknown, including a single unknown branch of a disjunction, does not become not_affected."
-	case "tree_false_without_sufficient_proof":
-		return "The condition tree is false, but the falsifying evidence is not a complete observed high-confidence proof."
-	case "exposure_unknown_treated_as_exposed":
-		return "Exposure for this affected asset is not a fresh high-confidence observation whose zones are all listed in trusted_zones. A missing, stale, inferred, or low-confidence record, or a zone in neither trusted_zones nor untrusted_zones, is exploitable with exposure_uncertainty. Matching is case-insensitive. Asset zone labels are not exposure evidence. A path that is only in trusted_zones stays affected as vulnerable_not_exposed."
-	case "exposure_port_unobserved":
-		return "The pack takes the service port from a host fact (exposure.port_fact, for example config.sshd.Port) and the asset has none. A fixed default such as 22 is not assumed, so exposure is unknown and the affected asset is exploitable with exposure_uncertainty. Record every port the service listens on, from sshd -T port lines and ListenAddress ports, as an observed high-confidence fact."
-	case "exposure_port_not_canonical":
-		return "The exposure port fact is not one canonical value: it must be decimal ports 1-65535 without leading zeros or white space, joined by single commas in strictly ascending order (22 or 22,2222), on the exact key with no purl and no second spelling of the key. It was not repaired or read as 22, so exposure is unknown and the asset is exploitable with exposure_uncertainty."
-	case "exposure_port_evidence_insufficient":
-		return "The exposure port fact does not meet the bar for exposure evidence: basis observed, confidence high or better, observed within evidence_max_age, and not expired at evaluation time. Exposure is unknown and the asset is exploitable with exposure_uncertainty. Re-collect the listening ports."
-	default:
+	info, ok := Reasons[reason]
+	if !ok {
 		return reason
 	}
+	if info.DecisionHint != "" {
+		return info.DecisionHint
+	}
+	return info.Hint
 }
