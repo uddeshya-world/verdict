@@ -719,6 +719,62 @@
     "note": "fixed on the exact purl and affected on a case variant. --allow-unmatched must not drop the variant and let fixed clear the host (N3)."
   },
   {
+    "id": "regresshion/host-src-9.6p1-exploitable",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "host",
+    "import_input": "bench/fixtures/host-src-openssh-9.6p1.json",
+    "import_complete": true,
+    "import_reachable_from": [
+      "internet"
+    ],
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "Source-built sshd (lab h1): no package, version 9.6p1 from the sshd -V banner at medium confidence. glibc, listening, internet-reachable: exploitable, not needs_review."
+  },
+  {
+    "id": "regresshion/host-src-9.8p1-never-clears",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "host",
+    "import_input": "bench/fixtures/host-src-openssh-9.8p1.json",
+    "import_complete": true,
+    "import_reachable_from": [
+      "internet"
+    ],
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Source-built 9.8p1 (lab h2). A banner is spoofable and a patched build can keep it: the medium-confidence entry can make C1 true, never false at the bar. Without the per-package confidence this case is not_affected under the reviewed simulation."
+  },
+  {
+    "id": "regresshion/host-src-only-complete-rejected",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "host",
+    "import_input": "bench/fixtures/host-src-openssh-only.json",
+    "import_complete": true,
+    "ground_truth": "unknown",
+    "expect_state": "import_rejected",
+    "note": "Only a binary-version entry and no package-database entry: --complete would prove absence of everything else from one banner, so it is refused."
+  },
+  {
+    "id": "regresshion/host-src-only-incomplete",
+    "kind": "import",
+    "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "import_format": "host",
+    "import_input": "bench/fixtures/host-src-openssh-only.json",
+    "import_reachable_from": [
+      "internet"
+    ],
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Same document without --complete: imported, and 9.8p1 from a banner still does not clear."
+  },
+  {
     "id": "regresshion/run4-sshd-running-yes",
     "pack": "packs/draft/ecp-cve-2024-6387-openssh.yaml",
     "policy": "examples/policy/lab-zones.json",

@@ -159,6 +159,9 @@ type row struct {
 	raw     string
 	version string
 	name    string
+	// confidence and source are copied to the package; see snapshot.Package.
+	confidence string
+	source     string
 }
 
 func finish(rows []row, skipped []string, opt InventoryOptions, kind string) (*Result, error) {
@@ -182,6 +185,8 @@ func finish(rows []row, skipped []string, opt InventoryOptions, kind string) (*R
 			continue
 		}
 		seen[pkg.PURL] = struct{}{}
+		pkg.Confidence = r.confidence
+		pkg.Source = r.source
 		pkgs = append(pkgs, pkg)
 	}
 	sort.Slice(pkgs, func(i, j int) bool { return pkgs[i].PURL < pkgs[j].PURL })

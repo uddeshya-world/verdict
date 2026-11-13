@@ -46,7 +46,9 @@ type Case struct {
 	// snapshot. Its rows use asset_id "imported".
 	ImportAdvisories     string `json:"import_advisories,omitempty"`
 	ImportAllowUnmatched bool   `json:"import_allow_unmatched,omitempty"`
-	Note                 string `json:"note,omitempty"`
+	// ImportReachableFrom is --reachable-from for import_format host.
+	ImportReachableFrom []string `json:"import_reachable_from,omitempty"`
+	Note                string   `json:"note,omitempty"`
 }
 
 // Row is the result of one case.
@@ -120,12 +122,15 @@ func LoadCorpus(data []byte) ([]Case, error) {
 			if c.Snapshot == "" || c.Asset == "" {
 				return nil, fmt.Errorf("bench: %s needs snapshot and asset", c.ID)
 			}
-			if c.ImportAdvisories != "" || c.ImportAllowUnmatched {
-				return nil, fmt.Errorf("bench: %s import_advisories needs kind import", c.ID)
+			if c.ImportAdvisories != "" || c.ImportAllowUnmatched || len(c.ImportReachableFrom) > 0 {
+				return nil, fmt.Errorf("bench: %s import_advisories and import_reachable_from need kind import", c.ID)
 			}
 		case "import":
-			if c.ImportInput == "" || (c.ImportFormat != "cyclonedx" && c.ImportFormat != "trivy") {
-				return nil, fmt.Errorf("bench: %s needs import_input and import_format cyclonedx or trivy", c.ID)
+			if c.ImportInput == "" || (c.ImportFormat != "cyclonedx" && c.ImportFormat != "trivy" && c.ImportFormat != "host") {
+				return nil, fmt.Errorf("bench: %s needs import_input and import_format cyclonedx, trivy, or host", c.ID)
+			}
+			if len(c.ImportReachableFrom) > 0 && c.ImportFormat != "host" {
+				return nil, fmt.Errorf("bench: %s import_reachable_from needs import_format host", c.ID)
 			}
 			if c.ExpectState == "" {
 				return nil, fmt.Errorf("bench: %s is an import case and needs expect_state", c.ID)
@@ -243,6 +248,13 @@ func runImport(root string, c Case, row Row, p *pack.Pack, pol *policy.Policy) (
 		got, err = importer.CycloneDX(data, opt)
 	case "trivy":
 		got, err = importer.Trivy(data, opt)
+	case "host":
+		// Basis and confidence come from the host importer, not opt.
+		got, err = importer.Host(data, importer.HostOptions{
+			AssetID: opt.AssetID, AssetName: opt.AssetName, AssetKind: "host",
+			Complete: opt.Complete, ReachableFrom: c.ImportReachableFrom,
+			KBVersion: opt.KBVersion, Evaluation: opt.Evaluation,
+		})
 	default:
 		err = fmt.Errorf("import format %q", c.ImportFormat)
 	}
