@@ -29,6 +29,7 @@ Adversarial fixtures from review:
 - `regresshion/adv-conflict-*` — `fixed` and `affected` on two spellings of one package URL are needs_review in either order.
 - `regresshion/port-*` (`fixtures/regresshion-port-libc.json`) — the exposure port comes from `config.sshd.Port`. sshd on 2222 with only an internal observation of 22, an absent port fact, a non-canonical value (`22 `, `022`, `2222,22`, `0`, `22, 2222`, `ssh`), and an attested medium port fact are all exploitable, never vulnerable_not_exposed. With `22,2222`, any exposed or unobserved port makes the asset exploitable.
 - `regresshion/libc-*` — only an observed high-confidence `musl` falsifies C2, with `vulnerable_code_cannot_be_controlled_by_adversary` (locked by `expect_justification`). `uclibc`, `uClibc`, `bionic`, `freebsd`, `Musl`, an attested musl, and an omitted `libc.family` are needs_review.
+- `curl-socks5/*` (agent-drafted CVE-2023-38545 pack) — socks5h use is a fact that is unknown until observed; an attested or non-boolean value stays needs_review; an observed socks5h user blocks the absence proof; a trusted-only observation on the placeholder tcp/1080 is vulnerable_not_exposed, still affected (curl is a client).
 
 `expect_justification` locks the OpenVEX justification of a `not_affected` case; a different label is a state mismatch. It requires `expect_state: not_affected`.
 
