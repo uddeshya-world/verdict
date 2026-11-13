@@ -15,6 +15,7 @@ import (
 
 func newBench(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
 	var corpus, out string
+	var asJSON bool
 	cmd := &cobra.Command{
 		Use:   "bench",
 		Short: "Score packs against the ground-truth corpus",
@@ -56,7 +57,13 @@ fixtures. They are not a review of a real CVE.`,
 					fmt.Fprintf(stderr, "FAIL %s state=%s vex=%s %s\n", row.ID, row.State, row.VEXStatus, row.Detail)
 				}
 			}
-			fmt.Fprintf(stdout, "bench cases=%d false_not_affected=%d state_mismatches=%d\n", rep.Cases, rep.FalseNotAffected, rep.StateMismatches)
+			if asJSON {
+				if _, err := stdout.Write(body); err != nil {
+					return err
+				}
+			} else {
+				fmt.Fprintf(stdout, "bench cases=%d false_not_affected=%d state_mismatches=%d\n", rep.Cases, rep.FalseNotAffected, rep.StateMismatches)
+			}
 			if rep.FalseNotAffected > 0 || rep.StateMismatches > 0 {
 				return &ExitError{Code: 1, Err: fmt.Errorf("verdict-bench gate failed: false_not_affected=%d state_mismatches=%d", rep.FalseNotAffected, rep.StateMismatches)}
 			}
@@ -65,5 +72,6 @@ fixtures. They are not a review of a real CVE.`,
 	}
 	cmd.Flags().StringVar(&corpus, "corpus", "bench/corpus.json", "ground-truth corpus")
 	cmd.Flags().StringVar(&out, "out", "", "write the JSON scoreboard")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "print the JSON scoreboard (the --out document) on stdout instead of the text line")
 	return cmd
 }

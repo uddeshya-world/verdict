@@ -18,6 +18,7 @@ func newImportK8s(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra
 	var inputs []string
 	var out, cluster, kb, evalAt, observedAt, lbZone, npZone, ingZone string
 	var maxBytes int64
+	var asJSON bool
 	cmd := &cobra.Command{
 		Use:   "k8s",
 		Short: "Import kubectl JSON you already exported as one asset per workload",
@@ -81,6 +82,12 @@ treated as exposed. NetworkPolicy objects are not used to narrow exposure.`,
 			if err := writeSnapshot(out, body, maxBytes); err != nil {
 				return err
 			}
+			if asJSON {
+				return writeJSON(stdout, importK8sResult{
+					Command: "import k8s", OK: true, Out: out, Cluster: cluster,
+					Assets: len(got.Snapshot.Assets), Notes: len(got.Skipped),
+				})
+			}
 			fmt.Fprintf(stdout, "import k8s: cluster=%s assets=%d notes=%d\n", cluster, len(got.Snapshot.Assets), len(got.Skipped))
 			return nil
 		},
@@ -95,5 +102,6 @@ treated as exposed. NetworkPolicy objects are not used to narrow exposure.`,
 	cmd.Flags().StringVar(&npZone, "untrusted-zone-for-nodeport", "", "zone node ports, hostPort, and hostNetwork are reachable from; unset writes unknown")
 	cmd.Flags().StringVar(&ingZone, "untrusted-zone-for-ingress", "", "zone Ingress backends are reachable from; unset writes unknown")
 	addMaxSnapshotBytes(cmd, &maxBytes)
+	addJSONFlag(cmd, &asJSON)
 	return cmd
 }

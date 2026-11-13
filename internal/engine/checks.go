@@ -34,36 +34,36 @@ type leafEval struct {
 func assess(o observation, eval time.Time, maxAge time.Duration) (usable, observed bool, conf logic.Confidence, reason string) {
 	ts, err := time.Parse(time.RFC3339, o.ObservedAt)
 	if err != nil {
-		return false, false, logic.ConfNone, "unreadable_time"
+		return false, false, logic.ConfNone, ReasonUnreadableTime
 	}
 	if ts.After(eval) {
-		return false, false, logic.ConfNone, "evidence_time_after_evaluation"
+		return false, false, logic.ConfNone, ReasonEvidenceTimeAfterEvaluation
 	}
 	if eval.Sub(ts) > maxAge {
-		return false, false, logic.ConfNone, "stale_evidence"
+		return false, false, logic.ConfNone, ReasonStaleEvidence
 	}
 	if o.ExpiresAt != "" {
 		exp, err := time.Parse(time.RFC3339, o.ExpiresAt)
 		if err != nil {
-			return false, false, logic.ConfNone, "unreadable_time"
+			return false, false, logic.ConfNone, ReasonUnreadableTime
 		}
 		if !exp.After(eval) {
-			return false, false, logic.ConfNone, "expired_evidence"
+			return false, false, logic.ConfNone, ReasonExpiredEvidence
 		}
 	}
 	conf, ok := logic.ParseConfidence(o.Confidence)
 	if !ok {
-		return false, false, logic.ConfNone, "unreadable_confidence"
+		return false, false, logic.ConfNone, ReasonUnreadableConfidence
 	}
 	switch o.Basis {
 	case "inferred":
-		return false, false, logic.ConfNone, "inferred_evidence_discarded"
+		return false, false, logic.ConfNone, ReasonInferredEvidenceDiscarded
 	case "attested":
 		return true, false, conf, ""
 	case "observed":
 		return true, true, conf, ""
 	default:
-		return false, false, logic.ConfNone, "basis_not_usable"
+		return false, false, logic.ConfNone, ReasonBasisNotUsable
 	}
 }
 
@@ -178,7 +178,7 @@ func unknownLeaf(id, reason, detail string, evidence []string) leafEval {
 		},
 		Reason: reason,
 		Detail: detail,
-		Stale:  reason == "stale_evidence" || reason == "expired_evidence",
+		Stale:  reason == ReasonStaleEvidence || reason == ReasonExpiredEvidence,
 	}
 }
 
@@ -228,9 +228,9 @@ func evalBoolFact(id string, ch pack.Check, key string, asset snapshot.Asset, ev
 	fact := findFact(asset, key)
 	if fact == nil {
 		if v := foldedKeyFact(asset, key); v != nil {
-			return unknownLeaf(id, "fact_key_not_canonical", key, []string{v.EvidenceID})
+			return unknownLeaf(id, ReasonFactKeyNotCanonical, key, []string{v.EvidenceID})
 		}
-		return unknownLeaf(id, "missing_fact", key, nil)
+		return unknownLeaf(id, ReasonMissingFact, key, nil)
 	}
 	usable, observed, conf, reason := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
 	if !usable {
@@ -239,7 +239,7 @@ func evalBoolFact(id string, ch pack.Check, key string, asset snapshot.Asset, ev
 	switch fact.Value {
 	case "true", "false":
 	default:
-		return unknownLeaf(id, "unexpected_fact_value", key, []string{fact.EvidenceID})
+		return unknownLeaf(id, ReasonUnexpectedFactValue, key, []string{fact.EvidenceID})
 	}
 	value := logic.False
 	if fact.Value == "true" {
@@ -247,9 +247,9 @@ func evalBoolFact(id string, ch pack.Check, key string, asset snapshot.Asset, ev
 	}
 	weak := ""
 	if !observed {
-		weak = "evidence_not_observed"
+		weak = ReasonEvidenceNotObserved
 	} else if value == logic.False && conf < logic.ConfHigh {
-		weak = "confidence_below_not_affected_bar"
+		weak = ReasonConfidenceBelowNotAffectedBar
 	}
 	return valueLeaf(id, value, conf, observed, ch.NegationJustification, []string{fact.EvidenceID}, weak, key)
 }
@@ -263,11 +263,11 @@ func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, ac *as
 			return gerr
 		}
 		if !gate.applicable {
-			weak := "when_package_not_applicable"
+			weak := ReasonWhenPackageNotApplicable
 			if !gate.observed {
-				weak = "evidence_not_observed"
+				weak = ReasonEvidenceNotObserved
 			} else if gate.conf < logic.ConfHigh {
-				weak = "confidence_below_not_affected_bar"
+				weak = ReasonConfidenceBelowNotAffectedBar
 			}
 			return valueLeaf(id, logic.False, gate.conf, gate.observed, ch.NegationJustification, gate.evidence, weak, key)
 		}
@@ -275,12 +275,12 @@ func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, ac *as
 	fact := findFact(asset, key)
 	if fact == nil {
 		if v := foldedKeyFact(asset, key); v != nil {
-			return unknownLeaf(id, "fact_key_not_canonical", key, []string{v.EvidenceID})
+			return unknownLeaf(id, ReasonFactKeyNotCanonical, key, []string{v.EvidenceID})
 		}
-		return unknownLeaf(id, "missing_fact", key, nil)
+		return unknownLeaf(id, ReasonMissingFact, key, nil)
 	}
 	if requireExpiry && fact.ExpiresAt == "" {
-		return unknownLeaf(id, "attestation_missing_expiry", key, []string{fact.EvidenceID})
+		return unknownLeaf(id, ReasonAttestationMissingExpiry, key, []string{fact.EvidenceID})
 	}
 	usable, observed, conf, reason := assess(observation{fact.Basis, fact.Confidence, fact.ObservedAt, fact.ExpiresAt}, eval, maxAge)
 	if !usable {
@@ -293,19 +293,19 @@ func evalEquals(id string, ch pack.Check, key string, requireExpiry bool, ac *as
 		a, e := fact.Value, ch.Equals
 		switch {
 		case strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(e)):
-			return unknownLeaf(id, "fact_value_not_canonical", key, []string{fact.EvidenceID})
+			return unknownLeaf(id, ReasonFactValueNotCanonical, key, []string{fact.EvidenceID})
 		case (e == "true" || e == "false") && a != "true" && a != "false":
-			return unknownLeaf(id, "fact_value_not_boolean", key, []string{fact.EvidenceID})
+			return unknownLeaf(id, ReasonFactValueNotBoolean, key, []string{fact.EvidenceID})
 		}
 		if ok, known := factkeys.InDomain(key, a); known && !ok {
-			return unknownLeaf(id, "fact_value_out_of_domain", key, []string{fact.EvidenceID})
+			return unknownLeaf(id, ReasonFactValueOutOfDomain, key, []string{fact.EvidenceID})
 		}
 	}
 	weak := ""
 	if !observed {
-		weak = "evidence_not_observed"
+		weak = ReasonEvidenceNotObserved
 	} else if value == logic.False && conf < logic.ConfHigh {
-		weak = "confidence_below_not_affected_bar"
+		weak = ReasonConfidenceBelowNotAffectedBar
 	}
 	return valueLeaf(id, value, conf, observed, ch.NegationJustification, []string{fact.EvidenceID}, weak, key)
 }
@@ -328,10 +328,10 @@ func evalWhen(w pack.WhenPackage, ac *assetCtx, eval time.Time, maxAge time.Dura
 	for _, pkg := range ac.packages() {
 		pi := pkg.info
 		if pi.canonErr || pi.parseErr {
-			return whenResult{}, unknownLeaf("", "malformed_purl", pkg.PURL, nil)
+			return whenResult{}, unknownLeaf("", ReasonMalformedPURL, pkg.PURL, nil)
 		}
 		if pi.parsed.Version != "" && pi.parsed.Version != pkg.Version {
-			return whenResult{}, unknownLeaf("", "version_purl_mismatch", pkg.PURL, nil)
+			return whenResult{}, unknownLeaf("", ReasonVersionPURLMismatch, pkg.PURL, nil)
 		}
 		exact, related := classify(&pi.subj, patterns)
 		switch {
@@ -343,25 +343,25 @@ func evalWhen(w pack.WhenPackage, ac *assetCtx, eval time.Time, maxAge time.Dura
 	}
 	ev := []string{asset.Inventory.EvidenceID}
 	if len(matched) == 0 && len(extras) > 0 {
-		return whenResult{}, unknownLeaf("", "distro_advisory_required", extras[0].PURL, ev)
+		return whenResult{}, unknownLeaf("", ReasonDistroAdvisoryRequired, extras[0].PURL, ev)
 	}
 	if !usable {
-		return whenResult{}, unknownLeaf("", "when_package_unresolved", reason, ev)
+		return whenResult{}, unknownLeaf("", ReasonWhenPackageUnresolved, reason, ev)
 	}
 	if len(matched) == 0 {
 		if !asset.Inventory.Complete || !observed {
-			return whenResult{}, unknownLeaf("", "when_package_unresolved", "inventory", ev)
+			return whenResult{}, unknownLeaf("", ReasonWhenPackageUnresolved, "inventory", ev)
 		}
 		return whenResult{applicable: false, observed: true, conf: conf, evidence: ev}, leafEval{}
 	}
 	inRange := false
 	for _, pkg := range matched {
 		if ac.ec.info(pkg.PURL).rawIsDist {
-			return whenResult{}, unknownLeaf("", "distro_advisory_required", pkg.PURL, ev)
+			return whenResult{}, unknownLeaf("", ReasonDistroAdvisoryRequired, pkg.PURL, ev)
 		}
 		in, unknown := versionInRanges(w.VersionScheme, pkg.Version, w.AffectedRanges)
 		if unknown {
-			return whenResult{}, unknownLeaf("", "unsupported_version", pkg.Version, ev)
+			return whenResult{}, unknownLeaf("", ReasonUnsupportedVersion, pkg.Version, ev)
 		}
 		if in {
 			inRange = true
@@ -390,10 +390,10 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 	for _, pkg := range ac.packages() {
 		pi := pkg.info
 		if pi.canonErr || pi.parseErr {
-			return unknownLeaf(id, "malformed_purl", pkg.PURL, []string{asset.Inventory.EvidenceID})
+			return unknownLeaf(id, ReasonMalformedPURL, pkg.PURL, []string{asset.Inventory.EvidenceID})
 		}
 		if pi.parsed.Version != "" && pi.parsed.Version != pkg.Version {
-			return unknownLeaf(id, "version_purl_mismatch", pkg.PURL, []string{asset.Inventory.EvidenceID})
+			return unknownLeaf(id, ReasonVersionPURLMismatch, pkg.PURL, []string{asset.Inventory.EvidenceID})
 		}
 		exact, related := classify(&pi.subj, patterns)
 		switch {
@@ -417,15 +417,15 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 			return applyAdvisory(id, ch, fact, nil, usable, observed, conf, reason, asset, eval, maxAge)
 		}
 		if orphan := orphanAdvisory(ac, ch.AdvisoryFact); orphan != nil {
-			return unknownLeaf(id, "advisory_without_package", ch.AdvisoryFact, append(ev, orphan.EvidenceID))
+			return unknownLeaf(id, ReasonAdvisoryWithoutPackage, ch.AdvisoryFact, append(ev, orphan.EvidenceID))
 		}
 		if !asset.Inventory.Complete {
-			return unknownLeaf(id, "inventory_incomplete", "", ev)
+			return unknownLeaf(id, ReasonInventoryIncomplete, "", ev)
 		}
 		if !usable || !observed {
 			why := reason
 			if why == "" {
-				why = "inventory_not_observed"
+				why = ReasonInventoryNotObserved
 			}
 			return unknownLeaf(id, why, "", ev)
 		}
@@ -443,12 +443,12 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 					// is not a value the collector writes, so it blocks.
 					continue
 				}
-				return unknownLeaf(id, "component_absent_but_in_use", key, append(ev, f.EvidenceID))
+				return unknownLeaf(id, ReasonComponentAbsentButInUse, key, append(ev, f.EvidenceID))
 			}
 		}
 		weak := ""
 		if conf < logic.ConfHigh {
-			weak = "confidence_below_not_affected_bar"
+			weak = ReasonConfidenceBelowNotAffectedBar
 		}
 		return valueLeaf(id, logic.False, conf, true, ch.AbsenceJustification, ev, weak, "")
 	}
@@ -476,7 +476,7 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 			// A fixed advisory for a distro build on the same asset does not clear it.
 			weak := ""
 			if !observed {
-				weak = "evidence_not_observed"
+				weak = ReasonEvidenceNotObserved
 			}
 			return valueLeaf(id, logic.True, conf, observed, ch.NegationJustification, ev, weak, "")
 		}
@@ -486,13 +486,13 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 		return resolveDistroAdvisories(id, ch, distro, extras, sawUnknown, usable, observed, conf, reason, ac, eval, maxAge)
 	}
 	if sawUnknown {
-		return unknownLeaf(id, "unsupported_version", "", ev)
+		return unknownLeaf(id, ReasonUnsupportedVersion, "", ev)
 	}
 	weak := ""
 	if !observed {
-		weak = "evidence_not_observed"
+		weak = ReasonEvidenceNotObserved
 	} else if conf < logic.ConfHigh {
-		weak = "confidence_below_not_affected_bar"
+		weak = ReasonConfidenceBelowNotAffectedBar
 	}
 	return valueLeaf(id, logic.False, conf, observed, ch.NegationJustification, ev, weak, "")
 }
@@ -520,9 +520,9 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 		exact, variants := findAdvisories(ac, ch.AdvisoryFact, pkg.PURL)
 		if len(exact) == 0 && len(variants) == 0 {
 			if bare := findFact(asset, ch.AdvisoryFact); bare != nil {
-				note("advisory_purl_required", ch.AdvisoryFact)
+				note(ReasonAdvisoryPURLRequired, ch.AdvisoryFact)
 			} else {
-				note("distro_advisory_required", pkg.PURL)
+				note(ReasonDistroAdvisoryRequired, pkg.PURL)
 			}
 			continue
 		}
@@ -540,11 +540,11 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 			}
 		}
 		if conflict {
-			note("conflicting_advisory", pkg.PURL)
+			note(ReasonConflictingAdvisory, pkg.PURL)
 			continue
 		}
 		if len(exact) == 0 {
-			note("advisory_purl_variant", pkg.PURL)
+			note(ReasonAdvisoryPURLVariant, pkg.PURL)
 			continue
 		}
 		bad := false
@@ -553,7 +553,7 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 			if !usable || !observed {
 				why := reason
 				if why == "" {
-					why = "advisory_not_observed"
+					why = ReasonAdvisoryNotObserved
 				}
 				note(why, pkg.PURL)
 				bad = true
@@ -571,28 +571,28 @@ func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot
 			anyTrue = true
 		case "fixed", "not_affected":
 		default:
-			note("unexpected_advisory_value", ch.AdvisoryFact)
+			note(ReasonUnexpectedAdvisoryValue, ch.AdvisoryFact)
 		}
 	}
 	ev = uniq(ev)
 	if anyTrue {
 		weak := ""
 		if !allObserved {
-			weak = "evidence_not_observed"
+			weak = ReasonEvidenceNotObserved
 		}
 		return valueLeaf(id, logic.True, useConf, allObserved, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
 	}
 	if sawUnknown {
-		return unknownLeaf(id, "unsupported_version", "", ev)
+		return unknownLeaf(id, ReasonUnsupportedVersion, "", ev)
 	}
 	if !allFalse {
 		return unknownLeaf(id, unknownReason, unknownDetail, ev)
 	}
 	weak := ""
 	if !allObserved {
-		weak = "evidence_not_observed"
+		weak = ReasonEvidenceNotObserved
 	} else if useConf < logic.ConfHigh {
-		weak = "confidence_below_not_affected_bar"
+		weak = ReasonConfidenceBelowNotAffectedBar
 	}
 	return valueLeaf(id, logic.False, useConf, allObserved, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
 }
@@ -603,12 +603,12 @@ func applyAdvisory(id string, ch pack.Check, fact *snapshot.Fact, matched []snap
 	if !usable || !observed {
 		why := reason
 		if why == "" {
-			why = "advisory_not_observed"
+			why = ReasonAdvisoryNotObserved
 		}
 		return unknownLeaf(id, why, ch.AdvisoryFact, ev)
 	}
 	if len(matched) == 0 {
-		return unknownLeaf(id, "advisory_without_package", ch.AdvisoryFact, ev)
+		return unknownLeaf(id, ReasonAdvisoryWithoutPackage, ch.AdvisoryFact, ev)
 	}
 	if !invUsable {
 		return unknownLeaf(id, invReason, ch.AdvisoryFact, ev)
@@ -621,19 +621,19 @@ func applyAdvisory(id string, ch pack.Check, fact *snapshot.Fact, matched []snap
 	case "affected":
 		weak := ""
 		if !invObserved {
-			weak = "evidence_not_observed"
+			weak = ReasonEvidenceNotObserved
 		}
 		return valueLeaf(id, logic.True, useConf, invObserved && observed, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
 	case "fixed", "not_affected":
 		weak := ""
 		if !invObserved {
-			weak = "evidence_not_observed"
+			weak = ReasonEvidenceNotObserved
 		} else if useConf < logic.ConfHigh {
-			weak = "confidence_below_not_affected_bar"
+			weak = ReasonConfidenceBelowNotAffectedBar
 		}
 		return valueLeaf(id, logic.False, useConf, invObserved && observed, ch.NegationJustification, ev, weak, ch.AdvisoryFact)
 	default:
-		return unknownLeaf(id, "unexpected_advisory_value", ch.AdvisoryFact, ev)
+		return unknownLeaf(id, ReasonUnexpectedAdvisoryValue, ch.AdvisoryFact, ev)
 	}
 }
 

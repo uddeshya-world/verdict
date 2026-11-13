@@ -112,6 +112,7 @@ connected build machine.`,
 	build.Flags().StringVar(&out, "out", "", "bundle tar to write")
 
 	var bundlePath, pubPath, installDir string
+	var verifyJSON bool
 	verify := &cobra.Command{
 		Use:   "verify",
 		Short: "Verify a bundle's signature and every file hash",
@@ -120,6 +121,12 @@ connected build machine.`,
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
+			if verifyJSON {
+				return writeJSON(stdout, bundleVerifyResult{
+					Command: "bundle verify", OK: true, KBVersion: v.Manifest.KBVersion,
+					CreatedAt: v.Manifest.CreatedAt, KeyID: v.Manifest.KeyID, Files: len(v.Manifest.Files),
+				})
+			}
 			fmt.Fprintf(stdout, "bundle ok kb_version=%s created_at=%s key_id=%s files=%d\n",
 				v.Manifest.KBVersion, v.Manifest.CreatedAt, v.Manifest.KeyID, len(v.Manifest.Files))
 			return nil
@@ -127,6 +134,7 @@ connected build machine.`,
 	}
 	verify.Flags().StringVar(&bundlePath, "bundle", "", "bundle tar")
 	verify.Flags().StringVar(&pubPath, "pubkey", "", "trusted PEM Ed25519 public key")
+	addJSONFlag(verify, &verifyJSON)
 
 	install := &cobra.Command{
 		Use:   "install",

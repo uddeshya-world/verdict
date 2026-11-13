@@ -57,16 +57,16 @@ func (m Meta) allowsNotAffected() bool {
 func (m Meta) blockReasons() []string {
 	var reasons []string
 	if m.Deprecated || m.Status == "deprecated" {
-		reasons = append(reasons, "pack_deprecated")
+		reasons = append(reasons, ReasonPackDeprecated)
 	}
 	if m.Status != "reviewed" && m.Status != "deprecated" {
-		reasons = append(reasons, "pack_not_reviewed")
+		reasons = append(reasons, ReasonPackNotReviewed)
 	}
 	if m.Status == "reviewed" && m.Reviewers < 2 {
-		reasons = append(reasons, "reviewer_quorum_not_met")
+		reasons = append(reasons, ReasonReviewerQuorumNotMet)
 	}
 	if m.Ceiling < logic.ConfHigh {
-		reasons = append(reasons, "confidence_ceiling_blocks_not_affected")
+		reasons = append(reasons, ReasonConfidenceCeilingBlocks)
 	}
 	return reasons
 }
@@ -96,7 +96,7 @@ func Decide(res logic.Result, meta Meta, exp ExposureClass) Decision {
 			d.State = stateExploitable
 			d.VEX = vexAffected
 			d.Uncertainty = true
-			d.Reasons = append(d.Reasons, "exposure_unknown_treated_as_exposed")
+			d.Reasons = append(d.Reasons, ReasonExposureUnknownTreatedExposed)
 			if exp.Reason != "" {
 				d.Reasons = append(d.Reasons, exp.Reason)
 			}
@@ -111,11 +111,11 @@ func Decide(res logic.Result, meta Meta, exp ExposureClass) Decision {
 	// An inconsistent Result must not become not_affected.
 	if res.Value != logic.False || res.StrictFalse == nil {
 		d.Confidence = logic.ConfNone
-		d.Reasons = append(d.Reasons, "insufficient_proof")
+		d.Reasons = append(d.Reasons, ReasonInsufficientProof)
 		if res.Value == logic.Unknown {
-			d.Reasons = append(d.Reasons, "tree_unknown")
+			d.Reasons = append(d.Reasons, ReasonTreeUnknown)
 		} else {
-			d.Reasons = append(d.Reasons, "tree_false_without_sufficient_proof")
+			d.Reasons = append(d.Reasons, ReasonTreeFalseWithoutSufficient)
 		}
 		sort.Strings(d.Reasons)
 		return d
@@ -124,11 +124,11 @@ func Decide(res logic.Result, meta Meta, exp ExposureClass) Decision {
 	conf := capConf(res.StrictFalse.Confidence, meta.Ceiling)
 	d.Confidence = conf
 	if !res.StrictFalse.Uniform {
-		d.Reasons = append(d.Reasons, "mixed_justification")
+		d.Reasons = append(d.Reasons, ReasonMixedJustification)
 	}
 	d.Reasons = append(d.Reasons, meta.blockReasons()...)
 	if conf < logic.ConfHigh {
-		d.Reasons = append(d.Reasons, "confidence_below_not_affected_bar")
+		d.Reasons = append(d.Reasons, ReasonConfidenceBelowNotAffectedBar)
 	}
 	if res.StrictFalse.Uniform && meta.allowsNotAffected() && conf >= logic.ConfHigh && len(res.StrictFalse.Justifications) == 1 {
 		d.State = stateNotAffected

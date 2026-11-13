@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/uddeshya-world/verdict/schemas/report.schema.json",
+  "title": "Verdict drill report",
+  "description": "The JSON report written by `verdict drill` (report_version 0.1.x). Reason codes are checked against the reason catalog by `verdict report validate`, not by this schema; see schemas/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_version",
+    "tool",
+    "kb_version",
+    "evaluation_time",
+    "pack_id",
+    "pack_sha256",
+    "policy_sha256",
+    "pack_status",
+    "cve",
+    "evidence_trust",
+    "verdicts",
+    "summary"
+  ],
+  "properties": {
+    "report_version": {
+      "type": "string",
+      "pattern": "^0\\.1\\.[0-9]+$"
+    },
+    "tool": { "type": "string", "minLength": 1 },
+    "kb_version": { "type": "string", "minLength": 1 },
+    "kb_key_id": { "type": "string" },
+    "kb_created_at": { "type": "string" },
+    "evaluation_time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{9}Z$"
+    },
+    "pack_id": { "type": "string", "minLength": 1 },
+    "pack_sha256": { "$ref": "#/$defs/sha256" },
+    "policy_sha256": {
+      "description": "Empty when drill ran without --policy.",
+      "anyOf": [{ "const": "" }, { "$ref": "#/$defs/sha256" }]
+    },
+    "pack_status": { "enum": ["draft", "reviewed", "deprecated"] },
+    "cve": { "type": "string", "minLength": 1 },
+    "evidence_trust": { "const": "caller_asserted_unverified" },
+    "verdicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/verdict" }
+    },
+    "summary": { "$ref": "#/$defs/summary" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "reason": {
+      "description": "A reason code. Membership in the catalog (`verdict explain --all`) is checked by `verdict report validate`.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)+$"
+    },
+    "confidence": { "enum": ["none", "low", "medium", "high", "confirmed"] },
+    "tri": { "enum": ["true", "false", "unknown"] },
+    "justification": {
+      "enum": [
+        "component_not_present",
+        "vulnerable_code_not_present",
+        "vulnerable_code_not_in_execute_path",
+        "vulnerable_code_cannot_be_controlled_by_adversary",
+        "inline_mitigations_already_exist"
+      ]
+    },
+    "strings": { "type": "array", "items": { "type": "string" } },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assets", "exploitable", "vulnerable_not_exposed", "not_affected", "needs_review"],
+      "properties": {
+        "assets": { "type": "integer", "minimum": 0 },
+        "exploitable": { "type": "integer", "minimum": 0 },
+        "vulnerable_not_exposed": { "type": "integer", "minimum": 0 },
+        "not_affected": { "type": "integer", "minimum": 0 },
+        "needs_review": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "hint"],
+      "properties": {
+        "check_id": { "type": "string" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "hint": { "type": "string" }
+      }
+    },
+    "proof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sufficient",
+        "suppressed",
+        "suppress_reasons",
+        "confidence",
+        "justifications",
+        "uniform_justification",
+        "check_ids",
+        "evidence_ids"
+      ],
+      "properties": {
+        "sufficient": { "type": "boolean" },
+        "suppressed": { "type": "boolean" },
+        "suppress_reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "justification": { "$ref": "#/$defs/justification" },
+        "justifications": { "type": "array", "items": { "$ref": "#/$defs/justification" } },
+        "uniform_justification": { "type": "boolean" },
+        "check_ids": { "$ref": "#/$defs/strings" },
+        "evidence_ids": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "leaf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "value", "confidence", "observed", "stale", "evidence_ids"],
+      "properties": {
+        "check_id": { "type": "string", "minLength": 1 },
+        "value": { "$ref": "#/$defs/tri" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "observed": { "type": "boolean" },
+        "stale": { "type": "boolean" },
+        "reason": { "$ref": "#/$defs/reason" },
+        "evidence_ids": { "$ref": "#/$defs/strings" },
+        "justification": { "$ref": "#/$defs/justification" },
+        "operator_edited": { "type": "boolean" }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "asset_name",
+        "asset_kind",
+        "zones",
+        "state",
+        "vex_status",
+        "confidence",
+        "exposure_uncertainty",
+        "exposure_evidence_ids",
+        "tree_value",
+        "reasons",
+        "hints",
+        "leaves"
+      ],
+      "properties": {
+        "asset_id": { "type": "string", "minLength": 1 },
+        "asset_name": { "type": "string" },
+        "asset_kind": { "type": "string" },
+        "zones": { "$ref": "#/$defs/strings" },
+        "primary_purl": { "type": "string" },
+        "state": { "enum": ["exploitable", "vulnerable_not_exposed", "not_affected", "needs_review"] },
+        "vex_status": { "enum": ["affected", "not_affected", "under_investigation"] },
+        "justification": { "$ref": "#/$defs/justification" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "exposure_uncertainty": { "type": "boolean" },
+        "exposure_evidence_ids": { "$ref": "#/$defs/strings" },
+        "tree_value": { "$ref": "#/$defs/tri" },
+        "reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } },
+        "hints": { "type": "array", "items": { "$ref": "#/$defs/hint" } },
+        "proof": { "$ref": "#/$defs/proof" },
+        "leaves": { "type": "array", "items": { "$ref": "#/$defs/leaf" } },
+        "action_statement": { "type": "string" },
+        "mitigation_dependent": { "type": "boolean" },
+        "impact_statement": { "type": "string" },
+        "operator_edits": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "state": { "const": "not_affected" } } },
+          "then": {
+            "required": ["justification"],
+            "properties": { "vex_status": { "const": "not_affected" } }
+          }
+        },
+        {
+          "if": { "properties": { "state": { "enum": ["exploitable", "vulnerable_not_exposed"] } } },
+          "then": { "properties": { "vex_status": { "const": "affected" } } }
+        },
+        {
+          "if": { "properties": { "state": { "const": "needs_review" } } },
+          "then": { "properties": { "vex_status": { "const": "under_investigation" } } }
+        }
+      ]
+    }
+  }
+}
