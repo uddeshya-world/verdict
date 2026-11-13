@@ -13,7 +13,7 @@ Verdict is an offline CLI that decides, per asset, whether a CVE is `exploitable
 2. Quote the asset id, `state`, the reason codes, and the `evidence_ids` for every claim.
 3. `needs_review` means unresolved, not safe. List the facts from `hints` (`check_id`, `reason`), run `verdict explain` on those codes, and ask a human for exactly those facts with the `next_action` text.
 4. `exploitable` with `exposure_uncertainty: true` is exploitable; exposure was not proven either way.
-5. Never write observed facts: do not create or edit snapshot facts, exposure, advisory rows, or zone policies, and do not run `snapshot set-fact`, `snapshot set-exposure`, or `import advisories` with values you inferred.
+5. Never write observed facts: do not create or edit snapshot facts, exposure, advisory rows, or zone policies, and do not run `snapshot set-fact`, `snapshot set-exposure`, or `import advisories` with values you inferred. If a human asks you to record a value they supplied, pass `--actor-kind agent` (observed is refused; agent edits never count as observed). Never run `verdict pack sign-review` or write review records.
 6. Never edit a pack, its `reviewers`, or its `status`, and never invent reviewer names.
 7. Use exit codes: 0 ok, 1 internal error or failed gate, 2 usage or input error, 3 `--fail-on` matched.
 
@@ -21,7 +21,7 @@ Verdict is an offline CLI that decides, per asset, whether a CVE is `exploitable
 
 ```bash
 # Evaluate one pack against a snapshot; the report is the answer.
-verdict drill --pack PACK.yaml --snapshot SNAP.json --policy ZONES.json --out report.json
+verdict drill --pack PACK.yaml --snapshot SNAP.json --policy ZONES.json --invoked-by <agent-name> --out report.json
 
 # Check the report before reading it (schema + reason catalog).
 verdict report validate --json report.json

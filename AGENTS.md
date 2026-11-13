@@ -27,7 +27,7 @@ test -z "$(gofmt -l internal cmd)" && go vet ./... && go test ./... \
 Rules:
 
 - No outbound network at runtime, no `os/exec`, no `time.Now` in the engine (`internal/engine/purity_test.go`). The engine is a pure function of its inputs.
-- Never set a pack's `status: reviewed`, never add names to `reviewers`, and never write or sign a review record. Two named humans do that ([docs/governance.md](docs/governance.md)). `synthetic-reviewer-*` names are test fixtures for `CVE-2099-*` packs only.
+- Never set a pack's `status: reviewed`, never add names to `reviewers`, and never write or sign a review record. **Never run `verdict pack sign-review`**, never generate or handle a reviewer key, and never add files to `packs/reviewer-keys/` or `packs/reviews/`. Two named humans do that with their own keys ([docs/governance.md](docs/governance.md#signed-review-records)). `synthetic-reviewer-*` names are test fixtures for `CVE-2099-*` packs only.
 - Never weaken the `not_affected` bar to make a test or a bench case pass. A bench `false_not_affected` above 0 is a release blocker, not a flaky test.
 - A new reason code is a `Reason*` constant plus a catalog entry in `internal/engine/reasons.go` with a hint, a next action, a kind, and an actor. `reasons_test.go` fails on a bare reason literal.
 - A report field change updates `schemas/report.schema.json` and `report_version` per [docs/agents.md](docs/agents.md#stability). `internal/reportschema` tests fail when they drift.
@@ -38,7 +38,7 @@ Rules:
 ## Using verdict to answer questions about a CVE
 
 ```bash
-verdict drill --pack PACK.yaml --snapshot SNAP.json --policy ZONES.json --out report.json
+verdict drill --pack PACK.yaml --snapshot SNAP.json --policy ZONES.json --invoked-by <agent-name> --out report.json
 verdict report validate report.json
 verdict explain <reason_code>...       # what a reason means and who resolves it
 ```
@@ -49,9 +49,10 @@ Rules:
 2. Quote the evidence: the asset id, `state`, the reason codes, and the `evidence_ids`. Do not paraphrase a verdict without them.
 3. `needs_review` is not "probably fine". Report it as unresolved. List the missing or weak facts from `hints` (`check_id` and `reason`), run `verdict explain` on those codes, and ask a human for exactly those facts using the `next_action` text.
 4. `exploitable` with `exposure_uncertainty: true` is exploitable. Say that exposure was not proven, not that the asset is probably unexposed.
-5. Never write observed facts. Do not create or edit snapshot facts, exposure records, advisory rows, or zone policies to change a verdict, and do not run `snapshot set-fact`, `set-exposure`, or `import advisories` with values you inferred. Collectors observe; humans attest.
+5. Never write observed facts. Do not create or edit snapshot facts, exposure records, advisory rows, or zone policies to change a verdict, and do not run `snapshot set-fact`, `set-exposure`, or `import advisories` with values you inferred. Collectors observe; humans attest. If a human tells you to record a value they gave you, run the edit command with **`--actor-kind agent`** (it refuses `--basis observed`, and the engine never treats an agent edit as observed), and never hand-edit `actor_kind` or the `edits` records in a snapshot.
 6. Never edit a pack, its reviewers, or its status to get a different answer.
 7. `evidence_trust` is always `caller_asserted_unverified`. A report is as good as the snapshot it was given; say so when it matters.
 8. Use exit codes, not text: 0 ok, 1 internal error or failed gate, 2 usage or input error, 3 `--fail-on` matched.
+9. Pass `--invoked-by <your agent name>` to `drill` (for example `claude-code`, `codex`, `cursor`) so the report records that an agent ran it.
 
 Claude Code skill: [integrations/claude-code/skills/verdict/SKILL.md](integrations/claude-code/skills/verdict/SKILL.md). Cursor rule: [integrations/cursor/rules/verdict.mdc](integrations/cursor/rules/verdict.mdc).

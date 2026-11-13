@@ -25,9 +25,32 @@ regreSSHion is not promoted. There is no record of two human reviewers for its c
 
 The engine enforces (1) and (2) and the ceiling. It does not know whether a name belongs to a real person. Repository policy and review process have to enforce that. Trusting the YAML is the same class of limitation as trusting the snapshot; `docs/trust-boundary.md` applies to packs a caller passes on the command line as well. Packs **shipped in this repository** are held to the stricter rule by `TestRepositoryPackPolicy`.
 
+## Signed review records
+
+A review record can carry a signature per reviewer, so a record that names two people is evidence that two holders of trusted keys signed this exact content. The flow for a real CVE pack:
+
+1. Each reviewer, once, makes a key pair on their own machine: `verdict bundle keygen --private-key ~/verdict-review.key --public-key review.pub` (the bundle Ed25519 PEM format). A maintainer adds the public key to `packs/reviewer-keys/<key_id>.pub` in a reviewed PR; `key_id` is printed by `keygen`. The private key never enters the repository.
+2. The pack author prints the content hash with `verdict pack hash <file>`.
+3. Each reviewer reviews the pack and runs, themselves:
+
+   ```bash
+   verdict pack sign-review --pack <file> --key ~/verdict-review.key --reviewer "Full Name" \
+     --statement "What I checked and concluded" --reviewed-at <RFC3339>
+   ```
+
+   It prints a reviewer entry with `key_id` and `signature`: base64 Ed25519 over `verdict-pack-review/v1\n<pack_id>\n<pack_sha256>\n<name>\n`. It refuses `synthetic-reviewer-*` names on a real pack. It does not read the clock or edit anything.
+4. The entries go into one record, `packs/reviews/<pack_id>/<anything>.json` (`pack_id`, `pack_sha256`, `reviewers`). Check it with `verdict pack review --pack <file> --record <record> --reviewer-keys packs/reviewer-keys --require-signatures`.
+5. Only then does a human set `status: reviewed` and copy the same names into `reviewers`.
+
+CI runs `verdict pack check-reviews`: every non-synthetic pack with `status: reviewed` needs a record under `packs/reviews/<pack_id>/` that `pack review` accepts, whose reviewers equal the pack's, and in which every reviewer's signature verifies against `packs/reviewer-keys/`. Synthetic `CVE-2099-*` packs use fixture reviewers and are not checked. `TestRepositoryPackPolicy` still refuses any reviewed real pack today; relaxing it to defer to this gate is a separate, reviewed change.
+
+What a signature covers: the pack id, the content hash, and the name. It does not cover `reviewed_at` or `statement`, which stay unauthenticated text. Any change to the pack content changes the hash and voids every signature. A forged record fails: unsigned entries, signatures from keys not in `packs/reviewer-keys/`, a key file whose content is not the key its name says, one key signing for two names, and a record re-pointed at edited pack content.
+
+Coding agents never run `sign-review`, never hold a reviewer key, and never write records or key files ([AGENTS.md](../AGENTS.md)).
+
 ## Quorum is not authenticity
 
-Two strings in a YAML list are not a cryptographic review. Signed packs, a reviewer key ring, and a transparency log are not implemented. Customers who need "nothing runs unless we signed it" cannot get that from v0.1.
+Two strings in a YAML list are not a cryptographic review. Signed review records (above) bind a review to a key, but the trusted key directory is only as trustworthy as the repository's review of changes to it, and there is no key revocation, expiry, or transparency log. Signed packs are not implemented. Customers who need "nothing runs unless we signed it" cannot get that from v0.1.
 
 ## Author
 
