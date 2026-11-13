@@ -19,6 +19,11 @@ import (
 	"github.com/uddeshya-world/verdict/internal/snapshot"
 )
 
+// ReportVersion is the report_version this engine writes. It is semver: a
+// field addition bumps the minor version, a removal or meaning change the
+// major. schemas/report.schema.json pins the accepted range.
+const ReportVersion = "0.1.0"
+
 // Report is the canonical drill result.
 type Report struct {
 	ReportVersion  string    `json:"report_version"`
@@ -144,7 +149,7 @@ func Evaluate(in Input) (*Report, error) {
 		meta.Ceiling = c
 	}
 	report := &Report{
-		ReportVersion:  "0.1.0",
+		ReportVersion:  ReportVersion,
 		Tool:           buildinfo.ModulePath + " " + buildinfo.Version,
 		KBVersion:      in.KBVersion,
 		KBKeyID:        in.KBKeyID,
@@ -356,8 +361,8 @@ func errorVerdict(asset snapshot.Asset, err error) Verdict {
 		Confidence:          "none",
 		ExposureEvidenceIDs: []string{},
 		TreeValue:           "unknown",
-		Reasons:             []string{"evaluation_error"},
-		Hints:               []Hint{{Reason: "evaluation_error", Hint: err.Error()}},
+		Reasons:             []string{ReasonEvaluationError},
+		Hints:               []Hint{{Reason: ReasonEvaluationError, Hint: err.Error()}},
 		Leaves:              []LeafView{},
 	}
 }
