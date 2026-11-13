@@ -4,8 +4,18 @@
 // Package buildinfo holds the version string reported by the CLI.
 package buildinfo
 
-// Version is the foundation slice, not a completed MVP release.
-const Version = "0.1.0-foundation"
+// DefaultVersion is what a build without a release ldflag reports.
+const DefaultVersion = "dev"
+
+// Version is the release version without its leading "v". The release
+// workflow sets it at link time:
+//
+//	-ldflags "-X github.com/uddeshya-world/verdict/internal/buildinfo.Version=0.2.0"
+//
+// It is a plain string so the same inputs give the same binary. It is not
+// derived from VCS state, so a source build reports "dev" wherever it is
+// built, and golden reports produced by tests do not depend on ldflags.
+var Version = DefaultVersion
 
 // ModulePath is the canonical module path.
 const ModulePath = "github.com/uddeshya-world/verdict"

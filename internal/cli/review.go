@@ -59,3 +59,42 @@ synthetic-reviewer-* names cannot sign a real CVE.`,
 	cmd.Flags().StringVar(&recordPath, "record", "", "review record JSON")
 	return cmd
 }
+
+// newPackHash prints the content hash that pack review compares against.
+// Output is one line per file: "pack_sha256=<hex> pack=<id> file=<path>".
+func newPackHash(stdout, stderr interface{ Write([]byte) (int, error) }) *cobra.Command {
+	return &cobra.Command{
+		Use:   "hash FILE...",
+		Short: "Print the review content hash (pack_sha256) of pack files",
+		Long: `hash loads each pack with the same strict loader as lint and review
+and prints the pack_sha256 that a review record must carry:
+
+  pack_sha256=<64 hex> pack=<metadata.id> file=<path>
+
+The hash is of the decoded pack with metadata.status and
+metadata.reviewers cleared. YAML comments and formatting do not change it;
+any other field does. It is not the pack_sha256 in a drill report, which
+hashes the file bytes. A file that fails to load prints nothing and the
+command exits 2.`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			for _, path := range args {
+				data, err := os.ReadFile(path)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+				p, err := pack.Load(path, data)
+				if err != nil {
+					fmt.Fprintf(stderr, "%s: %v\n", path, err)
+					return &ExitError{Code: 2, Err: fmt.Errorf("pack hash failed")}
+				}
+				sum, err := pack.ContentSHA256(p)
+				if err != nil {
+					return &ExitError{Code: 2, Err: err}
+				}
+				fmt.Fprintf(stdout, "pack_sha256=%s pack=%s file=%s\n", sum, p.Metadata.ID, path)
+			}
+			return nil
+		},
+	}
+}

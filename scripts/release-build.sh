@@ -18,9 +18,11 @@ trap 'rm -rf "$stage"' EXIT
 exe=verdict
 [ "$goos" = windows ] && exe=verdict.exe
 
+# The version stamp is a plain string from the tag, so it keeps the build
+# reproducible. Tags that predate the buildinfo.Version var ignore it.
 CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build \
   -trimpath -buildvcs=true \
-  -ldflags "-s -w -buildid=" \
+  -ldflags "-s -w -buildid= -X github.com/uddeshya-world/verdict/internal/buildinfo.Version=$ver" \
   -o "$stage/$name/$exe" ./cmd/verdict
 
 # SBOM from the binary's embedded module list (stdlib-only tool).
