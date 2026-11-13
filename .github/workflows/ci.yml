@@ -36,3 +36,70 @@ jobs:
         run: ./verdict report validate testdata/golden/*-report.json
       - name: verdict-bench false not_affected gate
         run: ./verdict bench --corpus bench/corpus.json
+
+  pack-review-gate:
+    # Pull requests that touch packs/ or bench/ (agent-drafted packs land
+    # here). The test job above already runs bench and check-reviews on every
+    # change; this job adds per-pack lint and test of the changed packs, an
+    # explicit bench count check, and keeps a promotion to reviewed apart from
+    # reviewer-key changes. See .github/PULL_REQUEST_TEMPLATE/pack.md.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # HEAD is the PR merge commit; HEAD^1 is the base it merges into.
+          fetch-depth: 2
+      - name: changed pack and bench files
+        id: changed
+        run: |
+          set -eu
+          git diff --name-only --diff-filter=d HEAD^1 HEAD -- packs bench > "$RUNNER_TEMP/changed.txt"
+          cat "$RUNNER_TEMP/changed.txt"
+          if [ -s "$RUNNER_TEMP/changed.txt" ]; then
+            echo "touched=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No change under packs/ or bench/; nothing to gate."
+            echo "touched=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        if: steps.changed.outputs.touched == 'true'
+        with:
+          go-version: "1.22.2"
+      - name: build
+        if: steps.changed.outputs.touched == 'true'
+        run: go build -o verdict ./cmd/verdict
+      - name: lint and test changed packs
+        if: steps.changed.outputs.touched == 'true'
+        run: |
+          set -eu
+          grep -E '^packs/.+\.yaml$' "$RUNNER_TEMP/changed.txt" > "$RUNNER_TEMP/packs.txt" || true
+          while IFS= read -r f; do
+            ./verdict pack lint "$f"
+            ./verdict pack test "$f"
+          done < "$RUNNER_TEMP/packs.txt"
+      - name: bench must have zero false not_affected and zero state mismatches
+        if: steps.changed.outputs.touched == 'true'
+        run: |
+          set -eu
+          ./verdict bench --corpus bench/corpus.json | tee "$RUNNER_TEMP/bench.txt"
+          grep -q 'false_not_affected=0 state_mismatches=0$' "$RUNNER_TEMP/bench.txt"
+      - name: reviewed packs need two verified signed reviews
+        if: steps.changed.outputs.touched == 'true'
+        run: |
+          set -eu
+          promoted=""
+          while IFS= read -r f; do
+            if grep -Eq '^[[:space:]]+status:[[:space:]]*"?reviewed"?[[:space:]]*(#.*)?$' "$f"; then
+              echo "$f has status reviewed"
+              promoted="yes"
+            fi
+          done < "$RUNNER_TEMP/packs.txt"
+          if [ -n "$promoted" ] && grep -q '^packs/reviewer-keys/' "$RUNNER_TEMP/changed.txt"; then
+            echo "A pull request may promote a pack or change packs/reviewer-keys/, not both." >&2
+            exit 1
+          fi
+          # check-reviews always requires every reviewer signature to verify
+          # (the --require-signatures rule of pack review), for every
+          # non-synthetic reviewed pack in the repository.
+          ./verdict pack check-reviews --packs packs --reviews packs/reviews --reviewer-keys packs/reviewer-keys

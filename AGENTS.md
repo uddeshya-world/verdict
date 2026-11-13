@@ -60,3 +60,13 @@ Rules:
 10. Pass `--invoked-by <your agent name>` to `drill` (for example `claude-code`, `codex`, `cursor`) so the report records that an agent ran it.
 
 Claude Code skill: [integrations/claude-code/skills/verdict/SKILL.md](integrations/claude-code/skills/verdict/SKILL.md). Cursor rule: [integrations/cursor/rules/verdict.mdc](integrations/cursor/rules/verdict.mdc).
+
+## Drafting a condition pack
+
+Agents may draft a new pack for a CVE. They never promote one. Skill: [integrations/claude-code/skills/verdict-pack-author/SKILL.md](integrations/claude-code/skills/verdict-pack-author/SKILL.md); Cursor rule: [integrations/cursor/rules/verdict-pack-author.mdc](integrations/cursor/rules/verdict-pack-author.mdc).
+
+1. Write `packs/draft/ecp-<cve>-<component>.yaml` with `status: draft` and `reviewers: []` from primary advisories: the upstream advisory and its OSV/JSON record first, then distro trackers and NVD. Every claim cites a URL and the date it was read in `metadata.sources[].note`; anything from memory is labelled unverified in `limitations`.
+2. A precondition that a package inventory cannot show is a fact that is unknown until observed. Never add a default, and never mark a fact observed that a collector did not observe.
+3. Add a fixture snapshot, `tests:` in the pack, and `bench/corpus.json` cases covering affected, fixed version, each unknown precondition, each mitigation, package absent with a complete inventory, and a distro package without an advisory fact.
+4. Run `verdict pack lint`, `pack test`, and `bench` (`false_not_affected=0`, `state_mismatches=0`), then open a PR labelled `pack-review` with `.github/PULL_REQUEST_TEMPLATE/pack.md` (`gh pr create --template pack.md --label pack-review`). Leave the reviewer section blank.
+5. Never set `status: reviewed`, add reviewers, write or sign review records, or weaken an existing pack or bench case. `needs_review` is the correct outcome for a draft. CI fails a `reviewed` pack without two verified signed reviews (`pack check-reviews`, which always requires every reviewer signature to verify).

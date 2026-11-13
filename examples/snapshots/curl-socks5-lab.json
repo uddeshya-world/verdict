@@ -1,0 +1,354 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-13T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "lab-curl-830-socks5h",
+      "name": "libcurl 8.3.0, app uses socks5h",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-830-socks5h",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.3.0",
+            "version": "8.3.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-socks-830",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-840-socks5h",
+      "name": "libcurl 8.4.0 (upstream fixed), app uses socks5h",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-840-socks5h",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.4.0",
+            "version": "8.4.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-socks-840",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-830-socks-unknown",
+      "name": "libcurl 8.3.0, socks5h use not observed",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-830-socks-unknown",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.3.0",
+            "version": "8.3.0"
+          }
+        ]
+      },
+      "facts": [],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-absent",
+      "name": "complete inventory, no curl or libcurl",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-absent",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssl@3.0.13",
+            "version": "3.0.13"
+          }
+        ]
+      },
+      "facts": [],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-830-no-socks5h",
+      "name": "libcurl 8.3.0, socks5h observed unused",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-830-no-socks5h",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.3.0",
+            "version": "8.3.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "false",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-nosocks-830",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-830-socks-attested-false",
+      "name": "libcurl 8.3.0, operator says no socks5h",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-830-socks-attested-false",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.3.0",
+            "version": "8.3.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "false",
+          "basis": "attested",
+          "confidence": "medium",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-attest-830",
+          "source": "demo-snapshot",
+          "expires_at": "2026-12-13T00:00:00Z"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-830-socks-nonbool",
+      "name": "libcurl 8.3.0, socks fact holds a proxy URL not a boolean",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-830-socks-nonbool",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.3.0",
+            "version": "8.3.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "socks5h://127.0.0.1:9050",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-socks-url",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-deb",
+      "name": "Debian libcurl4 (illustrative version, no advisory fact)",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-deb",
+        "packages": [
+          {
+            "purl": "pkg:deb/debian/libcurl4@7.88.1-10?distro=debian-12",
+            "version": "7.88.1-10"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-socks-deb",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-incomplete",
+      "name": "incomplete inventory, no curl listed",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": false,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-incomplete",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssl@3.0.13",
+            "version": "3.0.13"
+          }
+        ]
+      },
+      "facts": [],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-absent-but-socks5h",
+      "name": "complete inventory without libcurl, socks5h user observed (bundled libcurl)",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-absent-but-socks5h",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssl@3.0.13",
+            "version": "3.0.13"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-socks-bundled",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": []
+    },
+    {
+      "id": "lab-curl-830-socks-port-internal",
+      "name": "libcurl 8.3.0, socks5h, tcp/1080 observed internal-only",
+      "kind": "host",
+      "zones": [
+        "internal"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-13T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inv-lab-curl-830-socks-port-internal",
+        "packages": [
+          {
+            "purl": "pkg:generic/libcurl@8.3.0",
+            "version": "8.3.0"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "curl.socks5_remote_resolution",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-socks-int",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 1080,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-13T11:00:00Z",
+          "evidence_id": "e-exp-1080",
+          "source": "demo-snapshot"
+        }
+      ]
+    }
+  ]
+}

@@ -1064,5 +1064,118 @@
     "ground_truth": "affected",
     "expect_state": "exploitable",
     "note": "An agent narrowed tcp/22 from internet to internal and marked it observed. Agent exposure is not observed, so exposure is unknown and the asset stays exploitable, not vulnerable_not_exposed (A44)."
+  },
+  {
+    "id": "curl-socks5/socks5h-affected",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-830-socks5h",
+    "ground_truth": "affected",
+    "expect_state": "exploitable",
+    "note": "libcurl 8.3.0 in 7.69.0-8.3.0, socks5h observed. No observation for the placeholder port, so exploitable with exposure_uncertainty."
+  },
+  {
+    "id": "curl-socks5/upstream-fixed-840",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-840-socks5h",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "expect_justification": "vulnerable_code_not_present",
+    "note": "Upstream libcurl 8.4.0 is the curl.se fixed version. Clears only under the reviewed bar applied in memory; the draft pack gives needs_review."
+  },
+  {
+    "id": "curl-socks5/socks-usage-unknown",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-830-socks-unknown",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Affected build, socks5h use not observed. Absent fact is unknown, never false."
+  },
+  {
+    "id": "curl-socks5/absent-complete",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-absent",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "expect_justification": "component_not_present",
+    "note": "Complete observed inventory with no curl/libcurl. Reviewed-bar only; draft gives needs_review. Limitation: a bundled libcurl missing from the inventory is not detected."
+  },
+  {
+    "id": "curl-socks5/socks-observed-false",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-830-no-socks5h",
+    "ground_truth": "not_affected",
+    "expect_state": "not_affected",
+    "expect_justification": "vulnerable_code_not_in_execute_path",
+    "note": "Observed high-confidence 'no socks5h on this asset'. The advisory's recommendations C/D say not using socks5h avoids the bug. Reviewer decision: whether any collector can honestly observe this fact."
+  },
+  {
+    "id": "curl-socks5/socks-attested-false",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-830-socks-attested-false",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "An operator or agent statement that socks5h is unused is attested and never reaches the not_affected bar."
+  },
+  {
+    "id": "curl-socks5/socks-nonboolean",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-830-socks-nonbool",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "A proxy URL instead of true/false is not a canonical boolean and stays unknown."
+  },
+  {
+    "id": "curl-socks5/deb-not-sorted",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-deb",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Debian libcurl4 with no advisory fact. Distro versions are never sorted against the upstream range (backports)."
+  },
+  {
+    "id": "curl-socks5/incomplete-inventory",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-incomplete",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "No curl listed but the inventory is not complete: not component_not_present."
+  },
+  {
+    "id": "curl-socks5/absent-but-socks5h-observed",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-absent-but-socks5h",
+    "ground_truth": "unknown",
+    "expect_state": "needs_review",
+    "note": "Complete inventory without libcurl, but a socks5h user is observed (bundled libcurl): absence_contradicted_by blocks the absence proof."
+  },
+  {
+    "id": "curl-socks5/placeholder-port-internal",
+    "pack": "packs/draft/ecp-cve-2023-38545-curl.yaml",
+    "policy": "examples/policy/lab-zones.json",
+    "snapshot": "examples/snapshots/curl-socks5-lab.json",
+    "asset": "lab-curl-830-socks-port-internal",
+    "ground_truth": "affected",
+    "expect_state": "vulnerable_not_exposed",
+    "note": "Trusted-only observation on the placeholder tcp/1080 gives vulnerable_not_exposed. Still affected; curl is a client and this is the exposure-model limitation stated in the pack."
   }
 ]

@@ -1,0 +1,31 @@
+---
+description: Rules for drafting a new Verdict condition pack (ECP) for a CVE; the agent drafts, two humans review and sign
+globs: **/packs/draft/*.yaml,**/bench/corpus.json,**/examples/snapshots/*.json
+alwaysApply: false
+---
+
+# Verdict: drafting a condition pack
+
+You draft a pack; you never approve one. The correct outcome for an agent-drafted pack is `needs_review` on every asset that is not proven affected. A draft can never produce `not_affected`.
+
+## Hard rules
+
+1. `metadata.status: draft` and `reviewers: []`. Never set `reviewed`, never add reviewer names, never use `synthetic-reviewer-*` on a real CVE.
+2. Never run `verdict pack sign-review`; never write to `packs/reviews/` or `packs/reviewer-keys/`; never generate or handle a reviewer key.
+3. Never mark a fact `observed` that a collector did not observe, and never edit existing snapshot facts to change a verdict.
+4. Never weaken an existing pack or bench case (ranges, checks, limitations, tests, `ground_truth`, `expect_state`).
+5. Cite every claim with a URL and the date you read it in `metadata.sources[].note`: upstream advisory, its OSV/JSON record, distro trackers, NVD. Label anything from memory as unverified.
+6. A precondition inventory cannot show is a fact that is unknown until observed. No defaults.
+7. `verdict bench` must report `false_not_affected=0` and `state_mismatches=0`. Never change engine code to make a pack pass.
+
+## Workflow
+
+1. Read the upstream advisory and its JSON record; note range, fixed version, each precondition, each mitigation and its tradeoff.
+2. Check the closed check-type set (`internal/pack/pack.go`, `docs/pack-format.md`). If a precondition cannot be expressed honestly, keep it out of the tree or pick another CVE.
+3. Write `packs/draft/ecp-<cve>-<component>.yaml`: upstream range on non-distro purls, `advisory_fact` for deb/rpm/apk, one check per precondition, mitigations under `not` with `tradeoff`, and `limitations` for every gap.
+4. Add a fixture snapshot and `tests:` covering affected, fixed version, each unknown precondition, mitigation, package absent with complete inventory, and a distro package without an advisory fact.
+5. Add matching `bench/corpus.json` cases (bench applies the reviewed bar in memory; label `not_affected` only where the source says the evidence clears).
+6. Run `verdict pack lint`, `verdict pack test`, `verdict bench --corpus bench/corpus.json`, `verdict pack hash`, `go test ./...`, `sh scripts/demo.sh`.
+7. Open a PR with `gh pr create --template pack.md --label pack-review`, fill every section of `.github/PULL_REQUEST_TEMPLATE/pack.md`, and leave the reviewer section blank.
+
+Full workflow: `integrations/claude-code/skills/verdict-pack-author/SKILL.md`.
