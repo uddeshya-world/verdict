@@ -172,6 +172,10 @@ The synthetic reviewed pack is the one that is allowed to emit `not_affected`, a
 
 Verdict has a machine contract for Claude Code, Codex, Cursor, and CI: a JSON Schema for the report (`verdict report validate`), a reason catalog with a next action per code (`verdict explain --all`), `--json` on every summary command, and `drill --fail-on` with exit code 3. Agents read the report; they do not decide exploitability or write evidence. See [docs/agents.md](docs/agents.md) for exit codes, JSON shapes, and the stability policy, and [AGENTS.md](AGENTS.md) for the rules agents follow. Ready-made instructions: [Claude Code skill](integrations/claude-code/skills/verdict/SKILL.md), [Cursor rule](integrations/cursor/rules/verdict.mdc).
 
+### MCP server
+
+`verdict mcp --root .` serves the same answers as Model Context Protocol tools over stdio, offline and read-only: drill, explain, missing facts, diff, and the validators. It never exposes a command that writes facts, packs, reviews, bundles, or keys. Every path must resolve inside `--root`, outputs go only to `.verdict-out/`, and strings from snapshots and packs come back under `untrusted`, sanitized. Claude Code: `claude mcp add verdict -- verdict mcp --root .`. Cursor and Codex config: [docs/agents.md](docs/agents.md#mcp-server).
+
 ## How a verdict is decided
 
 Each check is `true`, `false`, or `unknown`, with a caller-asserted confidence and evidence ids.

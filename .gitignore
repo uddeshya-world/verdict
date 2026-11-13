@@ -6,3 +6,4 @@
 *.out
 coverage.out
 .DS_Store
+.verdict-out/
