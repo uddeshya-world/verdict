@@ -233,6 +233,17 @@ verdict pack check-reviews     # CI: packs/, packs/reviews/<pack_id>/*.json, pac
 
 `drill --invoked-by STRING` stores `invoked_by` in the report: printable ASCII (0x20-0x7e), 1 to 128 characters, else exit 2. Agents set it (`claude-code`, `codex`, `verdict-mcp/<client name>`), so a report says it was produced at an agent's request. It is a label the caller chose, not an authenticated identity; it does not change any verdict. Without the flag the field is absent.
 
+## Agent pack authoring
+
+An agent may draft a condition pack; only two humans can promote it. The workflow is the `verdict-pack-author` skill ([integrations/claude-code/skills/verdict-pack-author/SKILL.md](../integrations/claude-code/skills/verdict-pack-author/SKILL.md), Cursor: [verdict-pack-author.mdc](../integrations/cursor/rules/verdict-pack-author.mdc)).
+
+1. Draft `packs/draft/ecp-<cve>-<component>.yaml` with `status: draft` and `reviewers: []` from primary advisories. Each claim cites a URL and read date in `metadata.sources[].note`; claims from memory are listed as unverified in `limitations`.
+2. A precondition the inventory cannot show is a fact that is unknown until a collector observes it.
+3. Add a fixture snapshot, `tests:`, and `bench/corpus.json` cases (affected, fixed version, each unknown precondition, each mitigation, absent with a complete inventory, distro package without an advisory fact, attested instead of observed).
+4. Run `verdict pack lint`, `pack test`, `bench` (`false_not_affected=0`, `state_mismatches=0`), and `pack hash`, then open a PR labelled `pack-review` with `.github/PULL_REQUEST_TEMPLATE/pack.md`, reviewer section blank.
+
+CI job `pack-review-gate` runs on pull requests that touch `packs/` or `bench/`: it lints and tests each changed pack, checks both bench counts are zero, refuses a PR that promotes a pack and changes `packs/reviewer-keys/` together, and runs `pack check-reviews`, which fails any non-synthetic `reviewed` pack without a record whose two reviewer signatures verify. `needs_review` is the expected result for every draft. Threat row A50.
+
 ## MCP server
 
 `verdict mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server on stdin and stdout: JSON-RPC 2.0, one message per line, no network, no new dependency. It answers with the verdict CLI itself, run in process, so a tool result and the CLI never disagree. Prefer it to shelling out when your client supports MCP.
