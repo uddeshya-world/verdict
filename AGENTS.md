@@ -41,6 +41,7 @@ Rules:
 verdict drill --pack PACK.yaml --snapshot SNAP.json --policy ZONES.json --invoked-by <agent-name> --out report.json
 verdict report validate report.json
 verdict explain <reason_code>...       # what a reason means and who resolves it
+verdict diff before.json after.json    # did a change move any asset into exploitable or out of not_affected
 ```
 
 Rules:
@@ -53,6 +54,7 @@ Rules:
 6. Never edit a pack, its reviewers, or its status to get a different answer.
 7. `evidence_trust` is always `caller_asserted_unverified`. A report is as good as the snapshot it was given; say so when it matters.
 8. Use exit codes, not text: 0 ok, 1 internal error or failed gate, 2 usage or input error, 3 `--fail-on` matched.
-9. Pass `--invoked-by <your agent name>` to `drill` (for example `claude-code`, `codex`, `cursor`) so the report records that an agent ran it.
+9. **Never claim a change does not increase exposure** (a manifest, image, package, or zone-policy edit) without running `verdict diff BEFORE.json AFTER.json` on reports drilled from snapshots taken before and after it, with the same pack. Quote its summary line and any `class=regression` line. Exit 3 means it does increase exposure. A `removed` asset is not evidence of anything; say it was removed. Exit 2 on a `pack_id` or `cve` mismatch means the reports are not comparable, not that nothing changed.
+10. Pass `--invoked-by <your agent name>` to `drill` (for example `claude-code`, `codex`, `cursor`) so the report records that an agent ran it.
 
 Claude Code skill: [integrations/claude-code/skills/verdict/SKILL.md](integrations/claude-code/skills/verdict/SKILL.md). Cursor rule: [integrations/cursor/rules/verdict.mdc](integrations/cursor/rules/verdict.mdc).
