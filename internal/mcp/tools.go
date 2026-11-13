@@ -278,7 +278,25 @@ func (s *Server) path(arg, p string) (string, error) {
 	return real, nil
 }
 
-func (s *Server) paths(arg string, ps []string) ([]string, error) {
+// file resolves a path argument that must be a regular file of at most max
+// bytes: no FIFO or device that would block a read, no file larger than the
+// command that reads it accepts.
+func (s *Server) file(arg, p string, max int64) (string, error) {
+	real, err := s.path(arg, p)
+	if err != nil {
+		return "", err
+	}
+	fi, err := os.Stat(real)
+	if err != nil || !fi.Mode().IsRegular() {
+		return "", &toolError{kind: "path_rejected", msg: arg + ": not a regular file"}
+	}
+	if fi.Size() > max {
+		return "", &toolError{kind: "input_error", msg: fmt.Sprintf("%s: file is %d bytes, over the %d-byte cap", arg, fi.Size(), max)}
+	}
+	return real, nil
+}
+
+func (s *Server) paths(arg string, ps []string, max int64) ([]string, error) {
 	if len(ps) == 0 {
 		return nil, &argError{arg + " is required"}
 	}
@@ -287,7 +305,7 @@ func (s *Server) paths(arg string, ps []string) ([]string, error) {
 	}
 	out := make([]string, len(ps))
 	for i, p := range ps {
-		real, err := s.path(fmt.Sprintf("%s[%d]", arg, i), p)
+		real, err := s.file(fmt.Sprintf("%s[%d]", arg, i), p, max)
 		if err != nil {
 			return nil, err
 		}
@@ -333,17 +351,17 @@ func (s *Server) runDrill(a drillArgs) (*drillRun, error) {
 	if a.Pack == "" || a.Snapshot == "" {
 		return nil, &argError{"pack and snapshot are required"}
 	}
-	pk, err := s.path("pack", a.Pack)
+	pk, err := s.file("pack", a.Pack, pack.MaxBytes)
 	if err != nil {
 		return nil, err
 	}
-	sn, err := s.path("snapshot", a.Snapshot)
+	sn, err := s.file("snapshot", a.Snapshot, s.cfg.MaxSnapshotBytes)
 	if err != nil {
 		return nil, err
 	}
 	args := []string{"drill", "--pack", pk, "--snapshot", sn, "--invoked-by", s.invokedBy, s.snapCap()}
 	if a.Policy != "" {
-		pol, err := s.path("policy", a.Policy)
+		pol, err := s.file("policy", a.Policy, s.cfg.MaxSnapshotBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -669,7 +687,7 @@ func toolMissingFacts(s *Server, raw json.RawMessage) (any, error) {
 	out := map[string]any{"ok": true}
 	switch {
 	case a.Report != "" && a.Pack == "" && a.Snapshot == "" && a.Policy == "" && a.Asset == "":
-		p, err := s.path("report", a.Report)
+		p, err := s.file("report", a.Report, s.cfg.MaxSnapshotBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -885,11 +903,11 @@ func toolDiff(s *Server, raw json.RawMessage) (any, error) {
 	if !diff.ValidFailOn(a.FailOn) {
 		return nil, &argError{"fail_on must be " + diff.FailOnValues}
 	}
-	b, err := s.path("before", a.Before)
+	b, err := s.file("before", a.Before, s.cfg.MaxSnapshotBytes)
 	if err != nil {
 		return nil, err
 	}
-	af, err := s.path("after", a.After)
+	af, err := s.file("after", a.After, s.cfg.MaxSnapshotBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -998,7 +1016,7 @@ func toolPackLint(s *Server, raw json.RawMessage) (any, error) {
 	if err := decodeArgs(raw, &a); err != nil {
 		return nil, err
 	}
-	ps, err := s.paths("paths", a.Paths)
+	ps, err := s.paths("paths", a.Paths, pack.MaxBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1010,7 +1028,7 @@ func toolPackHash(s *Server, raw json.RawMessage) (any, error) {
 	if err := decodeArgs(raw, &a); err != nil {
 		return nil, err
 	}
-	ps, err := s.paths("paths", a.Paths)
+	ps, err := s.paths("paths", a.Paths, pack.MaxBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1022,7 +1040,7 @@ func toolPackTest(s *Server, raw json.RawMessage) (any, error) {
 	if err := decodeArgs(raw, &a); err != nil {
 		return nil, err
 	}
-	ps, err := s.paths("paths", a.Paths)
+	ps, err := s.paths("paths", a.Paths, pack.MaxBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1068,7 +1086,7 @@ func toolReportValidate(s *Server, raw json.RawMessage) (any, error) {
 	if err := decodeArgs(raw, &a); err != nil {
 		return nil, err
 	}
-	ps, err := s.paths("paths", a.Paths)
+	ps, err := s.paths("paths", a.Paths, s.cfg.MaxSnapshotBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1087,7 +1105,7 @@ func toolOpenVEXValidate(s *Server, raw json.RawMessage) (any, error) {
 	if a.Path == "" {
 		return nil, &argError{"path is required"}
 	}
-	p, err := s.path("path", a.Path)
+	p, err := s.file("path", a.Path, s.cfg.MaxSnapshotBytes)
 	if err != nil {
 		return nil, err
 	}

@@ -523,6 +523,16 @@ func TestPathEscapesRefused(t *testing.T) {
 		t.Fatalf("pack test with an outside fixture: %v", sc)
 	}
 
+	// Files over the reader's cap and non-regular files are refused before reading.
+	if err := os.WriteFile(filepath.Join(root, "big.yaml"), bytes.Repeat([]byte("#"), 300<<10), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{"big.yaml", "packs"} {
+		if _, isErr := s.tool("verdict_pack_lint", map[string]any{"paths": []string{p}}); !isErr {
+			t.Fatalf("pack lint %s accepted", p)
+		}
+	}
+
 	// A .verdict-out symlinked out of the root is not written through.
 	if err := os.Symlink(outside, filepath.Join(root, mcp.OutDirName)); err != nil {
 		t.Fatal(err)
