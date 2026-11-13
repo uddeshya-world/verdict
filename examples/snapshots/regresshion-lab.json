@@ -50,6 +50,15 @@
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
           "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
         }
       ],
       "exposure": [
@@ -114,6 +123,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],
@@ -180,6 +198,15 @@
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
           "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
         }
       ],
       "exposure": [],
@@ -222,6 +249,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],
@@ -288,6 +324,15 @@
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
           "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
         }
       ],
       "exposure": [
@@ -352,6 +397,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],
@@ -428,6 +482,15 @@
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-adv",
           "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
         }
       ],
       "exposure": [
@@ -493,6 +556,15 @@
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
           "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
         }
       ],
       "exposure": [
@@ -552,6 +624,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],
@@ -616,6 +697,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],
@@ -682,6 +772,15 @@
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
           "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
         }
       ],
       "exposure": [
@@ -746,6 +845,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],
@@ -820,6 +928,15 @@
           "confidence": "high",
           "observed_at": "2026-11-08T11:00:00Z",
           "evidence_id": "e-ssh-socket",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
           "source": "demo-snapshot"
         }
       ],

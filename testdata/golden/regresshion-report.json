@@ -4,7 +4,7 @@
   "kb_version": "demo-2026.11.08",
   "evaluation_time": "2026-11-08T12:00:00.000000000Z",
   "pack_id": "ECP-CVE-2024-6387-openssh",
-  "pack_sha256": "194bc487231c2bce5cd6b3fa42237b2a37a3ac03896adc8c2c0576906a9eba43",
+  "pack_sha256": "d029fb70ee1ddfe973ac001b5f9827002673e7bca5c65027ba64fa49ed3ac3fb",
   "policy_sha256": "8cdcee9c17b2ad37c354d6f32488399f07c5e1ff75bda4576292ee724f09caa8",
   "pack_status": "draft",
   "cve": "CVE-2024-6387",
@@ -23,7 +23,8 @@
       "confidence": "high",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-deb-adv"
+        "e-exp-deb-adv",
+        "e-port"
       ],
       "tree_value": "false",
       "reasons": [
@@ -82,7 +83,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -130,7 +131,8 @@
       "confidence": "none",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-deb"
+        "e-exp-deb",
+        "e-port"
       ],
       "tree_value": "unknown",
       "reasons": [
@@ -178,7 +180,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -226,7 +228,8 @@
       "confidence": "high",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-edge"
+        "e-exp-edge",
+        "e-port"
       ],
       "tree_value": "true",
       "reasons": [],
@@ -258,7 +261,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -306,7 +309,8 @@
       "confidence": "none",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-inc"
+        "e-exp-inc",
+        "e-port"
       ],
       "tree_value": "unknown",
       "reasons": [
@@ -354,7 +358,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -402,7 +406,8 @@
       "confidence": "none",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-inf"
+        "e-exp-inf",
+        "e-port"
       ],
       "tree_value": "unknown",
       "reasons": [
@@ -450,7 +455,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -498,7 +503,8 @@
       "confidence": "high",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-int"
+        "e-exp-int",
+        "e-port"
       ],
       "tree_value": "true",
       "reasons": [],
@@ -530,7 +536,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -579,7 +585,8 @@
       "confidence": "none",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-musl"
+        "e-exp-musl",
+        "e-port"
       ],
       "tree_value": "false",
       "reasons": [
@@ -598,7 +605,7 @@
         {
           "check_id": "C2_platform_glibc",
           "reason": "confidence_below_not_affected_bar",
-          "hint": "Check C2_platform_glibc is below high confidence. Raising the number in JSON does not authenticate it, and a low value cannot support not_affected. Pack hint: Record the libc family that was actually observed. Do not assume glibc."
+          "hint": "Check C2_platform_glibc is below high confidence. Raising the number in JSON does not authenticate it, and a low value cannot support not_affected. Pack hint: Record the libc sshd links, as observed; do not assume glibc. Only musl is false: per the musl project (oss-security 2024-07-01) the unsafe handler code is present but limited to a deadlock (DoS), not RCE. Alpine still lists builds as affected; patch anyway. Other libcs stay unknown."
         },
         {
           "check_id": "C3_socket_activation",
@@ -628,7 +635,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -676,7 +683,8 @@
       "confidence": "none",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-miss"
+        "e-exp-miss",
+        "e-port"
       ],
       "tree_value": "unknown",
       "reasons": [
@@ -724,7 +732,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -770,7 +778,8 @@
       "confidence": "high",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-mit"
+        "e-exp-mit",
+        "e-port"
       ],
       "tree_value": "false",
       "reasons": [
@@ -827,7 +836,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -877,7 +886,8 @@
       "confidence": "high",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-socket"
+        "e-exp-socket",
+        "e-port"
       ],
       "tree_value": "true",
       "reasons": [],
@@ -903,7 +913,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -954,7 +964,8 @@
       "confidence": "none",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-stale"
+        "e-exp-stale",
+        "e-port"
       ],
       "tree_value": "unknown",
       "reasons": [
@@ -1002,7 +1013,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -1049,7 +1060,9 @@
       "vex_status": "affected",
       "confidence": "high",
       "exposure_uncertainty": true,
-      "exposure_evidence_ids": [],
+      "exposure_evidence_ids": [
+        "e-port"
+      ],
       "tree_value": "true",
       "reasons": [
         "exposure_unknown_treated_as_exposed"
@@ -1086,7 +1099,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",
@@ -1135,7 +1148,8 @@
       "confidence": "high",
       "exposure_uncertainty": false,
       "exposure_evidence_ids": [
-        "e-exp-fix"
+        "e-exp-fix",
+        "e-port"
       ],
       "tree_value": "false",
       "reasons": [
@@ -1192,7 +1206,7 @@
           "evidence_ids": [
             "e-libc"
           ],
-          "justification": "vulnerable_code_not_present"
+          "justification": "vulnerable_code_cannot_be_controlled_by_adversary"
         },
         {
           "check_id": "C3_socket_activation",

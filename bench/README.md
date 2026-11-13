@@ -26,6 +26,10 @@ Adversarial fixtures from review:
 - `log4shell/lab-log4j-property-set` — log4j-core 2.14.1 with JndiLookup present stays exploitable when `formatMsgNoLookups` is true. Removing the class is still a valid mitigation.
 - `regresshion/purl-*` — name case, trailing space, `openssh-portable`, and a deb name in another case stay in scope (needs_review, or exploitable with an `affected` advisory). `pkg:GENERIC` is an exact match.
 - `regresshion/adv-conflict-*` — `fixed` and `affected` on two spellings of one package URL are needs_review in either order.
+- `regresshion/port-*` (`fixtures/regresshion-port-libc.json`) — the exposure port comes from `config.sshd.Port`. sshd on 2222 with only an internal observation of 22, an absent port fact, a non-canonical value (`22 `, `022`, `2222,22`, `0`, `22, 2222`, `ssh`), and an attested medium port fact are all exploitable, never vulnerable_not_exposed. With `22,2222`, any exposed or unobserved port makes the asset exploitable.
+- `regresshion/libc-*` — only an observed high-confidence `musl` falsifies C2, with `vulnerable_code_cannot_be_controlled_by_adversary` (locked by `expect_justification`). `uclibc`, `uClibc`, `bionic`, `freebsd`, `Musl`, an attested musl, and an omitted `libc.family` are needs_review.
+
+`expect_justification` locks the OpenVEX justification of a `not_affected` case; a different label is a state mismatch. It requires `expect_state: not_affected`.
 
 Every pack file under `packs/draft` and `packs/synthetic` must appear in the corpus. An import case must set `expect_state`. `import_advisories` applies an advisory file (rows use asset id `imported`) and `import_allow_unmatched` drops rows that match nothing.
 
