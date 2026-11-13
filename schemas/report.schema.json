@@ -25,6 +25,13 @@
       "pattern": "^0\\.1\\.[0-9]+$"
     },
     "tool": { "type": "string", "minLength": 1 },
+    "invoked_by": {
+      "description": "Caller-supplied label for who ran the drill (drill --invoked-by). Not authenticated. Omitted when unset.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[ -~]+$"
+    },
     "kb_version": { "type": "string", "minLength": 1 },
     "kb_key_id": { "type": "string" },
     "kb_created_at": { "type": "string" },

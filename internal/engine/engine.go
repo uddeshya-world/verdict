@@ -26,8 +26,11 @@ const ReportVersion = "0.1.0"
 
 // Report is the canonical drill result.
 type Report struct {
-	ReportVersion  string    `json:"report_version"`
-	Tool           string    `json:"tool"`
+	ReportVersion string `json:"report_version"`
+	Tool          string `json:"tool"`
+	// InvokedBy is the caller's own label for who ran the drill (drill
+	// --invoked-by, e.g. verdict-mcp/<client>). It is not authenticated.
+	InvokedBy      string    `json:"invoked_by,omitempty"`
 	KBVersion      string    `json:"kb_version"`
 	KBKeyID        string    `json:"kb_key_id,omitempty"`
 	KBCreatedAt    string    `json:"kb_created_at,omitempty"`
@@ -124,6 +127,25 @@ type Input struct {
 	// (drill --kb). Empty for a pack or OSV file given directly.
 	KBKeyID     string
 	KBCreatedAt string
+	// InvokedBy is copied to Report.InvokedBy; see ValidateInvokedBy.
+	InvokedBy string
+}
+
+// MaxInvokedBy bounds Report.InvokedBy.
+const MaxInvokedBy = 128
+
+// ValidateInvokedBy accepts empty (unset) or 1-128 printable ASCII
+// characters (0x20-0x7e).
+func ValidateInvokedBy(s string) error {
+	if len(s) > MaxInvokedBy {
+		return fmt.Errorf("invoked_by is longer than %d characters", MaxInvokedBy)
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < 0x20 || s[i] > 0x7e {
+			return fmt.Errorf("invoked_by must be printable ASCII (byte %d is 0x%02x)", i, s[i])
+		}
+	}
+	return nil
 }
 
 // Evaluate returns a deterministic report.
@@ -136,6 +158,9 @@ func Evaluate(in Input) (*Report, error) {
 	}
 	if in.KBVersion == "" {
 		return nil, fmt.Errorf("engine: kb_version is required")
+	}
+	if err := ValidateInvokedBy(in.InvokedBy); err != nil {
+		return nil, fmt.Errorf("engine: %w", err)
 	}
 	if len(in.Pack.Metadata.CVE) != 1 {
 		return nil, fmt.Errorf("engine: pack must name one CVE")
@@ -151,6 +176,7 @@ func Evaluate(in Input) (*Report, error) {
 	report := &Report{
 		ReportVersion:  ReportVersion,
 		Tool:           buildinfo.ModulePath + " " + buildinfo.Version,
+		InvokedBy:      in.InvokedBy,
 		KBVersion:      in.KBVersion,
 		KBKeyID:        in.KBKeyID,
 		KBCreatedAt:    in.KBCreatedAt,

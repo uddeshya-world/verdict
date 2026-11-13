@@ -315,7 +315,7 @@ func newDrill(stdout, stderr io.Writer) *cobra.Command {
 	var maxSnap int64
 	var maxKBAge string
 	var allowOlderKB, requireFloor bool
-	var failOn string
+	var failOn, invokedBy string
 	cmd := &cobra.Command{
 		Use:   "drill",
 		Short: "Evaluate one pack, or a version-only OSV fallback, against a local snapshot",
@@ -335,6 +335,9 @@ are skipped and need an advisory fact.`,
 			}
 			if failOn != "" && failOnValues[failOn] == nil {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--fail-on must be exploitable, affected, needs_review, or not_cleared")}
+			}
+			if err := engine.ValidateInvokedBy(invokedBy); err != nil {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--invoked-by: %w", err)}
 			}
 			if snapPath == "" || sources != 1 {
 				return &ExitError{Code: 2, Err: fmt.Errorf("--snapshot and exactly one of --pack, --osv, or --kb are required")}
@@ -423,7 +426,7 @@ are skipped and need an advisory fact.`,
 					return &ExitError{Code: 2, Err: fmt.Errorf("--evaluation-time: %w", err)}
 				}
 			}
-			in := engine.Input{Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb}
+			in := engine.Input{Pack: p, Policy: pol, Snapshot: snap, EvaluationTime: evalAt, KBVersion: kb, InvokedBy: invokedBy}
 			if kbRes != nil {
 				newer, err := checkKBAge(kbRes.CreatedAt, evalAt, nowFunc(), maxAge)
 				if err != nil {
@@ -505,6 +508,7 @@ are skipped and need an advisory fact.`,
 	cmd.Flags().BoolVar(&requireFloor, "require-floor", false, "with --kb: refuse unless at least one other verified bundle is installed under the root, so the rollback floor is never self-referential")
 	addMaxSnapshotBytes(cmd, &maxSnap)
 	cmd.Flags().StringVar(&asset, "asset", "", "evaluate a single asset id")
+	cmd.Flags().StringVar(&invokedBy, "invoked-by", "", "label for who ran this drill, stored as invoked_by in the report (printable ASCII, at most 128 characters; not authenticated). Agents set it, e.g. claude-code or verdict-mcp/<client>")
 	cmd.Flags().StringVar(&failOn, "fail-on", "", "exit 3 after writing all outputs when any verdict matches: exploitable, affected (exploitable or vulnerable_not_exposed), needs_review, or not_cleared (anything but not_affected)")
 	return cmd
 }
