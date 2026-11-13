@@ -341,6 +341,9 @@ func evalWhen(w pack.WhenPackage, ac *assetCtx, eval time.Time, maxAge time.Dura
 			extras = append(extras, pkg.Package)
 		}
 	}
+	for _, pkg := range matched {
+		conf = pkgConf(conf, pkg)
+	}
 	ev := []string{asset.Inventory.EvidenceID}
 	if len(matched) == 0 && len(extras) > 0 {
 		return whenResult{}, unknownLeaf("", "distro_advisory_required", extras[0].PURL, ev)
@@ -455,6 +458,16 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 	if !usable {
 		return unknownLeaf(id, reason, "", ev)
 	}
+	// From here a package is present. A per-package confidence (a version
+	// read from a binary banner) lowers every result but an in-range true,
+	// which uses that package's own confidence.
+	setConf := conf
+	for _, pkg := range matched {
+		setConf = pkgConf(setConf, pkg)
+	}
+	for _, pkg := range extras {
+		setConf = pkgConf(setConf, pkg)
+	}
 	var upstream []snapshot.Package
 	var distro []snapshot.Package
 	for _, pkg := range matched {
@@ -478,12 +491,12 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 			if !observed {
 				weak = "evidence_not_observed"
 			}
-			return valueLeaf(id, logic.True, conf, observed, ch.NegationJustification, ev, weak, "")
+			return valueLeaf(id, logic.True, pkgConf(conf, pkg), observed, ch.NegationJustification, ev, weak, "")
 		}
 	}
 	needsAdvisory := len(distro) > 0 || len(extras) > 0
 	if needsAdvisory {
-		return resolveDistroAdvisories(id, ch, distro, extras, sawUnknown, usable, observed, conf, reason, ac, eval, maxAge)
+		return resolveDistroAdvisories(id, ch, distro, extras, sawUnknown, usable, observed, setConf, reason, ac, eval, maxAge)
 	}
 	if sawUnknown {
 		return unknownLeaf(id, "unsupported_version", "", ev)
@@ -491,10 +504,23 @@ func evalPackageCtx(id string, ch pack.Check, component []string, ac *assetCtx, 
 	weak := ""
 	if !observed {
 		weak = "evidence_not_observed"
-	} else if conf < logic.ConfHigh {
+	} else if setConf < logic.ConfHigh {
 		weak = "confidence_below_not_affected_bar"
 	}
-	return valueLeaf(id, logic.False, conf, observed, ch.NegationJustification, ev, weak, "")
+	return valueLeaf(id, logic.False, setConf, observed, ch.NegationJustification, ev, weak, "")
+}
+
+// pkgConf is the lower of c and the package's own confidence. An empty
+// package confidence leaves c; an unreadable one is none, never higher.
+func pkgConf(c logic.Confidence, p snapshot.Package) logic.Confidence {
+	if p.Confidence == "" {
+		return c
+	}
+	pc, ok := logic.ParseConfidence(p.Confidence)
+	if !ok {
+		return logic.ConfNone
+	}
+	return logic.Min(c, pc)
 }
 
 func resolveDistroAdvisories(id string, ch pack.Check, distro, extras []snapshot.Package, sawUnknown, invUsable, invObserved bool, invConf logic.Confidence, invReason string, ac *assetCtx, eval time.Time, maxAge time.Duration) leafEval {
