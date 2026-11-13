@@ -115,7 +115,15 @@ the not_affected bar, whatever its confidence. observed needs --evidence FILE
 that the file proves the claim, so the entry is still caller-asserted. Confidence
 is low or medium (default); high needs basis observed. An existing entry is
 never overwritten without --replace. observed-at defaults to the snapshot's
-evaluation_time for attested entries (the clock is not read).`
+evaluation_time for attested entries (the clock is not read).
+
+--actor-kind is human (default) or agent, and is stored on the edit record.
+An agent (a coding agent or a script acting for one) must pass agent. An agent
+entry can only be attested: --actor-kind agent with --basis observed exits 2,
+and the engine never treats an entry whose latest edit is an agent's as
+observed, so an agent edit can never support not_affected.`
+
+const actorKindHelp = "who is making the edit: human or agent (agents must pass agent; agent entries are attested only)"
 
 func newSnapshotSetFact(stdout io.Writer) *cobra.Command {
 	var in, out, evidence string
@@ -128,6 +136,9 @@ func newSnapshotSetFact(stdout io.Writer) *cobra.Command {
 		Long:  "Add one fact to one asset of a snapshot and write a new snapshot.\n" + basisHelp,
 		Args:  cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
+			if e.ActorKind != snapshot.ActorHuman && e.ActorKind != snapshot.ActorAgent {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--actor-kind: actor_kind must be human or agent (got %q)", e.ActorKind)}
+			}
 			if err := attachEvidence(&e, evidence); err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
@@ -148,6 +159,7 @@ func newSnapshotSetFact(stdout io.Writer) *cobra.Command {
 	f.StringVar(&evidence, "evidence", "", "evidence file; its SHA-256 becomes the evidence id")
 	f.StringVar(&e.Source, "source", "", "free-text origin of the fact")
 	f.BoolVar(&e.Replace, "replace", false, "overwrite an existing fact with the same key and package")
+	f.StringVar(&e.ActorKind, "actor-kind", snapshot.ActorHuman, actorKindHelp)
 	addMaxSnapshotBytes(cmd, &maxBytes)
 	addJSONFlag(cmd, &asJSON)
 	return cmd
@@ -166,6 +178,9 @@ func newSnapshotSetExposure(stdout io.Writer) *cobra.Command {
 			"port and protocol. Narrowing or removing a zone needs --replace.\n" + basisHelp,
 		Args: cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
+			if e.ActorKind != snapshot.ActorHuman && e.ActorKind != snapshot.ActorAgent {
+				return &ExitError{Code: 2, Err: fmt.Errorf("--actor-kind: actor_kind must be human or agent (got %q)", e.ActorKind)}
+			}
 			if err := attachEvidence(&e, evidence); err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
@@ -186,13 +201,14 @@ func newSnapshotSetExposure(stdout io.Writer) *cobra.Command {
 	f.StringVar(&evidence, "evidence", "", "evidence file; its SHA-256 becomes the evidence id")
 	f.StringVar(&e.Source, "source", "", "free-text origin of the entry")
 	f.BoolVar(&e.Replace, "replace", false, "allow narrowing or removing zones for this port")
+	f.StringVar(&e.ActorKind, "actor-kind", snapshot.ActorHuman, actorKindHelp)
 	addMaxSnapshotBytes(cmd, &maxBytes)
 	addJSONFlag(cmd, &asJSON)
 	return cmd
 }
 
 func newSnapshotApply(stdout io.Writer) *cobra.Command {
-	var in, out, file string
+	var in, out, file, actor string
 	var maxBytes int64
 	var asJSON bool
 	cmd := &cobra.Command{
@@ -200,7 +216,10 @@ func newSnapshotApply(stdout io.Writer) *cobra.Command {
 		Short: "Apply a file of set-fact / set-exposure edits atomically",
 		Long: "Apply every edit in --file, in order, or none: the first failing edit aborts the run\n" +
 			"and nothing is written. Each edit follows the same rules as the single commands.\n" +
-			"evidence_file paths are relative to the edits file.\n" + basisHelp,
+			"evidence_file paths are relative to the edits file.\n" +
+			"An entry may carry actor_kind; an entry without one takes --actor-kind. With\n" +
+			"--actor-kind agent, an entry that says actor_kind human is refused: an agent's\n" +
+			"batch cannot contain human entries.\n" + basisHelp,
 		Args: cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
 			if file == "" {
@@ -210,15 +229,38 @@ func newSnapshotApply(stdout io.Writer) *cobra.Command {
 			if err != nil {
 				return &ExitError{Code: 2, Err: err}
 			}
+			if err := applyActorKind(edits, actor); err != nil {
+				return &ExitError{Code: 2, Err: err}
+			}
 			return runEdits(stdout, in, out, maxBytes, edits, "apply", asJSON)
 		},
 	}
 	cmd.Flags().StringVar(&in, "snapshot", "", "snapshot JSON to read")
 	cmd.Flags().StringVar(&out, "out", "", "snapshot JSON to write")
 	cmd.Flags().StringVar(&file, "file", "", "edits JSON: {\"edits\":[{\"op\":\"set_fact\",...}]}")
+	cmd.Flags().StringVar(&actor, "actor-kind", snapshot.ActorHuman, "default actor_kind for entries without one: human or agent; agent refuses entries that say human")
 	addMaxSnapshotBytes(cmd, &maxBytes)
 	addJSONFlag(cmd, &asJSON)
 	return cmd
+}
+
+// applyActorKind fills each entry's actor kind from the flag. An agent's
+// batch may not declare a human entry.
+func applyActorKind(edits []snapshot.Edit, flag string) error {
+	if flag != snapshot.ActorHuman && flag != snapshot.ActorAgent {
+		return fmt.Errorf("--actor-kind: actor_kind must be human or agent (got %q)", flag)
+	}
+	for i := range edits {
+		switch edits[i].ActorKind {
+		case "":
+			edits[i].ActorKind = flag
+		case snapshot.ActorHuman:
+			if flag == snapshot.ActorAgent {
+				return fmt.Errorf("edit %d: actor_kind human in a batch applied with --actor-kind agent", i+1)
+			}
+		}
+	}
+	return nil
 }
 
 func loadEditFile(path string) ([]snapshot.Edit, error) {

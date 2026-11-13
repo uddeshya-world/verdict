@@ -1,0 +1,190 @@
+{
+  "kb_version": "demo-2026.11.08",
+  "evaluation_time": "2026-11-08T12:00:00Z",
+  "evidence_trust": "caller_asserted",
+  "assets": [
+    {
+      "id": "agent-musl",
+      "name": "agent-musl",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-edge-exploitable",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "musl",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "source": "agent claim"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internet"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-exp-edge",
+          "source": "demo-snapshot"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "edits": [
+        {
+          "op": "set_fact",
+          "key": "libc.family",
+          "old_value": "glibc",
+          "new_value": "musl",
+          "old_basis": "observed",
+          "new_basis": "observed",
+          "replaced": true,
+          "at": "2026-11-08T11:00:00Z",
+          "source": "agent claim",
+          "evidence_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "actor_kind": "agent"
+        }
+      ]
+    },
+    {
+      "id": "agent-narrowed-exposure",
+      "name": "agent-narrowed-exposure",
+      "kind": "host",
+      "zones": [
+        "internet"
+      ],
+      "inventory": {
+        "complete": true,
+        "observed_at": "2026-11-08T11:00:00Z",
+        "basis": "observed",
+        "confidence": "high",
+        "evidence_id": "e-inventory-lab-edge-exploitable",
+        "packages": [
+          {
+            "purl": "pkg:generic/openssh@9.6p1",
+            "version": "9.6p1"
+          }
+        ]
+      },
+      "facts": [
+        {
+          "key": "libc.family",
+          "value": "glibc",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-libc",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "process.listening.sshd",
+          "value": "true",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-sshd",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.LoginGraceTime",
+          "value": "120",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-lgt",
+          "source": "demo-snapshot"
+        },
+        {
+          "key": "config.sshd.Port",
+          "value": "22",
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "e-port",
+          "source": "demo-snapshot"
+        }
+      ],
+      "exposure": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "reachable_from": [
+            "internal"
+          ],
+          "basis": "observed",
+          "confidence": "high",
+          "observed_at": "2026-11-08T11:00:00Z",
+          "evidence_id": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "source": "agent claim"
+        }
+      ],
+      "primary_purl": "pkg:generic/openssh@9.6p1",
+      "edits": [
+        {
+          "op": "set_exposure",
+          "port": 22,
+          "proto": "tcp",
+          "old_zones": [
+            "internet"
+          ],
+          "new_zones": [
+            "internal"
+          ],
+          "old_basis": "observed",
+          "new_basis": "observed",
+          "replaced": true,
+          "at": "2026-11-08T11:00:00Z",
+          "source": "agent claim",
+          "evidence_id": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "actor_kind": "agent"
+        }
+      ]
+    }
+  ]
+}

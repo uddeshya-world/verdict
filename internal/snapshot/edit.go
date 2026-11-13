@@ -19,6 +19,13 @@ const (
 	OpSetExposure = "set_exposure"
 )
 
+// Actor kinds recorded on an edit. An agent is an automated caller (a coding
+// agent, a script acting for one); a human is a person at the keyboard.
+const (
+	ActorHuman = "human"
+	ActorAgent = "agent"
+)
+
 // EvidenceIDPrefix starts an evidence id derived from the bytes of an
 // evidence file.
 const EvidenceIDPrefix = "sha256:"
@@ -42,6 +49,9 @@ type Edit struct {
 	HasEvidence   bool     `json:"-"` // an evidence file was supplied
 	Source        string   `json:"source,omitempty"`
 	Replace       bool     `json:"replace,omitempty"`
+	// ActorKind is human (default) or agent. An agent edit can only be
+	// attested, so it can never reach the not_affected bar.
+	ActorKind string `json:"actor_kind,omitempty"`
 }
 
 // HostFactChecker reports whether key is one the host collector writes and
@@ -99,6 +109,9 @@ func findAsset(s *Snapshot, id string) (*Asset, error) {
 // and exposure, and returns the stored values.
 func quality(e Edit, evalAt time.Time) (basis, conf, observedAt, expiresAt, evidenceID string, err error) {
 	basis, conf = e.Basis, e.Confidence
+	if _, aerr := actorKind(e); aerr != nil {
+		return "", "", "", "", "", aerr
+	}
 	if basis == "" {
 		basis = "attested"
 	}
@@ -112,6 +125,9 @@ func quality(e Edit, evalAt time.Time) (basis, conf, observedAt, expiresAt, evid
 	case "low", "medium", "high":
 	default:
 		return "", "", "", "", "", fmt.Errorf("confidence must be low, medium, or high (got %q)", conf)
+	}
+	if e.ActorKind == ActorAgent && basis == "observed" {
+		return "", "", "", "", "", fmt.Errorf("actor_kind agent cannot enter basis observed: an agent did not observe the asset. Enter it as attested, or have a collector or a human observe it")
 	}
 	if conf == "high" && basis != "observed" {
 		return "", "", "", "", "", fmt.Errorf("confidence high requires basis observed: an attested entry can never reach the not_affected bar")
@@ -152,6 +168,17 @@ func quality(e Edit, evalAt time.Time) (basis, conf, observedAt, expiresAt, evid
 		evidenceID = "attested:operator-entry"
 	}
 	return basis, conf, observedAt, expiresAt, evidenceID, nil
+}
+
+// actorKind returns the edit's actor kind, human when unset.
+func actorKind(e Edit) (string, error) {
+	switch e.ActorKind {
+	case "", ActorHuman:
+		return ActorHuman, nil
+	case ActorAgent:
+		return ActorAgent, nil
+	}
+	return "", fmt.Errorf("actor_kind must be human or agent (got %q)", e.ActorKind)
 }
 
 func sourceOrDefault(s string) (string, error) {
@@ -199,6 +226,7 @@ func setFact(s *Snapshot, e Edit, evalAt time.Time, check HostFactChecker) error
 	if err != nil {
 		return err
 	}
+	kind, _ := actorKind(e)
 	src, err := sourceOrDefault(e.Source)
 	if err != nil {
 		return err
@@ -206,7 +234,7 @@ func setFact(s *Snapshot, e Edit, evalAt time.Time, check HostFactChecker) error
 	f := Fact{Key: e.Key, PURL: factPURL, Value: e.Value, Basis: basis, Confidence: conf,
 		ObservedAt: obs, ExpiresAt: exp, EvidenceID: ev, Source: src}
 	rec := EditRecord{Op: OpSetFact, Key: e.Key, PURL: factPURL, NewValue: e.Value, NewBasis: basis,
-		At: editAt(e, evalAt), Source: src, EvidenceID: e.EvidenceID}
+		At: editAt(e, evalAt), Source: src, EvidenceID: e.EvidenceID, ActorKind: kind}
 	for i := range a.Facts {
 		old := a.Facts[i]
 		if old.Key != e.Key || !samePURLOrBothEmpty(old.PURL, factPURL) {
@@ -253,6 +281,7 @@ func setExposure(s *Snapshot, e Edit, evalAt time.Time) error {
 	if err != nil {
 		return err
 	}
+	kind, _ := actorKind(e)
 	src, err := sourceOrDefault(e.Source)
 	if err != nil {
 		return err
@@ -260,7 +289,7 @@ func setExposure(s *Snapshot, e Edit, evalAt time.Time) error {
 	x := Exposure{Port: e.Port, Proto: e.Proto, ReachableFrom: zones, Basis: basis, Confidence: conf,
 		ObservedAt: obs, ExpiresAt: exp, EvidenceID: ev, Source: src}
 	rec := EditRecord{Op: OpSetExposure, Port: e.Port, Proto: e.Proto, NewZones: zones, NewBasis: basis,
-		At: editAt(e, evalAt), Source: src, EvidenceID: e.EvidenceID}
+		At: editAt(e, evalAt), Source: src, EvidenceID: e.EvidenceID, ActorKind: kind}
 	var keep []Exposure
 	have := map[string]bool{}
 	found := false

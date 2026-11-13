@@ -27,6 +27,7 @@ const (
 	ReasonMissingFact                      = "missing_fact"
 	ReasonUnexpectedFactValue              = "unexpected_fact_value"
 	ReasonEvidenceNotObserved              = "evidence_not_observed"
+	ReasonAgentEditNotObserved             = "agent_edit_not_observed"
 	ReasonConfidenceBelowNotAffectedBar    = "confidence_below_not_affected_bar"
 	ReasonWhenPackageNotApplicable         = "when_package_not_applicable"
 	ReasonWhenPackageUnresolved            = "when_package_unresolved"
@@ -133,6 +134,12 @@ var Reasons = map[string]ReasonInfo{
 		Hint:       "Check {check} is not basis observed. Attestations can support an affected result and cannot support not_affected.",
 		NextAction: "Collect the fact as an observation on the asset if not_affected is the goal. An attestation will not clear the CVE.",
 		Actor:      ActorCollector,
+	},
+	ReasonAgentEditNotObserved: {
+		Kind:       KindLeaf,
+		Hint:       "Check {check} rests on a fact whose latest edit record has actor_kind agent. An agent did not observe the asset, so the fact is read as attested whatever its basis says. It can support an affected result and cannot support not_affected.",
+		NextAction: "A collector or a human observes the fact on the asset and records it with actor_kind human and an evidence file, then re-run drill. An agent cannot resolve this.",
+		Actor:      ActorHuman,
 	},
 	ReasonConfidenceBelowNotAffectedBar: {
 		Kind:         KindLeaf,

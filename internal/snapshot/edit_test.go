@@ -83,6 +83,28 @@ func TestEditHighNeedsObserved(t *testing.T) {
 	wantErr(t, fact(func(e *Edit) { e.Basis = "inferred" }), "basis must be")
 }
 
+func TestEditAgentAttestedOnly(t *testing.T) {
+	wantErr(t, fact(func(e *Edit) {
+		e.ActorKind, e.Basis, e.Confidence, e.EvidenceID, e.HasEvidence, e.ObservedAt = ActorAgent, "observed", "high", ev, true, "2026-11-08T11:00:00Z"
+	}), "actor_kind agent cannot enter basis observed")
+	wantErr(t, fact(func(e *Edit) { e.ActorKind = ActorAgent; e.Confidence = "high" }), "confidence high requires basis observed")
+	wantErr(t, fact(func(e *Edit) { e.ActorKind = "bot" }), "actor_kind must be human or agent")
+	got, err := Apply(base(t), fact(func(e *Edit) { e.ActorKind = ActorAgent }), nil, DefaultMaxBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := got.Assets[1].Edits[0]; r.ActorKind != ActorAgent || r.NewBasis != "attested" {
+		t.Fatalf("%+v", r)
+	}
+	got, err = Apply(base(t), fact(nil), nil, DefaultMaxBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := got.Assets[1].Edits[0]; r.ActorKind != ActorHuman {
+		t.Fatalf("default actor: %+v", r)
+	}
+}
+
 func TestEditTimes(t *testing.T) {
 	wantErr(t, fact(func(e *Edit) { e.ObservedAt = "2026-11-09T00:00:00Z" }), "after the snapshot evaluation_time")
 	wantErr(t, fact(func(e *Edit) { e.ObservedAt = "yesterday" }), "observed_at")
@@ -338,6 +360,11 @@ func TestLoadRejectsMalformedEdits(t *testing.T) {
 	if err := load(good); err != nil {
 		t.Fatalf("good record rejected: %v", err)
 	}
+	for _, k := range []string{"human", "agent"} {
+		if err := load(strings.Replace(good, `"op"`, `"actor_kind":"`+k+`","op"`, 1)); err != nil {
+			t.Fatalf("actor_kind %s rejected: %v", k, err)
+		}
+	}
 	bad := map[string]string{
 		"unknown field":          strings.Replace(good, `"op"`, `"extra":1,"op"`, 1),
 		"bad op":                 strings.Replace(good, `"set_fact"`, `"drop"`, 1),
@@ -351,6 +378,7 @@ func TestLoadRejectsMalformedEdits(t *testing.T) {
 		"bad evidence":           strings.Replace(good, `"source"`, `"evidence_id":"a b","source"`, 1),
 		"replaced w/o old basis": strings.Replace(good, `"replaced":false`, `"replaced":true`, 1),
 		"fact with port":         strings.Replace(good, `"op"`, `"port":22,"op"`, 1),
+		"bad actor_kind":         strings.Replace(good, `"op"`, `"actor_kind":"bot","op"`, 1),
 		"exposure no zones":      `{"op":"set_exposure","port":22,"proto":"tcp","new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`,
 		"exposure bad port":      `{"op":"set_exposure","port":0,"proto":"tcp","new_zones":["a"],"new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`,
 		"exposure with key":      `{"op":"set_exposure","key":"k","port":22,"proto":"tcp","new_zones":["a"],"new_basis":"attested","replaced":false,"at":"2026-11-08T12:00:00Z","source":"s"}`,

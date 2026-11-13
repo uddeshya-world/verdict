@@ -26,6 +26,12 @@ jobs:
         run: |
           go build -o verdict ./cmd/verdict
           ./scripts/demo.sh
+      - name: signed review gate
+        # Every non-synthetic pack with status reviewed needs a record in
+        # packs/reviews/<pack_id>/ whose reviewer signatures verify against
+        # packs/reviewer-keys/. No real pack is reviewed today, so this
+        # passes until one is promoted.
+        run: ./verdict pack check-reviews --packs packs --reviews packs/reviews --reviewer-keys packs/reviewer-keys
       - name: report contract
         run: ./verdict report validate testdata/golden/*-report.json
       - name: verdict-bench false not_affected gate

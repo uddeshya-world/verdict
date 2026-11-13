@@ -5,13 +5,18 @@ package pack
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/uddeshya-world/verdict/internal/bundle"
 )
 
 // ReviewAttestation is one human's statement about one pack file.
@@ -21,6 +26,111 @@ type ReviewAttestation struct {
 	Name       string `json:"name"`
 	ReviewedAt string `json:"reviewed_at"`
 	Statement  string `json:"statement"`
+	// KeyID and Signature are optional. Signature is base64 Ed25519 over
+	// ReviewMessage, made with the reviewer's own key; KeyID is
+	// bundle.KeyID of the matching public key.
+	KeyID     string `json:"key_id,omitempty"`
+	Signature string `json:"signature,omitempty"`
+}
+
+// ReviewSignatureDomain starts every signed review message.
+const ReviewSignatureDomain = "verdict-pack-review/v1"
+
+var keyIDRE = regexp.MustCompile(`^[0-9a-f]{32}$`)
+
+// ReviewMessage is the exact byte string a reviewer signs: the domain, the
+// pack id, the content hash, and the reviewer name (trimmed), each followed
+// by a newline. reviewed_at and statement are not signed.
+func ReviewMessage(packID, packSHA256, name string) []byte {
+	return []byte(ReviewSignatureDomain + "\n" + packID + "\n" + packSHA256 + "\n" + strings.TrimSpace(name) + "\n")
+}
+
+// SignReview returns a signed attestation for one reviewer. It refuses a
+// name that is empty, multi-line, or a synthetic-reviewer-* name on a real
+// pack, and the reverse.
+func SignReview(p *Pack, priv ed25519.PrivateKey, name, reviewedAt, statement string) (*ReviewAttestation, error) {
+	name = strings.TrimSpace(name)
+	if name == "" || strings.ContainsAny(name, "\x00\r\n") || len(name) > 256 {
+		return nil, fmt.Errorf("pack sign-review: reviewer name must be one non-empty line of at most 256 bytes")
+	}
+	if strings.TrimSpace(statement) == "" {
+		return nil, fmt.Errorf("pack sign-review: statement is required")
+	}
+	if _, err := time.Parse(time.RFC3339, reviewedAt); err != nil {
+		return nil, fmt.Errorf("pack sign-review: reviewed_at: %w", err)
+	}
+	fixture := strings.HasPrefix(strings.ToLower(name), "synthetic-reviewer-")
+	if p.Metadata.Synthetic != fixture {
+		return nil, fmt.Errorf("pack sign-review: synthetic-reviewer-* names sign synthetic packs only, and synthetic packs take only those names")
+	}
+	sum, err := ContentSHA256(p)
+	if err != nil {
+		return nil, err
+	}
+	pub, ok := priv.Public().(ed25519.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("pack sign-review: key is not Ed25519")
+	}
+	sig := ed25519.Sign(priv, ReviewMessage(p.Metadata.ID, sum, name))
+	return &ReviewAttestation{Name: name, ReviewedAt: reviewedAt, Statement: statement,
+		KeyID: bundle.KeyID(pub), Signature: base64.StdEncoding.EncodeToString(sig)}, nil
+}
+
+// KeyLookup returns the trusted public key for a key id, or an error.
+type KeyLookup func(keyID string) (ed25519.PublicKey, error)
+
+// VerifyReviewSignatures checks every signed reviewer of rec against keys.
+// A signature that does not verify, a key id that is unknown or does not
+// match its key, or one key used for two reviewers is an error. With
+// require, an unsigned reviewer is an error too. It returns the number of
+// verified reviewers. Call CheckReview as well: this checks signatures only.
+func VerifyReviewSignatures(rec *ReviewRecord, keys KeyLookup, require bool) (int, error) {
+	if rec == nil {
+		return 0, fmt.Errorf("pack review: record is required")
+	}
+	if keys == nil && require {
+		return 0, fmt.Errorf("pack review: signatures are required but no reviewer keys were given")
+	}
+	used := map[string]string{}
+	ok := 0
+	for _, r := range rec.Reviewers {
+		name := strings.TrimSpace(r.Name)
+		if r.Signature == "" && r.KeyID == "" {
+			if require {
+				return ok, fmt.Errorf("pack review: %s is not signed", name)
+			}
+			continue
+		}
+		if r.Signature == "" || r.KeyID == "" {
+			return ok, fmt.Errorf("pack review: %s needs both key_id and signature", name)
+		}
+		if !keyIDRE.MatchString(r.KeyID) {
+			return ok, fmt.Errorf("pack review: %s key_id %q is not 32 lowercase hex characters", name, r.KeyID)
+		}
+		if keys == nil {
+			return ok, fmt.Errorf("pack review: %s is signed but no reviewer keys were given to check it", name)
+		}
+		if prev, dup := used[r.KeyID]; dup {
+			return ok, fmt.Errorf("pack review: %s and %s are signed with the same key %s", prev, name, r.KeyID)
+		}
+		used[r.KeyID] = name
+		pub, err := keys(r.KeyID)
+		if err != nil {
+			return ok, fmt.Errorf("pack review: %s key %s: %w", name, r.KeyID, err)
+		}
+		if bundle.KeyID(pub) != r.KeyID {
+			return ok, fmt.Errorf("pack review: %s key file for %s holds key %s", name, r.KeyID, bundle.KeyID(pub))
+		}
+		sig, err := base64.StdEncoding.DecodeString(r.Signature)
+		if err != nil || len(sig) != ed25519.SignatureSize {
+			return ok, fmt.Errorf("pack review: %s signature is not base64 Ed25519", name)
+		}
+		if !ed25519.Verify(pub, ReviewMessage(rec.PackID, rec.PackSHA256, name), sig) {
+			return ok, fmt.Errorf("pack review: %s signature does not verify for pack %s content %s", name, rec.PackID, rec.PackSHA256)
+		}
+		ok++
+	}
+	return ok, nil
 }
 
 // ReviewRecord binds reviewer statements to the pack content.
