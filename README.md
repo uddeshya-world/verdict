@@ -44,6 +44,8 @@ gh attestation verify "verdict_${V}_${A}.tar.gz" -R uddeshya-world/verdict
 tar xzf "verdict_${V}_${A}.tar.gz" && "./verdict_${V}_${A}/verdict" version
 ```
 
+A release binary prints its tag without the leading `v` (`github.com/uddeshya-world/verdict 0.1.1`); the release build sets it with `-ldflags -X`. v0.1.0 binaries predate that and print `0.1.0-foundation`. A source build (`go build`, `go install`) prints `dev`, and so do reports and OpenVEX `tooling` it writes.
+
 The checksum proves the download matches the release; the attestation proves it was built by this repository's release workflow from that tag. Builds are reproducible given Go 1.22.2: rebuilding a tag with `scripts/release-build.sh vX.Y.Z linux amd64 out` yields the same archive bytes.
 
 ## Quickstart
@@ -248,7 +250,7 @@ Not implemented (do not treat design-plan milestones as done):
 
 - [ ] Phase 0 interviews
 - [x] Draft seed packs for Spring4Shell, xz, and IngressNightmare, still unreviewed
-- [ ] Any real-world pack with two human reviewers. `verdict pack review` checks a record against the pack bytes and does not edit the pack. regreSSHion stays draft
+- [ ] Any real-world pack with two human reviewers. `verdict pack hash` prints the content hash a review record needs; `verdict pack review` checks the record against the pack and does not edit the pack. regreSSHion stays draft
 - [ ] Fixtures built from images, or a signed bundle
 - [x] Offline CycloneDX and Trivy JSON import. Scanner vulnerability lists are ignored
 - [x] Offline JAR/WAR/EAR inspection (`import jar`) for Maven coordinates and the Log4j `JndiLookup` class

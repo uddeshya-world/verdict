@@ -110,6 +110,18 @@ jobs:
           CGO_ENABLED: "0"
           SBOM_BIN: ${{ runner.temp }}/sbom
         run: sh "$GITHUB_WORKSPACE/wf/scripts/release-build.sh" "$TAG" "$GOOS" "$GOARCH" "$GITHUB_WORKSPACE/dist"
+      - name: check version stamp
+        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+        run: |
+          ver=${TAG#v}
+          d=$(mktemp -d)
+          tar -xzf "dist/verdict_${ver}_linux_amd64.tar.gz" -C "$d"
+          got=$("$d/verdict_${ver}_linux_amd64/verdict" version)
+          echo "$got"
+          # Tags before v0.1.1 have a const Version that -X cannot set.
+          if grep -q '^var Version' src/internal/buildinfo/version.go; then
+            test "$got" = "github.com/uddeshya-world/verdict $ver"
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ matrix.goos }}-${{ matrix.goarch }}

@@ -5,7 +5,7 @@
   "role": "tool-assisted document creator; evidence was not authenticated",
   "timestamp": "2026-11-08T12:00:00.000000000Z",
   "version": 1,
-  "tooling": "github.com/uddeshya-world/verdict 0.1.0-foundation",
+  "tooling": "github.com/uddeshya-world/verdict dev",
   "statements": [
     {
       "@id": "urn:verdict:statement:lab-deb-advisory-fixed:CVE-2024-6387",

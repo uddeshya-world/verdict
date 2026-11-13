@@ -69,7 +69,9 @@ bundle version are explicit inputs.`,
 func newVersion() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Print the foundation version",
+		Short: "Print the module path and release version",
+		Long: `version prints "<module path> <version>". Release binaries carry the tag
+without its leading v, set at link time. Other builds print "dev".`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", buildinfo.ModulePath, buildinfo.Version)
 			return nil
@@ -80,9 +82,10 @@ func newVersion() *cobra.Command {
 func newPack(stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pack",
-		Short: "Lint or test condition packs",
+		Short: "Lint, test, hash, or check reviews of condition packs",
 	}
 	cmd.AddCommand(newPackReview(stdout, stderr))
+	cmd.AddCommand(newPackHash(stdout, stderr))
 	cmd.AddCommand(&cobra.Command{
 		Use:   "lint FILE...",
 		Short: "Reject unknown fields, unknown check kinds, and malformed trees",

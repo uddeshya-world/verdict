@@ -35,7 +35,7 @@ Banned in engine and logic code, and checked by test:
 - `net`, `net/http`, and `os/exec`
 - map iteration leaking into output order (outputs are structs and sorted slices)
 
-`pack_sha256` is the SHA-256 of the pack file bytes the operator passed in. Changing whitespace changes the digest and therefore the OpenVEX document id. The verdict states themselves depend on the decoded pack, not on key order in the file.
+`pack_sha256` is the SHA-256 of the pack file bytes the operator passed in. Changing whitespace changes the digest and therefore the OpenVEX document id. This is not the review content hash: `verdict pack hash` prints that one, computed over the decoded pack with `status` and `reviewers` cleared, and `verdict pack review` checks records against it. The verdict states themselves depend on the decoded pack, not on key order in the file.
 
 ## Evaluation pipeline
 
