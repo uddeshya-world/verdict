@@ -1,0 +1,42 @@
+{
+ "schema": "verdict.collect-host/v1",
+ "collector": "collect-host.sh",
+ "hostname": "src-only",
+ "collected_at": "2026-11-08T11:00:00Z",
+ "os": {
+  "id": "debian",
+  "version_id": "12"
+ },
+ "packages": [
+  {
+   "manager": "binary",
+   "name": "openssh",
+   "version": "9.8p1",
+   "purl": "pkg:generic/openssh@9.8p1",
+   "path": "/usr/sbin/sshd",
+   "source": "binary_version"
+  }
+ ],
+ "unparsed": [],
+ "facts": {
+  "libc.family": "glibc",
+  "process.sshd.links_liblzma": "false",
+  "process.listening.sshd": "true",
+  "service.socket_activation.sshd": "false",
+  "config.sshd.LoginGraceTime": "120",
+  "config.sshd.Port": "22"
+ },
+ "listening": [
+  {
+   "port": 22,
+   "proto": "tcp",
+   "process": "sshd"
+  }
+ ],
+ "notes": [
+  "/usr/sbin/sshd is in no package database; openssh 9.8p1 read from its sshd -V banner (binary version: affected-only evidence)",
+  "listening sockets from ss -ltnp",
+  "LoginGraceTime from sshd -T",
+  "config.sshd.Port from sshd -T, listening sshd sockets, and sshd socket units"
+ ]
+}

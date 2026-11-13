@@ -14,6 +14,11 @@
 # print command output wholesale. It reads the package database, os-release,
 # the socket table, systemd unit state, and sshd configuration.
 #
+# An sshd that no package database owns (a source build) is also read with
+# `sshd -V`; its OpenSSH version becomes a "binary" entry that Verdict imports
+# at medium confidence: evidence for affected, never for not_affected. See
+# "source-built sshd" below.
+#
 # A fact is omitted when the command that would observe it is missing,
 # fails, or cannot see enough (for example, socket owners without root).
 # An omitted fact is unknown to Verdict. No default is filled in.
@@ -75,6 +80,9 @@ function unparsed(mgr, line) {
 }
 function pkg(mgr, name, version, purl) {
   print "P {\"manager\":\"" mgr "\",\"name\":\"" esc(name) "\",\"version\":\"" esc(version) "\",\"purl\":\"" esc(purl) "\"}"
+}
+function binpkg(name, version, purl, path) {
+  print "P {\"manager\":\"binary\",\"name\":\"" esc(name) "\",\"version\":\"" esc(version) "\",\"purl\":\"" esc(purl) "\",\"path\":\"" esc(path) "\",\"source\":\"binary_version\"}"
 }
 '
 
@@ -202,6 +210,9 @@ fact() {
 SSHD=""
 if have sshd; then
   SSHD=$(command -v sshd)
+elif [ -x /usr/local/sbin/sshd ]; then
+  # make install's default prefix; often not on a non-login root PATH.
+  SSHD=/usr/local/sbin/sshd
 fi
 LDD_OUT=""
 LDD_OK=0
@@ -212,6 +223,115 @@ if [ -n "$SSHD" ] && have ldd; then
     note "ldd on sshd failed"
   fi
 fi
+
+# ------------------------------------------- source-built sshd (no package)
+#
+# A make-install OpenSSH is in no package database, so the regreSSHion pack
+# would only see "sshd runs, no package". For each sshd binary found (the one
+# on PATH and /usr/local/sbin/sshd) that every package database present says
+# it does not own, `sshd -V` is read and one entry is written:
+#   manager binary, name openssh, purl pkg:generic/openssh@<ver>,
+#   path <binary>, source binary_version.
+# The importer gives it confidence medium: it can make a check true, never
+# clear one (a banner can be spoofed; a patched build can keep its banner).
+# Nothing is written when ownership cannot be decided (no package database,
+# a missing query tool, or a query error), when the banner is not exactly
+# OpenSSH_MAJOR.MINOR[pPATCH] followed by "," or the end of the line (a
+# distributor suffix such as "OpenSSH_9.2p1 Debian-2" is not a source build),
+# or when the binary is owned by a package.
+
+# pkg_owner prints owned, unowned, or unknown for one path.
+pkg_owner() {
+  po_paths=$1
+  if have readlink && po_r=$(readlink -f "$1" 2>/dev/null) && [ -n "$po_r" ] && [ "$po_r" != "$1" ]; then
+    case $po_r in /*) ;; *) echo unknown; return ;; esac
+    case $po_r in *[!A-Za-z0-9/._+-]*) echo unknown; return ;; esac
+    po_paths="$po_paths
+$po_r"
+  fi
+  # usrmerge: the database may list /sbin/x for /usr/sbin/x or the reverse.
+  po_all=$(printf '%s\n' "$po_paths" | awk 'NF > 0 {
+    print
+    if ($0 ~ /^\/usr\/(s?bin|lib)\//) print substr($0, 5)
+    else if ($0 ~ /^\/(s?bin|lib)\//) print "/usr" $0
+  }' | sort -u)
+  po_any=0
+  if [ -e /var/lib/dpkg/status ]; then
+    po_any=1
+    have dpkg-query || { echo unknown; return; }
+    for po_p in $po_all; do
+      dpkg-query -S "$po_p" >/dev/null 2>&1
+      case $? in 0) echo owned; return ;; 1) ;; *) echo unknown; return ;; esac
+    done
+  fi
+  if [ -d /var/lib/rpm ] || [ -d /usr/lib/sysimage/rpm ]; then
+    po_any=1
+    have rpm || { echo unknown; return; }
+    for po_p in $po_all; do
+      if po_o=$(rpm -qf "$po_p" 2>&1); then echo owned; return; fi
+      case $po_o in *"is not owned by any package"*|*"No such file or directory"*) ;; *) echo unknown; return ;; esac
+    done
+  fi
+  if [ -e "$APK_DB" ]; then
+    po_any=1
+    have apk || { echo unknown; return; }
+    for po_p in $po_all; do
+      if po_o=$(apk info --who-owns "$po_p" 2>&1); then
+        case $po_o in *"is owned by"*) echo owned; return ;; *) echo unknown; return ;; esac
+      fi
+      case $po_o in *"Could not find owner package"*) ;; *) echo unknown; return ;; esac
+    done
+  fi
+  if [ "$po_any" = 0 ]; then echo unknown; else echo unowned; fi
+}
+
+# sshd_banner_version prints "V version" or "X reason" from `sshd -V`.
+# sshd before 9.x rejects -V but still prints the banner with its usage.
+sshd_banner_version() {
+  "$1" -V </dev/null 2>&1 | awk '
+    /^OpenSSH_/ {
+      n++
+      line = $0
+      if (line ~ /^OpenSSH_[0-9]+\.[0-9]+(p[0-9]+)?,/ || line ~ /^OpenSSH_[0-9]+\.[0-9]+(p[0-9]+)?$/) {
+        v = substr(line, 9); sub(/,.*$/, "", v)
+        split(v, a, /[.p]/)
+        if (length(a[1]) <= 3 && length(a[2]) <= 3 && length(a[3]) <= 3) ver = v
+        else why = "version component too long"
+      } else why = "not exactly OpenSSH_MAJOR.MINOR[pPATCH] (distributor suffix or other form)"
+    }
+    END {
+      if (n == 0) print "X no OpenSSH_ banner"
+      else if (n > 1) print "X more than one OpenSSH_ banner"
+      else if (ver != "") print "V " ver
+      else print "X " why
+    }'
+}
+
+BIN_SEEN=""
+BIN_VERS=""
+for b in "$SSHD" /usr/local/sbin/sshd; do
+  [ -n "$b" ] && [ -f "$b" ] && [ -x "$b" ] || continue
+  case $b in /*) ;; *) continue ;; esac
+  case " $BIN_SEEN " in *" $b "*) continue ;; esac
+  BIN_SEEN="$BIN_SEEN $b"
+  case $b in *[!A-Za-z0-9/._+-]*) note "sshd at an unusual path; binary version not read"; continue ;; esac
+  own=$(pkg_owner "$b")
+  case $own in
+    owned) continue ;;
+    unknown) note "$b: package ownership not determined; binary version not read"; continue ;;
+  esac
+  r=$(sshd_banner_version "$b")
+  case $r in
+    "V "*)
+      v=${r#V }
+      case " $BIN_VERS " in *" $v "*) note "$b: openssh $v already recorded from another binary"; continue ;; esac
+      BIN_VERS="$BIN_VERS $v"
+      add_pkg_out "$(B="$b" V="$v" awk "$AWK_LIB"'BEGIN { init(); binpkg("openssh", ENVIRON["V"], "pkg:generic/openssh@" ENVIRON["V"], ENVIRON["B"]) }')"
+      note "$b is in no package database; openssh $v read from its sshd -V banner (binary version: affected-only evidence)"
+      ;;
+    *) note "$b is in no package database; sshd -V banner not used: ${r#X }" ;;
+  esac
+done
 
 # libc.family: prefer the libc sshd is linked against; else the system's.
 LIBC=""

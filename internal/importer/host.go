@@ -9,8 +9,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/uddeshya-world/verdict/internal/factkeys"
@@ -28,7 +30,9 @@ const HostMaxBytes = 16 * 1024 * 1024
 
 // HostOptions is how a collect-host.sh document becomes one asset.
 // Basis and confidence are not options: the collector read the values
-// itself, so they are observed and high. The document is still caller-asserted.
+// itself, so they are observed and high. A binary-version entry (an OpenSSH
+// version read from an unpackaged sshd's banner) is observed but carries its
+// own package confidence, medium. The document is still caller-asserted.
 type HostOptions struct {
 	AssetID   string
 	AssetName string
@@ -56,6 +60,9 @@ type hostDoc struct {
 		Name    string `json:"name"`
 		Version string `json:"version"`
 		PURL    string `json:"purl"`
+		// Path and Source are written only on a binary-version entry.
+		Path   string `json:"path"`
+		Source string `json:"source"`
 	} `json:"packages"`
 	Unparsed []struct {
 		Manager string `json:"manager"`
@@ -133,7 +140,19 @@ func Host(data []byte, opt HostOptions) (*Result, error) {
 
 	var rows []row
 	var skipped []string
+	dbRows := 0
+	var binNotes []string
 	for _, p := range doc.Packages {
+		if p.Manager == HostBinaryManager || p.Source != "" || p.Path != "" {
+			r, err := hostBinaryRow(p.Manager, p.Name, p.Version, p.PURL, p.Path, p.Source)
+			if err != nil {
+				return nil, err
+			}
+			rows = append(rows, r)
+			binNotes = append(binNotes, fmt.Sprintf("%s: version read from the %s banner; confidence medium, can support affected only", r.raw, p.Path))
+			continue
+		}
+		dbRows++
 		if p.PURL == "" {
 			label := p.Name
 			if label == "" {
@@ -148,6 +167,14 @@ func Host(data []byte, opt HostOptions) (*Result, error) {
 		skipped = append(skipped, fmt.Sprintf("%s: unparsed line %q", u.Manager, u.Line))
 	}
 
+	// --complete is a claim about the package database. A version read from a
+	// binary banner is not a package database, so it cannot carry that claim
+	// alone: without one database entry, absence of anything else would rest
+	// on nothing.
+	if opt.Complete && dbRows == 0 {
+		return nil, fmt.Errorf("import host: inventory cannot be complete: no package-database entries (binary-version entries do not prove absence)")
+	}
+
 	facts, err := hostFactList(doc.Facts, observedAt, evidenceID)
 	if err != nil {
 		return nil, err
@@ -157,6 +184,7 @@ func Host(data []byte, opt HostOptions) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
+	notes = append(notes, binNotes...)
 	notes = append(notes, warn...)
 
 	res, err := finish(rows, skipped, InventoryOptions{
@@ -180,6 +208,43 @@ func Host(data []byte, opt HostOptions) (*Result, error) {
 		return nil, fmt.Errorf("import host: %w", err)
 	}
 	return &Result{Snapshot: checked, Skipped: res.Skipped, Notes: notes}, nil
+}
+
+// HostBinaryManager is the manager the collector writes on a version read
+// from a binary's banner rather than from a package database.
+const HostBinaryManager = "binary"
+
+// HostBinarySource is the source marker on a binary-version entry.
+const HostBinarySource = "binary_version"
+
+// hostBinaryVersion is the only version shape accepted from a banner:
+// OpenSSH MAJOR.MINOR, optionally pPATCH (9.6p1, 9.6).
+var hostBinaryVersion = regexp.MustCompile(`^[0-9]{1,3}\.[0-9]{1,3}(p[0-9]{1,3})?$`)
+
+// hostBinaryRow checks one binary-version entry. Only openssh is accepted,
+// in exactly the shape the collector writes; anything else rejects the
+// document. The package gets confidence medium: it can support affected
+// but never meets the not_affected bar (a banner can be spoofed, and a
+// patched build can keep its upstream banner).
+func hostBinaryRow(manager, name, version, raw, path, source string) (row, error) {
+	bad := func(why string) (row, error) {
+		return row{}, fmt.Errorf("import host: binary-version entry %q: %s", name, why)
+	}
+	switch {
+	case manager != HostBinaryManager:
+		return bad("manager must be " + HostBinaryManager)
+	case source != HostBinarySource:
+		return bad("source must be " + HostBinarySource)
+	case name != "openssh":
+		return bad("only openssh is read from a binary banner")
+	case !hostBinaryVersion.MatchString(version):
+		return bad("version is not MAJOR.MINOR[pPATCH]")
+	case raw != "pkg:generic/openssh@"+version:
+		return bad("purl must be pkg:generic/openssh@" + version)
+	case len(path) == 0 || len(path) > 4096 || path[0] != '/' || strings.ContainsAny(path, "\x00\r\n"):
+		return bad("path must be one absolute path")
+	}
+	return row{raw: raw, version: version, name: name, confidence: "medium", source: HostBinarySource}, nil
 }
 
 func hostFactList(in map[string]string, observedAt, evidenceID string) ([]snapshot.Fact, error) {

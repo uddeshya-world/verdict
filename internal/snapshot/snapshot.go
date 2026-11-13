@@ -89,9 +89,19 @@ type Inventory struct {
 }
 
 // Package is one installed coordinate.
+//
+// Confidence, when set, is this package's own confidence. It can only lower
+// the inventory's: the engine uses the lower of the two for any check that
+// matches this package. The host importer sets it to "medium" on a version
+// read from a binary's banner (Source "binary_version"), so that entry can
+// make a check true but can never meet the not_affected bar. Empty means the
+// inventory confidence applies, which is every package-database entry.
+// Basis and freshness are always the inventory's.
 type Package struct {
-	PURL    string `json:"purl"`
-	Version string `json:"version"`
+	PURL       string `json:"purl"`
+	Version    string `json:"version"`
+	Confidence string `json:"confidence,omitempty"`
+	Source     string `json:"source,omitempty"`
 }
 
 // Fact is one observed, attested, or inferred key.
@@ -194,6 +204,14 @@ func validate(s *Snapshot) error {
 			}
 			if _, ok := purls[pkg.PURL]; ok {
 				return fmt.Errorf("snapshot: asset %s duplicate purl %s", a.ID, pkg.PURL)
+			}
+			switch pkg.Confidence {
+			case "", "low", "medium", "high", "confirmed":
+			default:
+				return fmt.Errorf("snapshot: asset %s package %s confidence %q is invalid", a.ID, pkg.PURL, pkg.Confidence)
+			}
+			if len(pkg.Source) > 64 || strings.ContainsAny(pkg.Source, "\x00\r\n") {
+				return fmt.Errorf("snapshot: asset %s package %s source must be one line of at most 64 bytes", a.ID, pkg.PURL)
 			}
 			purls[pkg.PURL] = struct{}{}
 		}
