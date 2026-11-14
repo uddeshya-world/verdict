@@ -192,7 +192,7 @@ func (s *session) mustTool(name string, args map[string]any) map[string]any {
 func TestHandshakeAndToolsList(t *testing.T) {
 	root := fixtureRoot(t)
 	for _, tc := range []struct{ asked, want string }{
-		{"2025-06-18", "2025-06-18"}, {"2025-03-26", "2025-03-26"}, {"2024-11-05", "2024-11-05"}, {"1999-01-01", "2025-06-18"}, {"", "2025-06-18"},
+		{"2025-11-25", "2025-11-25"}, {"2025-06-18", "2025-06-18"}, {"2025-03-26", "2025-03-26"}, {"2024-11-05", "2024-11-05"}, {"1999-01-01", "2025-11-25"}, {"", "2025-11-25"},
 	} {
 		s := newSession(t, root, nil)
 		r := s.call("initialize", map[string]any{"protocolVersion": tc.asked, "clientInfo": map[string]any{"name": "t"}})

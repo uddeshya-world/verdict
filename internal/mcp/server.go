@@ -29,7 +29,7 @@ import (
 const MaxLineBytes = 4 << 20
 
 // Protocol versions this server speaks, newest first.
-var supportedVersions = []string{"2025-06-18", "2025-03-26", "2024-11-05"}
+var supportedVersions = []string{"2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"}
 
 // JSON-RPC error codes.
 const (

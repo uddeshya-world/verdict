@@ -274,7 +274,7 @@ command = "verdict"
 args = ["mcp", "--root", "/path/to/repo"]
 ```
 
-Flags: `--root DIR` (default `.`), `--max-snapshot-bytes` (the drill cap, applied to every tool that reads a snapshot or report), `--log FILE` (JSON lines of every request and response with a `seq`; mode 0600, truncated at start; no timestamps, the order is the record). It speaks protocol versions `2025-06-18`, `2025-03-26`, and `2024-11-05`. Exit 0 when stdin closes, 2 for a bad `--root`, `--log`, or cap, 1 on an I/O error.
+Flags: `--root DIR` (default `.`), `--max-snapshot-bytes` (the drill cap, applied to every tool that reads a snapshot or report), `--log FILE` (JSON lines of every request and response with a `seq`; mode 0600, truncated at start; no timestamps, the order is the record). It speaks protocol versions `2025-11-25`, `2025-06-18`, `2025-03-26`, and `2024-11-05` (an unknown version gets the newest). A client that first probes `server/discover` (newer Claude Code) gets -32601 and falls back to `initialize`. Exit 0 when stdin closes, 2 for a bad `--root`, `--log`, or cap, 1 on an I/O error.
 
 ### Tools
 
